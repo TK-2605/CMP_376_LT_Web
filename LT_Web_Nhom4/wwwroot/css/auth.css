@@ -1,0 +1,29 @@
+.auth-shell {
+  min-height: calc(100vh - 154px);
+  display: flex;
+  align-items: center;
+  padding: 56px 0;
+  background:
+    radial-gradient(circle at top left, rgba(111, 66, 193, 0.16), transparent 32rem),
+    linear-gradient(180deg, #ffffff, #f7f5ff);
+}
+
+.auth-card {
+  border: 0;
+  border-radius: 28px;
+  box-shadow: 0 24px 80px rgba(31, 41, 55, 0.12);
+  overflow: hidden;
+}
+
+.auth-panel {
+  color: #fff;
+  background: linear-gradient(145deg, #6f42c1, #3b82f6);
+}
+
+.auth-provider-button {
+  min-height: 46px;
+}
+
+.auth-form-side {
+  padding: clamp(2rem, 4vw, 3.5rem);
+}

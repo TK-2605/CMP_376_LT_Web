@@ -1,0 +1,55 @@
+@model ExamListViewModel
+
+@{
+    ViewData["Title"] = "De thi";
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        @if (TempData["ExamMessage"] is string message)
+        {
+            <div class="alert alert-success">@message</div>
+        }
+
+        <div class="row align-items-end mb-5">
+            <div class="col-lg-7">
+                <div class="student-eyebrow mb-2">Exams</div>
+                <h1 class="display-6 fw-bold">Danh sach de thi</h1>
+                <p class="text-muted mb-0">Chon de thi duoc giao cho lop cua ban va bat dau khi dung thoi gian.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            @foreach (var exam in Model.Exams)
+            {
+                <div class="col-lg-6">
+                    <article class="card student-exam-card h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <span class="badge rounded-pill">@exam.SubjectName</span>
+                                <span class="text-muted">@exam.QuestionCount cau</span>
+                            </div>
+                            <h2 class="h4 fw-bold">@exam.Title</h2>
+                            <p class="text-muted">@exam.ClassName</p>
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <small class="text-muted d-block">Bat dau</small>
+                                        <strong>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 bg-light rounded-3">
+                                        <small class="text-muted d-block">Thoi luong</small>
+                                        <strong>@exam.DurationMinutes phut</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <a asp-controller="Exams" asp-action="Start" asp-route-id="@exam.Id" class="btn btn-primary">Bat dau lam bai</a>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </div>
+</section>

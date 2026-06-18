@@ -1,0 +1,53 @@
+@model ExternalLoginConfirmationViewModel
+
+@{
+    ViewData["Title"] = "Xac nhan OAuth";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<section class="auth-shell">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card auth-card">
+                    <div class="card-body auth-form-side">
+                        <h1 class="h3 fw-bold">Hoan tat dang nhap OAuth 2.0</h1>
+                        <p class="text-muted">Xac nhan thong tin tai khoan truoc khi lien ket voi nha cung cap dang nhap ngoai.</p>
+
+                        <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLoginConfirmation" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                            <input asp-for="ReturnUrl" type="hidden" />
+
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label"></label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="StudentCode" class="form-label"></label>
+                                <input asp-for="StudentCode" class="form-control" />
+                                <span asp-validation-for="StudentCode" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" readonly />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Lien ket va dang nhap</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

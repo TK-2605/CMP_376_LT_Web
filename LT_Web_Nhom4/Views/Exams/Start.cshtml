@@ -1,0 +1,111 @@
+@model ExamStartViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["BodyClass"] = "exam-body";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
+
+<div class="exam-shell">
+    <div class="container">
+        <div class="exam-header mb-4">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <span class="badge text-bg-light text-primary mb-3">@Model.SubjectName</span>
+                    <h1 class="h2 fw-bold mb-2">@Model.Title</h1>
+                    <p class="mb-0 text-white-50">Moi cau hoi chi chon mot dap an. He thong se autosave khi ban thay doi lua chon.</p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card exam-timer-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="fw-semibold text-dark">Thoi gian con lai</span>
+                                <span class="h4 mb-0 text-primary" data-exam-timer-label>--:--</span>
+                            </div>
+                            <div class="exam-timer-bar">
+                                <span data-exam-timer-bar></span>
+                            </div>
+                            <div class="exam-autosave small mt-3" data-exam-autosave></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form asp-controller="Exams"
+              asp-action="Submit"
+              method="post"
+              data-exam-form
+              data-duration-minutes="@Model.DurationMinutes"
+              data-started-at="@Model.StartedAt.ToUniversalTime().ToString("O")"
+              data-autosave-url="@Url.Action("Autosave", "Exams")">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input type="hidden" name="ExamId" value="@Model.ExamId" />
+            <input type="hidden" name="AttemptId" value="@Model.AttemptId" />
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    @for (var i = 0; i < Model.Questions.Count; i++)
+                    {
+                        var question = Model.Questions[i];
+                        <section class="card exam-question-card mb-4" data-question-id="@question.QuestionId">
+                            <div class="card-body p-4">
+                                <input type="hidden" name="Answers[@i].QuestionId" value="@question.QuestionId" />
+                                <div class="d-flex justify-content-between gap-3 mb-3">
+                                    <h2 class="h5 fw-bold mb-0">Cau @(i + 1). @question.Content</h2>
+                                    <span class="badge text-bg-light">@question.Score diem</span>
+                                </div>
+
+                                <div class="d-grid gap-3">
+                                    @foreach (var option in question.Options)
+                                    {
+                                        var inputId = $"q_{question.QuestionId}_o_{option.OptionId}";
+                                        <label class="exam-option" for="@inputId">
+                                            <input id="@inputId"
+                                                   class="form-check-input me-2"
+                                                   type="radio"
+                                                   name="Answers[@i].SelectedOptionId"
+                                                   value="@option.OptionId" />
+                                            <span>@option.Content</span>
+                                        </label>
+                                    }
+                                </div>
+                                <span class="text-danger field-validation-valid" data-valmsg-for="Answers[@i].SelectedOptionId" data-valmsg-replace="true"></span>
+                            </div>
+                        </section>
+                    }
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card exam-navigation-card sticky-top" style="top: 96px;">
+                        <div class="card-body p-4">
+                            <h2 class="h5 fw-bold">Tien do lam bai</h2>
+                            <p class="text-muted small">Cham xanh la cau da chon dap an.</p>
+                            <div class="d-flex flex-wrap gap-2 mb-4">
+                                @foreach (var question in Model.Questions)
+                                {
+                                    <span class="exam-progress-dot" data-progress-question="@question.QuestionId"></span>
+                                }
+                            </div>
+
+                            <div class="alert alert-warning small">
+                                Khong tat trinh duyet khi dang thi. Neu mat ket noi, dap an gan nhat se duoc autosave lai.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Nop bai</button>
+                            <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Thoat</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/exam.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,26 @@
+@model CrudDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Details {Model.Title}";
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="card">
+            <div class="card-body p-4">
+                <h1 class="h3 fw-bold mb-4">Details @Model.Title</h1>
+
+                <dl class="row">
+                    @foreach (var field in Model.Fields)
+                    {
+                        <dt class="col-sm-3">@field.Label</dt>
+                        <dd class="col-sm-9">@field.Value</dd>
+                    }
+                </dl>
+
+                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">Edit</a>
+                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+</section>

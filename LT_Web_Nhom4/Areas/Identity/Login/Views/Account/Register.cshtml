@@ -1,0 +1,71 @@
+@model RegisterViewModel
+
+@{
+    ViewData["Title"] = "Dang ky";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<section class="auth-shell">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="card auth-card">
+                    <div class="card-body auth-form-side">
+                        <h1 class="h3 fw-bold">Tao tai khoan sinh vien</h1>
+                        <p class="text-muted mb-4">Tai khoan moi mac dinh phuc vu vai tro Student khi role da duoc seed.</p>
+
+                        <form asp-area="Identity" asp-controller="Account" asp-action="Register" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                            <input asp-for="ReturnUrl" type="hidden" />
+
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label"></label>
+                                <input asp-for="FullName" class="form-control" autocomplete="name" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="StudentCode" class="form-label"></label>
+                                <input asp-for="StudentCode" class="form-control" />
+                                <span asp-validation-for="StudentCode" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" autocomplete="username" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 mt-4">Dang ky</button>
+                        </form>
+
+                        <p class="text-center mt-4 mb-0">
+                            Da co tai khoan?
+                            <a asp-area="Identity" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl">Dang nhap</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

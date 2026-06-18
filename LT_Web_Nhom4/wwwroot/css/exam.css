@@ -1,0 +1,71 @@
+.exam-body {
+  background: #f5f7fb;
+}
+
+.exam-shell {
+  padding: 32px 0 56px;
+}
+
+.exam-header {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.22);
+}
+
+.exam-timer-card,
+.exam-question-card,
+.exam-navigation-card {
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 16px 38px rgba(31, 41, 55, 0.08);
+}
+
+.exam-timer-bar {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.exam-timer-bar span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: #2563eb;
+  transition: width 1s linear, background 0.2s ease;
+}
+
+.exam-timer-bar span.is-warning {
+  background: #ef4444;
+}
+
+.exam-option {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.exam-option:has(input:checked) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.exam-progress-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+}
+
+.exam-progress-dot.is-answered {
+  border-color: #10b981;
+  background: #10b981;
+}
+
+.exam-autosave {
+  min-height: 24px;
+}

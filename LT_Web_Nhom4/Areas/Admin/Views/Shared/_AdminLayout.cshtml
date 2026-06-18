@@ -1,0 +1,194 @@
+@{
+    var title = ViewData["Title"] as string ?? "Admin";
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+
+    string IsActive(string path)
+    {
+        return currentPath.StartsWith(path, StringComparison.OrdinalIgnoreCase) ? " active" : string.Empty;
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en" class="layout-menu-fixed layout-compact" data-assets-path="/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <title>@title | Admin</title>
+
+    <link rel="icon" type="image/x-icon" href="~/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/vendor/fonts/iconify-icons.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/libs/node-waves/node-waves.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/css/core.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/materio-demo.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+
+    <script src="~/vendor/js/helpers.js" asp-append-version="true"></script>
+    <script src="~/js/materio-config.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("VendorStyles", required: false)
+    @await RenderSectionAsync("PageStyles", required: false)
+</head>
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <div class="app-brand demo">
+                    <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="app-brand-link">
+                        <span class="app-brand-logo demo">
+                            <i class="icon-base ri ri-graduation-cap-line text-primary fs-3"></i>
+                        </span>
+                        <span class="app-brand-text demo menu-text fw-semibold ms-2">Exam Admin</span>
+                    </a>
+                    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                        <i class="menu-toggle-icon d-xl-inline-block align-middle"></i>
+                    </a>
+                </div>
+
+                <div class="menu-inner-shadow"></div>
+
+                <ul class="menu-inner py-1">
+                    <li class="menu-item@(IsActive("/Admin/Dashboard"))">
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-dashboard-line"></i>
+                            <div>Dashboard</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-header mt-4">
+                        <span class="menu-header-text">Management</span>
+                    </li>
+
+                    <li class="menu-item@(IsActive("/Admin/Users"))">
+                        <a href="/Admin/Users" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-user-settings-line"></i>
+                            <div>Users</div>
+                        </a>
+                    </li>
+                    <li class="menu-item@(IsActive("/Admin/Subjects"))">
+                        <a href="/Admin/Subjects" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-book-2-line"></i>
+                            <div>Subjects</div>
+                        </a>
+                    </li>
+                    <li class="menu-item@(IsActive("/Admin/Classes"))">
+                        <a href="/Admin/Classes" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-group-line"></i>
+                            <div>Classes</div>
+                        </a>
+                    </li>
+                    <li class="menu-item@(IsActive("/Admin/Questions"))">
+                        <a href="/Admin/Questions" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-question-answer-line"></i>
+                            <div>Questions</div>
+                        </a>
+                    </li>
+                    <li class="menu-item@(IsActive("/Admin/Exams"))">
+                        <a href="/Admin/Exams" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-file-list-3-line"></i>
+                            <div>Exams</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-header mt-4">
+                        <span class="menu-header-text">Monitoring</span>
+                    </li>
+
+                    <li class="menu-item@(IsActive("/Admin/Attempts"))">
+                        <a href="/Admin/Attempts" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-bar-chart-box-line"></i>
+                            <div>Attempts</div>
+                        </a>
+                    </li>
+                    <li class="menu-item@(IsActive("/Admin/AntiCheat"))">
+                        <a href="/Admin/AntiCheat" class="menu-link">
+                            <i class="menu-icon icon-base ri ri-shield-check-line"></i>
+                            <div>Anti-cheat</div>
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <div class="layout-page">
+                <nav class="layout-navbar container-xxl navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
+                    <div class="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 d-xl-none">
+                        <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
+                            <i class="icon-base ri ri-menu-line icon-md"></i>
+                        </a>
+                    </div>
+
+                    <div class="navbar-nav-right d-flex align-items-center justify-content-between w-100">
+                        <div>
+                            <span class="text-muted fw-normal">Admin</span>
+                            <span class="text-heading fw-semibold">/ @title</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                                <i class="icon-base ri ri-home-4-line me-1"></i>
+                                Site
+                            </a>
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <span class="text-muted small d-none d-md-inline">@User.Identity.Name</span>
+                                <form asp-area="Identity"
+                                      asp-controller="Account"
+                                      asp-action="Logout"
+                                      asp-route-returnUrl="@Url.Action("Login", "Account", new { area = "Identity" })"
+                                      method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+                                </form>
+                                <div class="avatar avatar-sm">
+                                    <span class="avatar-initial rounded-circle bg-label-primary">
+                                        <i class="icon-base ri ri-user-line"></i>
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">Login</a>
+                            }
+                        </div>
+                    </div>
+                </nav>
+
+                <div class="content-wrapper">
+                    <main class="container-xxl flex-grow-1 container-p-y">
+                        @RenderBody()
+                    </main>
+
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl">
+                            <div class="footer-container d-flex align-items-center justify-content-between py-4 flex-md-row flex-column">
+                                <div class="text-body">
+                                    © @DateTime.Now.Year Exam Management
+                                </div>
+                                <div class="d-none d-lg-inline-block">
+                                    <span class="text-muted">Materio styled admin area</span>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+
+                    <div class="content-backdrop fade"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+        <div class="drag-target"></div>
+    </div>
+
+    <script src="~/vendor/libs/jquery/jquery.js" asp-append-version="true"></script>
+    <script src="~/vendor/libs/popper/popper.js" asp-append-version="true"></script>
+    <script src="~/vendor/js/bootstrap.js" asp-append-version="true"></script>
+    <script src="~/vendor/libs/node-waves/node-waves.js" asp-append-version="true"></script>
+    <script src="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.js" asp-append-version="true"></script>
+    <script src="~/vendor/js/menu.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("VendorScripts", required: false)
+    @await RenderSectionAsync("PageScripts", required: false)
+</body>
+</html>

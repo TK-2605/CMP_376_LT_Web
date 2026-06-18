@@ -1,0 +1,90 @@
+:root {
+  --student-primary: #6f42c1;
+  --student-primary-dark: #4f2c91;
+  --student-soft: #f6f2ff;
+}
+
+.student-navbar {
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.06);
+}
+
+.student-page-shell {
+  background: #fff;
+}
+
+.student-hero {
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  background:
+    linear-gradient(120deg, rgba(111, 66, 193, 0.95), rgba(79, 44, 145, 0.86)),
+    url('/img/student/banner-bg.jpg') center/cover;
+  border-bottom-left-radius: 48px;
+  border-bottom-right-radius: 48px;
+}
+
+.student-hero h1 {
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1.04;
+}
+
+.student-hero-card {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  backdrop-filter: blur(18px);
+}
+
+.student-section {
+  padding: 88px 0;
+}
+
+.student-eyebrow {
+  color: var(--student-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.student-subject-card {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(31, 41, 55, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.student-subject-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 60px rgba(31, 41, 55, 0.13);
+}
+
+.student-subject-card img {
+  height: 210px;
+  object-fit: cover;
+}
+
+.student-feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--student-primary);
+  font-weight: 800;
+}
+
+.student-exam-card {
+  border: 1px solid #ece7fb;
+  border-radius: 20px;
+}
+
+.student-exam-card .badge {
+  background: var(--student-soft);
+  color: var(--student-primary-dark);
+}

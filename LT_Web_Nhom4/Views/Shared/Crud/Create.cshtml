@@ -1,0 +1,20 @@
+@model CrudFormViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h1 class="h3 fw-bold mb-4">@Model.Title</h1>
+                        <partial name="/Views/Shared/Crud/_Form.cshtml" model="Model" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

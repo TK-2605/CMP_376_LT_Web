@@ -1,0 +1,54 @@
+@model CrudFormViewModel
+
+<form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="@Model.ActionName" asp-route-id="@Model.Key" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    @foreach (var field in Model.Fields)
+    {
+        <div class="mb-3">
+            <label class="form-label" for="@field.Name">@field.Label</label>
+
+            @if (field.Options.Count > 0)
+            {
+                <select id="@field.Name" name="@field.Name" class="form-select" disabled="@field.IsReadOnly">
+                    @if (field.IsNullable)
+                    {
+                        <option value="">-- None --</option>
+                    }
+                    @foreach (var option in field.Options)
+                    {
+                        <option value="@option.Value" selected="@(option.Value == field.Value)">@option.Text</option>
+                    }
+                </select>
+            }
+            else if (field.IsBoolean)
+            {
+                <div class="form-check">
+                    <input id="@field.Name" name="@field.Name" type="checkbox" value="true" class="form-check-input" checked="@(field.Value == "true")" disabled="@field.IsReadOnly" />
+                    <label class="form-check-label" for="@field.Name">Yes</label>
+                </div>
+            }
+            else
+            {
+                <input id="@field.Name"
+                       name="@field.Name"
+                       type="@field.InputType"
+                       value="@field.Value"
+                       class="form-control"
+                       readonly="@field.IsReadOnly"
+                       step="any" />
+            }
+
+            @if (field.IsReadOnly)
+            {
+                <input type="hidden" name="@field.Name" value="@field.Value" />
+            }
+            <span class="text-danger field-validation-valid" data-valmsg-for="@field.Name" data-valmsg-replace="true"></span>
+        </div>
+    }
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    </div>
+</form>

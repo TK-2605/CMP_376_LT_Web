@@ -1,0 +1,29 @@
+@model CrudDeleteViewModel
+
+@{
+    ViewData["Title"] = $"Delete {Model.Title}";
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="card border-danger">
+            <div class="card-body p-4">
+                <h1 class="h3 fw-bold mb-3">Delete @Model.Title</h1>
+                <p class="text-danger">Are you sure you want to delete this record?</p>
+
+                <dl class="row">
+                    @foreach (var field in Model.Fields.Take(8))
+                    {
+                        <dt class="col-sm-3">@field.Label</dt>
+                        <dd class="col-sm-9">@field.Value</dd>
+                    }
+                </dl>
+
+                <form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@Model.Key" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

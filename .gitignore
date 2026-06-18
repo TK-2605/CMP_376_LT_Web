@@ -1,0 +1,38 @@
+## Visual Studio
+.vs/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+project.lock.json
+project.assets.json
+artifacts/
+
+## ASP.NET local config
+appsettings.*.local.json
+secrets.json
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
