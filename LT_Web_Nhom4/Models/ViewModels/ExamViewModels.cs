@@ -5,6 +5,10 @@ namespace LT_Web_Nhom4.Models.ViewModels
     public class ExamListViewModel
     {
         public IList<ExamCardViewModel> Exams { get; set; } = new List<ExamCardViewModel>();
+
+        public IList<ExamCardViewModel> OwnedExams => Exams.Where(exam => exam.IsOwnedByCurrentUser).ToList();
+
+        public IList<ExamCardViewModel> ParticipatingExams => Exams.Where(exam => !exam.IsOwnedByCurrentUser).ToList();
     }
 
     public class ExamCardViewModel
@@ -24,6 +28,12 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public int DurationMinutes { get; set; }
 
         public int QuestionCount { get; set; }
+
+        public bool IsOwnedByCurrentUser { get; set; }
+
+        public bool IsParticipant { get; set; }
+
+        public string RoleLabel => IsOwnedByCurrentUser ? "Giao vien phong" : "Hoc sinh";
     }
 
     public class ExamRoomViewModel
@@ -59,6 +69,78 @@ namespace LT_Web_Nhom4.Models.ViewModels
             "Khong tat trinh duyet trong khi dang lam bai.",
             "Kiem tra tien do tra loi truoc khi nop bai."
         };
+    }
+
+    public class ExamManageViewModel
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+
+        public string SubjectName { get; set; } = string.Empty;
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public DateTime StartAt { get; set; }
+
+        public DateTime EndAt { get; set; }
+
+        public int DurationMinutes { get; set; }
+
+        public int QuestionCount { get; set; }
+
+        public int ParticipantCount { get; set; }
+
+        public int AttemptCount { get; set; }
+
+        public int SubmittedCount { get; set; }
+
+        public int WarningCount { get; set; }
+
+        public decimal? AverageScore { get; set; }
+
+        public IList<ExamParticipantViewModel> Participants { get; set; } = new List<ExamParticipantViewModel>();
+
+        public IList<ExamAttemptSummaryViewModel> Attempts { get; set; } = new List<ExamAttemptSummaryViewModel>();
+
+        public IList<ExamQuestionManageViewModel> Questions { get; set; } = new List<ExamQuestionManageViewModel>();
+    }
+
+    public class ExamParticipantViewModel
+    {
+        public string UserId { get; set; } = string.Empty;
+
+        public string DisplayName { get; set; } = string.Empty;
+
+        public string Email { get; set; } = string.Empty;
+
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class ExamAttemptSummaryViewModel
+    {
+        public int AttemptId { get; set; }
+
+        public string StudentName { get; set; } = string.Empty;
+
+        public DateTime StartedAt { get; set; }
+
+        public DateTime? SubmittedAt { get; set; }
+
+        public decimal? Score { get; set; }
+
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class ExamQuestionManageViewModel
+    {
+        public int QuestionId { get; set; }
+
+        public string Content { get; set; } = string.Empty;
+
+        public decimal Score { get; set; }
+
+        public int OptionCount { get; set; }
     }
 
     public class ExamStartViewModel

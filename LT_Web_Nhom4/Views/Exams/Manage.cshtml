@@ -1,0 +1,181 @@
+@model ExamManageViewModel
+
+@{
+    ViewData["Title"] = "Quan ly phong thi";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
+
+<section class="exam-manage-shell">
+    <div class="container">
+        <div class="exam-manage-header">
+            <div>
+                <span class="exam-room-kicker">Giao vien phong thi</span>
+                <h1>@Model.Title</h1>
+                <p>@Model.SubjectName - @Model.ClassName</p>
+            </div>
+            <div class="exam-manage-actions">
+                <a asp-controller="Exams" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-light">Cau hinh phong</a>
+                <a asp-controller="ExamQuestions" asp-action="Index" class="btn btn-outline-light">Cau hoi trong de</a>
+            </div>
+        </div>
+
+        <div class="exam-manage-stats">
+            <article>
+                <span>Hoc sinh</span>
+                <strong>@Model.ParticipantCount</strong>
+            </article>
+            <article>
+                <span>Cau hoi</span>
+                <strong>@Model.QuestionCount</strong>
+            </article>
+            <article>
+                <span>Da nop</span>
+                <strong>@Model.SubmittedCount/@Model.AttemptCount</strong>
+            </article>
+            <article>
+                <span>Canh bao</span>
+                <strong>@Model.WarningCount</strong>
+            </article>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card exam-manage-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 fw-bold mb-0">Hoc sinh trong phong</h2>
+                            <a asp-controller="ClassMembers" asp-action="Index" class="btn btn-sm btn-outline-primary">Quan ly hoc sinh</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Hoc sinh</th>
+                                        <th>Email</th>
+                                        <th>Trang thai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Participants.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-muted">Chua co hoc sinh trong phong.</td>
+                                        </tr>
+                                    }
+                                    @foreach (var participant in Model.Participants)
+                                    {
+                                        <tr>
+                                            <td>@participant.DisplayName</td>
+                                            <td>@participant.Email</td>
+                                            <td><span class="badge text-bg-success">@participant.Status</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card exam-manage-card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 fw-bold mb-0">Luot thi va cham diem</h2>
+                            <a asp-controller="Results" asp-action="Index" class="btn btn-sm btn-outline-primary">Xem tat ca</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Hoc sinh</th>
+                                        <th>Nop bai</th>
+                                        <th>Diem</th>
+                                        <th>Trang thai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Attempts.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-muted">Chua co luot thi.</td>
+                                        </tr>
+                                    }
+                                    @foreach (var attempt in Model.Attempts)
+                                    {
+                                        <tr>
+                                            <td>@attempt.StudentName</td>
+                                            <td>@(attempt.SubmittedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Dang lam")</td>
+                                            <td>@(attempt.Score?.ToString("0.##") ?? "-")</td>
+                                            <td><span class="badge text-bg-light">@attempt.Status</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card exam-manage-card">
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold">Thong tin phong</h2>
+                        <dl class="exam-manage-info">
+                            <div>
+                                <dt>Bat dau</dt>
+                                <dd>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                            </div>
+                            <div>
+                                <dt>Ket thuc</dt>
+                                <dd>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                            </div>
+                            <div>
+                                <dt>Thoi luong</dt>
+                                <dd>@Model.DurationMinutes phut</dd>
+                            </div>
+                            <div>
+                                <dt>Diem TB</dt>
+                                <dd>@(Model.AverageScore?.ToString("0.##") ?? "-")</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card exam-manage-card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 fw-bold mb-0">Cau hoi va dap an dung</h2>
+                            <a asp-controller="Questions" asp-action="Index" class="btn btn-sm btn-outline-primary">Ngan hang</a>
+                        </div>
+                        <div class="exam-manage-question-list">
+                            @if (Model.Questions.Count == 0)
+                            {
+                                <p class="text-muted mb-0">Chua gan cau hoi vao de.</p>
+                            }
+                            @foreach (var question in Model.Questions)
+                            {
+                                <article>
+                                    <strong>@question.Content</strong>
+                                    <span>@question.Score diem - @question.OptionCount dap an</span>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card exam-manage-card mt-4">
+                    <div class="card-body">
+                        <h2 class="h5 fw-bold">Dieu huong nhanh</h2>
+                        <div class="d-grid gap-2">
+                            <a asp-controller="AttemptAnswers" asp-action="Index" class="btn btn-outline-secondary">Dap an bai lam</a>
+                            <a asp-controller="AntiCheat" asp-action="Index" class="btn btn-outline-secondary">Canh bao gian lan</a>
+                            <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary">Ve danh sach phong</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

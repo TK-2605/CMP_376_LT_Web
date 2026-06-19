@@ -13,14 +13,69 @@
 
         <div class="row align-items-end mb-5">
             <div class="col-lg-7">
-                <div class="student-eyebrow mb-2">De thi</div>
-                <h1 class="display-6 fw-bold">Danh sach de thi</h1>
-                <p class="text-muted mb-0">Chon de thi duoc giao cho lop cua ban va bat dau khi dung thoi gian.</p>
+                <div class="student-eyebrow mb-2">Phong thi</div>
+                <h1 class="display-6 fw-bold">Phong thi cua ban</h1>
+                <p class="text-muted mb-0">Phong ban tao se vao bang quan ly. Phong ban tham gia se vao phong cho hoac phong lam bai.</p>
             </div>
         </div>
 
+        @if (Model.OwnedExams.Count > 0)
+        {
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h4 fw-bold mb-0">Phong toi tao</h2>
+                <span class="text-muted small">@Model.OwnedExams.Count phong</span>
+            </div>
+            <div class="row g-4 mb-5">
+                @foreach (var exam in Model.OwnedExams)
+                {
+                    var now = DateTime.Now;
+                    var isOpen = now >= exam.StartAt && now <= exam.EndAt;
+                    var isClosed = now > exam.EndAt;
+                    <div class="col-lg-6">
+                        <article class="card student-exam-card h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                    <span class="badge rounded-pill">@exam.SubjectName</span>
+                                    <span class="badge rounded-pill text-bg-primary">@exam.RoleLabel</span>
+                                </div>
+                                <h3 class="h4 fw-bold">@exam.Title</h3>
+                                <p class="text-muted">@exam.ClassName - @exam.QuestionCount cau</p>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-6">
+                                        <div class="p-3 bg-light rounded-3">
+                                            <small class="text-muted d-block">Bat dau</small>
+                                            <strong>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="p-3 bg-light rounded-3">
+                                            <small class="text-muted d-block">Trang thai</small>
+                                            <strong>@(isOpen ? "Dang mo" : isClosed ? "Da ket thuc" : "Chua mo")</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a asp-controller="Exams" asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary">
+                                    Quan ly phong
+                                </a>
+                            </div>
+                        </article>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h4 fw-bold mb-0">Phong toi tham gia</h2>
+            <span class="text-muted small">@Model.ParticipatingExams.Count phong</span>
+        </div>
         <div class="row g-4">
-            @foreach (var exam in Model.Exams)
+            @if (Model.ParticipatingExams.Count == 0)
+            {
+                <div class="col-12">
+                    <div class="alert alert-light border">Ban chua duoc them vao phong thi nao.</div>
+                </div>
+            }
+            @foreach (var exam in Model.ParticipatingExams)
             {
                 var now = DateTime.Now;
                 var isOpen = now >= exam.StartAt && now <= exam.EndAt;
@@ -34,7 +89,7 @@
                                     @(isOpen ? "Dang mo" : isClosed ? "Da ket thuc" : "Phong cho")
                                 </span>
                             </div>
-                            <h2 class="h4 fw-bold">@exam.Title</h2>
+                            <h3 class="h4 fw-bold">@exam.Title</h3>
                             <p class="text-muted">@exam.ClassName - @exam.QuestionCount cau</p>
                             <div class="row g-3 mb-4">
                                 <div class="col-sm-6">

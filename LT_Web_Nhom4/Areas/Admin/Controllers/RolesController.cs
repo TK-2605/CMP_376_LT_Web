@@ -19,7 +19,10 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var roles = await _roleManager.Roles.AsNoTracking().ToListAsync();
+            var roles = await _roleManager.Roles
+                .AsNoTracking()
+                .Where(role => role.Name != "Teacher")
+                .ToListAsync();
             return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
                 Title = "Vai tro",
@@ -41,7 +44,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Details(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
-            if (role is null)
+            if (role is null || IsRoomTeacherRole(role.Name ?? string.Empty))
             {
                 return NotFound();
             }
@@ -74,7 +77,22 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IFormCollection form)
         {
-            var role = new IdentityRole(form["Name"].ToString());
+            var roleName = form["Name"].ToString().Trim();
+            if (IsRoomTeacherRole(roleName))
+            {
+                ModelState.AddModelError("Name", "Teacher la vai tro theo phong thi, khong tao trong role he thong.");
+                return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
+                {
+                    Title = "Them vai tro",
+                    Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
+                    ActionName = nameof(Create),
+                    ControllerName = "Roles",
+                    AreaName = "Admin",
+                    Fields = RoleFields(new IdentityRole(roleName))
+                });
+            }
+
+            var role = new IdentityRole(roleName);
             var result = await _roleManager.CreateAsync(role);
             if (result.Succeeded)
             {
@@ -96,7 +114,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Edit(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
-            if (role is null)
+            if (role is null || IsRoomTeacherRole(role.Name ?? string.Empty))
             {
                 return NotFound();
             }
@@ -118,12 +136,28 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Edit(string id, IFormCollection form)
         {
             var role = await _roleManager.FindByIdAsync(id);
-            if (role is null)
+            if (role is null || IsRoomTeacherRole(role.Name ?? string.Empty))
             {
                 return NotFound();
             }
 
-            role.Name = form["Name"];
+            var roleName = form["Name"].ToString().Trim();
+            if (IsRoomTeacherRole(roleName))
+            {
+                ModelState.AddModelError("Name", "Teacher la vai tro theo phong thi, khong tao trong role he thong.");
+                return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
+                {
+                    Title = "Sua vai tro",
+                    Description = "Cap nhat ten hien thi cua nhom quyen.",
+                    ActionName = nameof(Edit),
+                    ControllerName = "Roles",
+                    AreaName = "Admin",
+                    Key = role.Id,
+                    Fields = RoleFields(role)
+                });
+            }
+
+            role.Name = roleName;
             var result = await _roleManager.UpdateAsync(role);
             if (result.Succeeded)
             {
@@ -146,7 +180,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Delete(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
-            if (role is null)
+            if (role is null || IsRoomTeacherRole(role.Name ?? string.Empty))
             {
                 return NotFound();
             }
@@ -168,7 +202,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
-            if (role is null)
+            if (role is null || IsRoomTeacherRole(role.Name ?? string.Empty))
             {
                 return NotFound();
             }
@@ -193,9 +227,14 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                     Label = "Ten vai tro",
                     Value = role?.Name,
                     InputType = "text",
-                    Placeholder = "Vi du: Admin, Teacher, Student"
+                    Placeholder = "Vi du: Admin, Student"
                 }
             };
+        }
+
+        private static bool IsRoomTeacherRole(string role)
+        {
+            return string.Equals(role, "Teacher", StringComparison.OrdinalIgnoreCase);
         }
 
         private void AddErrors(IdentityResult result)

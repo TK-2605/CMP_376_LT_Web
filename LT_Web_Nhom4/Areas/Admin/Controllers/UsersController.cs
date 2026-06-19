@@ -28,7 +28,9 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             foreach (var user in users)
             {
-                var roles = await _userManager.GetRolesAsync(user);
+                var roles = (await _userManager.GetRolesAsync(user))
+                    .Where(role => !IsRoomTeacherRole(role))
+                    .ToList();
                 rows.Add(new CrudRowViewModel
                 {
                     Key = user.Id,
@@ -64,7 +66,9 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = (await _userManager.GetRolesAsync(user))
+                .Where(role => !IsRoomTeacherRole(role))
+                .ToList();
 
             return View("/Areas/Admin/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
@@ -333,7 +337,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 FullName = user.FullName,
                 StudentCode = user.StudentCode,
                 AvailableRoles = await GetAvailableRoleNamesAsync(),
-                SelectedRoles = currentRoles
+                SelectedRoles = currentRoles.Where(role => !IsRoomTeacherRole(role)).ToList()
             };
         }
 
@@ -343,6 +347,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 .AsNoTracking()
                 .Where(role => role.Name != null)
                 .Select(role => role.Name!)
+                .Where(role => !IsRoomTeacherRole(role))
                 .OrderBy(role => role)
                 .ToListAsync();
         }
@@ -351,6 +356,11 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
             return adminUsers.Any(user => user.Id != userId);
+        }
+
+        private static bool IsRoomTeacherRole(string role)
+        {
+            return string.Equals(role, "Teacher", StringComparison.OrdinalIgnoreCase);
         }
 
         private void AddErrors(IdentityResult result)
