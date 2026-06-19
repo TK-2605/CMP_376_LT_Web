@@ -14,8 +14,17 @@
                     Sinh vien vao dung de thi cua lop, theo doi thoi gian con lai va nop bai trong mot giao dien gon gang, de tap trung.
                 </p>
                 <div class="d-flex flex-wrap gap-3">
-                    <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Xem de thi</a>
-                    <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-4">Dang ky</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Phong thi cua toi</a>
+                        <a asp-controller="Classes" asp-action="Create" class="btn btn-outline-light btn-lg px-4">Tao lop hoc</a>
+                        <a asp-controller="Exams" asp-action="Create" class="btn btn-outline-light btn-lg px-4">Tao de thi</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Xem de thi</a>
+                        <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-4">Dang ky</a>
+                    }
                 </div>
             </div>
             <div class="col-lg-5">

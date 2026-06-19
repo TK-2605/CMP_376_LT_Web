@@ -67,24 +67,60 @@ namespace LT_Web_Nhom4.Controllers
             return CanUpdateAsync(entity);
         }
 
-        protected override Task OnCreatingAsync(Exam entity)
+        protected override async Task OnCreatingAsync(Exam entity)
         {
             if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
             {
                 entity.CreatedById = CurrentUserId;
             }
 
-            return Task.CompletedTask;
+            await NormalizeExamLinksAsync(entity);
         }
 
-        protected override Task OnUpdatingAsync(Exam entity)
+        protected override async Task OnUpdatingAsync(Exam entity)
         {
             if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
             {
                 entity.CreatedById = CurrentUserId;
             }
 
-            return Task.CompletedTask;
+            await NormalizeExamLinksAsync(entity);
+        }
+
+        private async Task NormalizeExamLinksAsync(Exam entity)
+        {
+            if (entity.ClassId <= 0)
+            {
+                var ownedClass = await Context.Classes
+                    .AsNoTracking()
+                    .Where(classRoom => IsAdmin || classRoom.TeacherId == CurrentUserId)
+                    .OrderBy(classRoom => classRoom.Id)
+                    .FirstOrDefaultAsync();
+
+                if (ownedClass is null)
+                {
+                    ModelState.AddModelError(nameof(entity.ClassId), "Hay tao lop/phong hoc truoc khi tao de thi.");
+                    return;
+                }
+
+                entity.ClassId = ownedClass.Id;
+                entity.SubjectId = ownedClass.SubjectId;
+                return;
+            }
+
+            var selectedClass = await Context.Classes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(classRoom =>
+                    classRoom.Id == entity.ClassId
+                    && (IsAdmin || classRoom.TeacherId == CurrentUserId));
+
+            if (selectedClass is null)
+            {
+                ModelState.AddModelError(nameof(entity.ClassId), "Lop/phong hoc khong hop le hoac khong thuoc quyen quan ly cua ban.");
+                return;
+            }
+
+            entity.SubjectId = selectedClass.SubjectId;
         }
 
         public override Task<IActionResult> Details(string id)

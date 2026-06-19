@@ -37,24 +37,50 @@ namespace LT_Web_Nhom4.Controllers
             return CanReadAsync(entity);
         }
 
-        protected override Task OnCreatingAsync(ClassEntity entity)
+        protected override async Task OnCreatingAsync(ClassEntity entity)
         {
             if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
             {
                 entity.TeacherId = CurrentUserId;
             }
 
-            return Task.CompletedTask;
+            if (entity.SubjectId <= 0)
+            {
+                entity.SubjectId = await EnsureDefaultSubjectAsync();
+            }
         }
 
-        protected override Task OnUpdatingAsync(ClassEntity entity)
+        protected override async Task OnUpdatingAsync(ClassEntity entity)
         {
             if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
             {
                 entity.TeacherId = CurrentUserId;
             }
 
-            return Task.CompletedTask;
+            if (entity.SubjectId <= 0)
+            {
+                entity.SubjectId = await EnsureDefaultSubjectAsync();
+            }
+        }
+
+        private async Task<int> EnsureDefaultSubjectAsync()
+        {
+            var subject = await Context.Subjects.FirstOrDefaultAsync(item => item.Code == "GENERAL");
+            if (subject is not null)
+            {
+                return subject.Id;
+            }
+
+            subject = new LT_Web_Nhom4.Models.Subject
+            {
+                Code = "GENERAL",
+                Name = "Mon hoc chung",
+                Description = "Mon hoc mac dinh de tao lop/phong thi nhanh."
+            };
+
+            Context.Subjects.Add(subject);
+            await Context.SaveChangesAsync();
+            return subject.Id;
         }
     }
 }

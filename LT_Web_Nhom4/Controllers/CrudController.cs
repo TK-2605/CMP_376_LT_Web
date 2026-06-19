@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Security.Claims;
 using LT_Web_Nhom4.Data;
+using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -436,6 +437,16 @@ namespace LT_Web_Nhom4.Controllers
                     var isKey = keyNames.Contains(property.Name);
                     var showInList = listFields.Contains(property.Name);
                     var showInForm = formFields.Contains(property.Name) || isKey && !readOnlyKeys;
+                    if (!IsAdmin && IsServerAssignedField(entityName, property.Name))
+                    {
+                        showInForm = false;
+                    }
+
+                    if (!IsAdmin && entityName == nameof(Exam) && property.Name == nameof(Exam.SubjectId))
+                    {
+                        showInForm = false;
+                    }
+
                     return new CrudFieldViewModel
                     {
                         Name = property.Name,
@@ -450,7 +461,8 @@ namespace LT_Web_Nhom4.Controllers
                         ShowInForm = showInForm,
                         ShowInDetails = showInList || showInForm,
                         Placeholder = BuildPlaceholder(property.Name),
-                        Options = BuildOptions(property.ClrType)
+                        HelpText = BuildHelpText(entityName, property.Name),
+                        Options = BuildOptions(property.Name, property.ClrType)
                     };
                 })
                 .Where(field => field.ShowInList || field.ShowInForm || field.ShowInDetails)
@@ -591,16 +603,155 @@ namespace LT_Web_Nhom4.Controllers
             return "text";
         }
 
-        private static IReadOnlyList<CrudOptionViewModel> BuildOptions(Type type)
+        private IReadOnlyList<CrudOptionViewModel> BuildOptions(string propertyName, Type type)
         {
             var underlyingType = GetUnderlyingType(type);
-            if (!underlyingType.IsEnum)
+            if (underlyingType.IsEnum)
             {
-                return new List<CrudOptionViewModel>();
+                return Enum.GetNames(underlyingType)
+                    .Select(name => new CrudOptionViewModel { Value = name, Text = SplitPascalCase(name) })
+                    .ToList();
             }
 
-            return Enum.GetNames(underlyingType)
-                .Select(name => new CrudOptionViewModel { Value = name, Text = SplitPascalCase(name) })
+            return propertyName switch
+            {
+                "SubjectId" => BuildSubjectOptions(),
+                "TeacherId" => BuildUserOptions(),
+                "ClassId" => BuildClassOptions(),
+                "CreatedById" => BuildUserOptions(),
+                "QuestionId" => BuildQuestionOptions(),
+                "ExamId" => BuildExamOptions(),
+                "UserId" => BuildUserOptions(),
+                "ExamAttemptId" => BuildAttemptOptions(),
+                "SelectedOptionId" => BuildQuestionOptionOptions(),
+                _ => new List<CrudOptionViewModel>()
+            };
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildSubjectOptions()
+        {
+            return Context.Subjects
+                .AsNoTracking()
+                .OrderBy(subject => subject.Name)
+                .Take(200)
+                .Select(subject => new CrudOptionViewModel
+                {
+                    Value = subject.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = subject.Code + " - " + subject.Name
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildClassOptions()
+        {
+            var query = Context.Classes.AsNoTracking();
+            if (!IsAdmin)
+            {
+                query = query.Where(classRoom => classRoom.TeacherId == CurrentUserId);
+            }
+
+            return query
+                .OrderBy(classRoom => classRoom.Name)
+                .Take(200)
+                .Select(classRoom => new CrudOptionViewModel
+                {
+                    Value = classRoom.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = classRoom.Code + " - " + classRoom.Name
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildQuestionOptions()
+        {
+            var query = Context.Questions.AsNoTracking();
+            if (!IsAdmin)
+            {
+                query = query.Where(question => question.CreatedById == CurrentUserId);
+            }
+
+            return query
+                .OrderByDescending(question => question.Id)
+                .Take(200)
+                .Select(question => new CrudOptionViewModel
+                {
+                    Value = question.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = question.Content.Length > 80 ? question.Content.Substring(0, 80) + "..." : question.Content
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildQuestionOptionOptions()
+        {
+            IQueryable<QuestionOption> query = Context.QuestionOptions.AsNoTracking().Include(option => option.Question);
+            if (!IsAdmin)
+            {
+                query = query.Where(option => option.Question.CreatedById == CurrentUserId);
+            }
+
+            return query
+                .OrderBy(option => option.QuestionId)
+                .ThenBy(option => option.DisplayOrder)
+                .Take(300)
+                .Select(option => new CrudOptionViewModel
+                {
+                    Value = option.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = "#" + option.QuestionId + " - " + option.Content
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildExamOptions()
+        {
+            IQueryable<Exam> query = Context.Exams.AsNoTracking().Include(exam => exam.Class);
+            if (!IsAdmin)
+            {
+                query = query.Where(exam => exam.CreatedById == CurrentUserId || exam.Class.TeacherId == CurrentUserId);
+            }
+
+            return query
+                .OrderByDescending(exam => exam.StartAt)
+                .Take(200)
+                .Select(exam => new CrudOptionViewModel
+                {
+                    Value = exam.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = exam.Title
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildAttemptOptions()
+        {
+            IQueryable<ExamAttempt> query = Context.ExamAttempts.AsNoTracking().Include(attempt => attempt.Exam).ThenInclude(exam => exam.Class);
+            if (!IsAdmin)
+            {
+                query = query.Where(attempt => attempt.UserId == CurrentUserId
+                    || attempt.Exam.CreatedById == CurrentUserId
+                    || attempt.Exam.Class.TeacherId == CurrentUserId);
+            }
+
+            return query
+                .OrderByDescending(attempt => attempt.StartedAt)
+                .Take(200)
+                .Select(attempt => new CrudOptionViewModel
+                {
+                    Value = attempt.Id.ToString(CultureInfo.InvariantCulture),
+                    Text = "#" + attempt.Id + " - " + attempt.Status
+                })
+                .ToList();
+        }
+
+        private IReadOnlyList<CrudOptionViewModel> BuildUserOptions()
+        {
+            return Context.Users
+                .AsNoTracking()
+                .OrderBy(user => user.FullName)
+                .ThenBy(user => user.Email)
+                .Take(300)
+                .Select(user => new CrudOptionViewModel
+                {
+                    Value = user.Id,
+                    Text = string.IsNullOrWhiteSpace(user.FullName) ? user.Email ?? user.UserName ?? user.Id : user.FullName
+                })
                 .ToList();
         }
 
@@ -623,10 +774,32 @@ namespace LT_Web_Nhom4.Controllers
         {
             if (propertyName.EndsWith("Id", StringComparison.Ordinal))
             {
-                return "Nhap ma lien ket";
+                return "Chon du lieu lien ket";
             }
 
             return FieldLabels.TryGetValue(propertyName, out var label) ? label : SplitPascalCase(propertyName);
+        }
+
+        private static string? BuildHelpText(string entityName, string propertyName)
+        {
+            if (entityName == nameof(Exam) && propertyName == nameof(Exam.ClassId))
+            {
+                return "Chi hien cac lop/phong do ban tao. Neu danh sach trong, hay tao lop hoc truoc.";
+            }
+
+            if (entityName == nameof(Class) && propertyName == nameof(Class.SubjectId))
+            {
+                return "Database moi se co san mon hoc mac dinh.";
+            }
+
+            return null;
+        }
+
+        private static bool IsServerAssignedField(string entityName, string propertyName)
+        {
+            return propertyName == nameof(Class.TeacherId)
+                || propertyName == nameof(Question.CreatedById)
+                || propertyName == nameof(Exam.CreatedById);
         }
 
         private static string SplitPascalCase(string value)

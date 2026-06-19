@@ -52,7 +52,7 @@ builder.Services.AddControllersWithViews()
     });
 
 var app = builder.Build();
-await SeedDefaultRolesAsync(app);
+await SeedDefaultDataAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -89,10 +89,10 @@ app.MapRazorPages()
 
 app.Run();
 
-static async Task SeedDefaultRolesAsync(WebApplication app)
+static async Task SeedDefaultDataAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeed");
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("AppSeed");
 
     try
     {
@@ -106,9 +106,22 @@ static async Task SeedDefaultRolesAsync(WebApplication app)
                 await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
+
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        if (!await context.Subjects.AnyAsync())
+        {
+            context.Subjects.Add(new Subject
+            {
+                Code = "GENERAL",
+                Name = "Mon hoc chung",
+                Description = "Mon hoc mac dinh de tao lop/phong thi khi database moi chua co danh muc."
+            });
+
+            await context.SaveChangesAsync();
+        }
     }
     catch (Exception exception)
     {
-        logger.LogWarning(exception, "Default identity roles were not seeded.");
+        logger.LogWarning(exception, "Default application data was not seeded.");
     }
 }
