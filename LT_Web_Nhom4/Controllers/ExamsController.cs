@@ -38,6 +38,55 @@ namespace LT_Web_Nhom4.Controllers
             return Task.FromResult<IActionResult>(View(model));
         }
 
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> Details(string id)
+        {
+            return base.Details(id);
+        }
+
+        [Authorize(Roles = "Teacher,Admin")]
+        public override IActionResult Create()
+        {
+            return base.Create();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> Create(IFormCollection form)
+        {
+            return base.Create(form);
+        }
+
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> Edit(string id)
+        {
+            return base.Edit(id);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> Edit(string id, IFormCollection form)
+        {
+            return base.Edit(id, form);
+        }
+
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> Delete(string id)
+        {
+            return base.Delete(id);
+        }
+
+        [HttpPost]
+        [ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Teacher,Admin")]
+        public override Task<IActionResult> DeleteConfirmed(string id)
+        {
+            return base.DeleteConfirmed(id);
+        }
+
         public IActionResult Room(int id)
         {
             var room = BuildSampleRoom(id);

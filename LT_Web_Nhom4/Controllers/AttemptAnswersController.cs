@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LT_Web_Nhom4.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Teacher,Admin")]
     public class AttemptAnswersController : CrudController<AttemptAnswer>
     {
         public AttemptAnswersController(ApplicationDbContext context) : base(context)
