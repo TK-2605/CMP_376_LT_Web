@@ -23,6 +23,27 @@
   max-width: 720px;
 }
 
+.admin-overview-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #696cff;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 .375rem 1.5rem rgba(67, 89, 113, .08);
+}
+
+.admin-overview-header h1 { margin: .25rem 0; font-size: 1.75rem; font-weight: 700; }
+.admin-overview-header p { margin: 0; color: #697a8d; }
+.admin-metric-list { display: grid; gap: 1rem; padding: 0; margin: 0; list-style: none; }
+.admin-metric-list li { display: grid; grid-template-columns: 42px 1fr auto; gap: .75rem; align-items: center; }
+.admin-metric-list li > span { width: 42px; height: 42px; display: grid; place-items: center; }
+.admin-metric-list li > div { display: grid; }
+.admin-metric-list small { color: #8c8fa1; }
+
 .admin-crud-page {
   display: grid;
   gap: 1.35rem;

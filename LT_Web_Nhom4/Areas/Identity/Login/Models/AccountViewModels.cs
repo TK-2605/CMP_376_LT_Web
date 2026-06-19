@@ -6,16 +6,16 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Models
     public class LoginViewModel
     {
         [Display(Name = "Email")]
-        [Required(ErrorMessage = "Vui long nhap email.")]
-        [EmailAddress(ErrorMessage = "Email khong hop le.")]
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
 
-        [Display(Name = "Mat khau")]
-        [Required(ErrorMessage = "Vui long nhap mat khau.")]
+        [Display(Name = "Mật khẩu")]
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Ghi nho toi")]
+        [Display(Name = "Ghi nhớ tôi")]
         public bool RememberMe { get; set; }
 
         public string? ReturnUrl { get; set; }
@@ -25,30 +25,30 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Models
 
     public class RegisterViewModel
     {
-        [Display(Name = "Ho va ten")]
-        [Required(ErrorMessage = "Vui long nhap ho va ten.")]
-        [StringLength(150, ErrorMessage = "Ho va ten khong duoc vuot qua 150 ky tu.")]
+        [Display(Name = "Họ và tên")]
+        [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
+        [StringLength(150, ErrorMessage = "Họ và tên không được vượt quá 150 ký tự.")]
         public string FullName { get; set; } = string.Empty;
 
-        [Display(Name = "Ma sinh vien")]
-        [StringLength(50, ErrorMessage = "Ma sinh vien khong duoc vuot qua 50 ky tu.")]
+        [Display(Name = "Mã sinh viên")]
+        [StringLength(50, ErrorMessage = "Mã sinh viên không được vượt quá 50 ký tự.")]
         public string? StudentCode { get; set; }
 
         [Display(Name = "Email")]
-        [Required(ErrorMessage = "Vui long nhap email.")]
-        [EmailAddress(ErrorMessage = "Email khong hop le.")]
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
 
-        [Display(Name = "Mat khau")]
-        [Required(ErrorMessage = "Vui long nhap mat khau.")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Mat khau phai tu 6 den 100 ky tu.")]
+        [Display(Name = "Mật khẩu")]
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải từ 6 đến 100 ký tự.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Nhap lai mat khau")]
-        [Required(ErrorMessage = "Vui long nhap lai mat khau.")]
+        [Display(Name = "Nhập lại mật khẩu")]
+        [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu.")]
         [DataType(DataType.Password)]
-        [Compare(nameof(Password), ErrorMessage = "Mat khau nhap lai khong khop.")]
+        [Compare(nameof(Password), ErrorMessage = "Mật khẩu nhập lại không khớp.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string? ReturnUrl { get; set; }
@@ -57,25 +57,25 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Models
     public class ForgotPasswordViewModel
     {
         [Display(Name = "Email")]
-        [Required(ErrorMessage = "Vui long nhap email.")]
-        [EmailAddress(ErrorMessage = "Email khong hop le.")]
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
     }
 
     public class ExternalLoginConfirmationViewModel
     {
         [Display(Name = "Email")]
-        [Required(ErrorMessage = "Vui long nhap email.")]
-        [EmailAddress(ErrorMessage = "Email khong hop le.")]
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
 
-        [Display(Name = "Ho va ten")]
-        [Required(ErrorMessage = "Vui long nhap ho va ten.")]
-        [StringLength(150, ErrorMessage = "Ho va ten khong duoc vuot qua 150 ky tu.")]
+        [Display(Name = "Họ và tên")]
+        [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
+        [StringLength(150, ErrorMessage = "Họ và tên không được vượt quá 150 ký tự.")]
         public string FullName { get; set; } = string.Empty;
 
-        [Display(Name = "Ma sinh vien")]
-        [StringLength(50, ErrorMessage = "Ma sinh vien khong duoc vuot qua 50 ky tu.")]
+        [Display(Name = "Mã sinh viên")]
+        [StringLength(50, ErrorMessage = "Mã sinh viên không được vượt quá 50 ký tự.")]
         public string? StudentCode { get; set; }
 
         public string? ReturnUrl { get; set; }

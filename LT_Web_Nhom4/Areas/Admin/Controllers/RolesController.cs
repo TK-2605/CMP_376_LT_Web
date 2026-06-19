@@ -25,8 +25,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 .ToListAsync();
             return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
-                Title = "Vai tro",
-                Description = "Quan ly nhom quyen dung de phan cap truy cap trong he thong.",
+                Title = "Vai trò",
+                Description = "Quản lý nhóm quyền dùng để phân cấp truy cập trong hệ thống.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Fields = RoleFields(),
@@ -51,8 +51,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
-                Title = "Vai tro",
-                Description = "Thong tin vai tro dang duoc su dung trong phan quyen.",
+                Title = "Vai trò",
+                Description = "Thông tin vai trò đang được sử dụng trong phân quyền.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Key = role.Id,
@@ -64,8 +64,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Them vai tro",
-                Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
+                Title = "Thêm vai trò",
+                Description = "Đặt tên ngắn gọn, dễ hiểu cho nhóm quyền mới.",
                 ActionName = nameof(Create),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -80,11 +80,11 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var roleName = form["Name"].ToString().Trim();
             if (IsRoomTeacherRole(roleName))
             {
-                ModelState.AddModelError("Name", "Teacher la vai tro theo phong thi, khong tao trong role he thong.");
+                ModelState.AddModelError("Name", "Teacher là vai trò theo phòng thi, không tạo trong role hệ thống.");
                 return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
                 {
-                    Title = "Them vai tro",
-                    Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
+                    Title = "Thêm vai trò",
+                    Description = "Đặt tên ngắn gọn, dễ hiểu cho nhóm quyền mới.",
                     ActionName = nameof(Create),
                     ControllerName = "Roles",
                     AreaName = "Admin",
@@ -102,8 +102,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Them vai tro",
-                Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
+                Title = "Thêm vai trò",
+                Description = "Đặt tên ngắn gọn, dễ hiểu cho nhóm quyền mới.",
                 ActionName = nameof(Create),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -121,8 +121,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Sua vai tro",
-                Description = "Cap nhat ten hien thi cua nhom quyen.",
+                Title = "Sửa vai trò",
+                Description = "Cập nhật tên hiển thị của nhóm quyền.",
                 ActionName = nameof(Edit),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -144,11 +144,11 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var roleName = form["Name"].ToString().Trim();
             if (IsRoomTeacherRole(roleName))
             {
-                ModelState.AddModelError("Name", "Teacher la vai tro theo phong thi, khong tao trong role he thong.");
+                ModelState.AddModelError("Name", "Teacher là vai trò theo phòng thi, không tạo trong role hệ thống.");
                 return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
                 {
-                    Title = "Sua vai tro",
-                    Description = "Cap nhat ten hien thi cua nhom quyen.",
+                    Title = "Sửa vai trò",
+                    Description = "Cập nhật tên hiển thị của nhóm quyền.",
                     ActionName = nameof(Edit),
                     ControllerName = "Roles",
                     AreaName = "Admin",
@@ -167,8 +167,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Sua vai tro",
-                Description = "Cap nhat ten hien thi cua nhom quyen.",
+                Title = "Sửa vai trò",
+                Description = "Cập nhật tên hiển thị của nhóm quyền.",
                 ActionName = nameof(Edit),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -187,8 +187,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
             {
-                Title = "Vai tro",
-                Description = "Chi xoa vai tro khi chac chan khong con duoc su dung.",
+                Title = "Vai trò",
+                Description = "Chỉ xóa vai trò khi chắc chắn không còn được sử dụng.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Key = role.Id,
@@ -224,10 +224,10 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 new()
                 {
                     Name = "Name",
-                    Label = "Ten vai tro",
+                    Label = "Tên vai trò",
                     Value = role?.Name,
                     InputType = "text",
-                    Placeholder = "Vi du: Admin, Student"
+                    Placeholder = "Ví dụ: Admin, Student"
                 }
             };
         }

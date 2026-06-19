@@ -39,9 +39,9 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                         ["Email"] = user.Email,
                         ["FullName"] = user.FullName,
                         ["StudentCode"] = user.StudentCode,
-                        ["Roles"] = roles.Count > 0 ? string.Join(", ", roles.OrderBy(role => role)) : "Chua co",
-                        ["IsActive"] = user.IsActive ? "Dang hoat dong" : "Tam khoa",
-                        ["EmailConfirmed"] = user.EmailConfirmed ? "Da xac thuc" : "Chua xac thuc",
+                        ["Roles"] = roles.Count > 0 ? string.Join(", ", roles.OrderBy(role => role)) : "Chưa có",
+                        ["IsActive"] = user.IsActive ? "Đang hoạt động" : "Tạm khóa",
+                        ["EmailConfirmed"] = user.EmailConfirmed ? "Đã xác thực" : "Chưa xác thực",
                         ["CreatedAt"] = user.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                     }
                 });
@@ -49,8 +49,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
-                Title = "Tai khoan",
-                Description = "Quan ly tai khoan sinh vien, giang vien va trang thai truy cap.",
+                Title = "Tài khoản",
+                Description = "Quản lý tài khoản, vai trò hệ thống và trạng thái truy cập.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Fields = UserFields(),
@@ -72,8 +72,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
-                Title = "Tai khoan",
-                Description = "Thong tin lien he va trang thai truy cap cua tai khoan.",
+                Title = "Tài khoản",
+                Description = "Thông tin liên hệ và trạng thái truy cập của tài khoản.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Key = user.Id,
@@ -85,8 +85,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Them tai khoan",
-                Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
+                Title = "Thêm tài khoản",
+                Description = "Tạo tài khoản mới và mật khẩu ban đầu cho người dùng.",
                 ActionName = nameof(Create),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -117,8 +117,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Them tai khoan",
-                Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
+                Title = "Thêm tài khoản",
+                Description = "Tạo tài khoản mới và mật khẩu ban đầu cho người dùng.",
                 ActionName = nameof(Create),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -136,8 +136,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Sua tai khoan",
-                Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
+                Title = "Sửa tài khoản",
+                Description = "Cập nhật thông tin cá nhân và trạng thái truy cập.",
                 ActionName = nameof(Edit),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -172,8 +172,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Sua tai khoan",
-                Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
+                Title = "Sửa tài khoản",
+                Description = "Cập nhật thông tin cá nhân và trạng thái truy cập.",
                 ActionName = nameof(Edit),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -192,8 +192,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Areas/Admin/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
             {
-                Title = "Tai khoan",
-                Description = "Tai khoan se khong con dang nhap duoc sau khi bi xoa.",
+                Title = "Tài khoản",
+                Description = "Tài khoản sẽ không còn đăng nhập được sau khi bị xóa.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Key = user.Id,
@@ -253,7 +253,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             if (currentRoles.Contains("Admin") && !selectedRoles.Contains("Admin") && !await CanRemoveAdminRoleAsync(user.Id))
             {
-                ModelState.AddModelError(string.Empty, "He thong phai con it nhat mot tai khoan Admin.");
+                ModelState.AddModelError(string.Empty, "Hệ thống phải còn ít nhất một tài khoản Admin.");
             }
 
             if (!ModelState.IsValid)
@@ -287,7 +287,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 }
             }
 
-            TempData["AdminMessage"] = "Da cap nhat quyen cho tai khoan.";
+            TempData["AdminMessage"] = "Đã cập nhật quyền cho tài khoản.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -299,11 +299,11 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var fields = new List<CrudFieldViewModel>
             {
                 new() { Name = "Email", Label = "Email", Value = user?.Email, InputType = "email", Placeholder = "name@example.com" },
-                new() { Name = "FullName", Label = "Ho va ten", Value = user?.FullName, InputType = "text", Placeholder = "Nguyen Van A" },
-                new() { Name = "StudentCode", Label = "Ma sinh vien", Value = user?.StudentCode, InputType = "text", IsNullable = true, Placeholder = "Neu co" },
-                new() { Name = "Roles", Label = "Quyen", Value = roles is null ? null : string.Join(", ", roles.OrderBy(role => role)), ShowInForm = false },
-                new() { Name = "IsActive", Label = "Cho phep dang nhap", Value = user?.IsActive == false ? "false" : "true", IsBoolean = true },
-                new() { Name = "EmailConfirmed", Label = "Email da xac thuc", Value = user?.EmailConfirmed == true ? "true" : "false", IsBoolean = true }
+                new() { Name = "FullName", Label = "Họ và tên", Value = user?.FullName, InputType = "text", Placeholder = "Nguyễn Văn A" },
+                new() { Name = "StudentCode", Label = "Mã sinh viên", Value = user?.StudentCode, InputType = "text", IsNullable = true, Placeholder = "Nếu có" },
+                new() { Name = "Roles", Label = "Quyền", Value = roles is null ? null : string.Join(", ", roles.OrderBy(role => role)), ShowInForm = false },
+                new() { Name = "IsActive", Label = "Cho phép đăng nhập", Value = user?.IsActive == false ? "false" : "true", IsBoolean = true },
+                new() { Name = "EmailConfirmed", Label = "Email đã xác thực", Value = user?.EmailConfirmed == true ? "true" : "false", IsBoolean = true }
             };
 
             if (includePassword)
@@ -311,9 +311,9 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 fields.Insert(1, new CrudFieldViewModel
                 {
                     Name = "Password",
-                    Label = "Mat khau",
+                    Label = "Mật khẩu",
                     InputType = "password",
-                    Placeholder = "Nhap mat khau ban dau"
+                    Placeholder = "Nhập mật khẩu ban đầu"
                 });
             }
 

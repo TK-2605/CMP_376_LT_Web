@@ -1,7 +1,7 @@
 @model ExternalLoginConfirmationViewModel
 
 @{
-    ViewData["Title"] = "Xac nhan tai khoan";
+    ViewData["Title"] = "Xác nhận tài khoản";
 }
 
 <section class="auth-shell">
@@ -12,8 +12,8 @@
                     <partial name="_AuthHomeButton" />
                     <div class="auth-form-side">
                         <div class="auth-form-heading text-center">
-                            <h1>Hoan tat tai khoan</h1>
-                            <p>Kiem tra thong tin ca nhan truoc khi vao he thong.</p>
+                            <h1>Hoàn tất tài khoản</h1>
+                            <p>Kiểm tra thông tin cá nhân trước khi vào hệ thống.</p>
                         </div>
 
                         <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLoginConfirmation" method="post" class="auth-form">
@@ -21,14 +21,14 @@
                             <input asp-for="ReturnUrl" type="hidden" />
 
                             <div class="auth-field">
-                                <label asp-for="FullName" class="form-label">Ho va ten</label>
-                                <input asp-for="FullName" class="form-control" placeholder="Nguyen Van A" />
+                                <label asp-for="FullName" class="form-label">Họ và tên</label>
+                                <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
                                 <span asp-validation-for="FullName" class="text-danger"></span>
                             </div>
 
                             <div class="auth-field">
-                                <label asp-for="StudentCode" class="form-label">Ma sinh vien</label>
-                                <input asp-for="StudentCode" class="form-control" placeholder="Neu co" />
+                                <label asp-for="StudentCode" class="form-label">Mã sinh viên</label>
+                                <input asp-for="StudentCode" class="form-control" placeholder="Nếu có" />
                                 <span asp-validation-for="StudentCode" class="text-danger"></span>
                             </div>
 
@@ -38,7 +38,7 @@
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
 
-                            <button type="submit" class="btn btn-primary auth-submit">Hoan tat</button>
+                            <button type="submit" class="btn btn-primary auth-submit">Hoàn tất</button>
                         </form>
                     </div>
                 </div>

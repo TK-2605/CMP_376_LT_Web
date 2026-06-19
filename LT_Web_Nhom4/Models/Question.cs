@@ -10,7 +10,7 @@ namespace LT_Web_Nhom4.Models
 
         public string Content { get; set; } = string.Empty;
 
-        public string? ImageUrl { get; set; }
+        public string? ImagePath { get; set; }
 
         public string? VideoUrl { get; set; }
 

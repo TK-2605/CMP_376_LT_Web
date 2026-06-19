@@ -33,6 +33,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<AttemptAnswer> AttemptAnswers { get; set; }
 
+        public DbSet<AttemptAnswerSelection> AttemptAnswerSelections { get; set; }
+
         public DbSet<AntiCheatEvent> AntiCheatEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -82,6 +84,10 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(classRoom => classRoom.Code).HasMaxLength(50);
                 entity.Property(classRoom => classRoom.Name).HasMaxLength(200);
+                entity.Property(classRoom => classRoom.Description).HasMaxLength(2000);
+                entity.Property(classRoom => classRoom.CoverImagePath).HasMaxLength(500);
+                entity.Property(classRoom => classRoom.IntroVideoUrl).HasMaxLength(1000);
+                entity.Property(classRoom => classRoom.RowVersion).IsRowVersion();
                 entity.Property(classRoom => classRoom.Semester).HasMaxLength(50);
                 entity.Property(classRoom => classRoom.AcademicYear).HasMaxLength(50);
                 entity.HasIndex(classRoom => classRoom.Code).IsUnique();
@@ -116,7 +122,7 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(question => question.Content).HasMaxLength(4000);
                 entity.Property(question => question.Explanation).HasMaxLength(4000);
-                entity.Property(question => question.ImageUrl).HasMaxLength(1000);
+                entity.Property(question => question.ImagePath).HasMaxLength(500);
                 entity.Property(question => question.VideoUrl).HasMaxLength(1000);
 
                 entity.HasOne(question => question.Subject)
@@ -142,9 +148,13 @@ namespace LT_Web_Nhom4.Data
 
             builder.Entity<Exam>(entity =>
             {
+                entity.Property(exam => exam.Code).HasMaxLength(20);
                 entity.Property(exam => exam.Title).HasMaxLength(200);
+                entity.Property(exam => exam.Instructions).HasMaxLength(4000);
                 entity.Property(exam => exam.PassingScore).HasPrecision(6, 2);
                 entity.Property(exam => exam.MaxScore).HasPrecision(6, 2).HasDefaultValue(10);
+                entity.Property(exam => exam.RowVersion).IsRowVersion();
+                entity.HasIndex(exam => exam.Code).IsUnique();
 
                 entity.HasOne(exam => exam.Subject)
                     .WithMany(subject => subject.Exams)
@@ -184,6 +194,7 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(attempt => attempt.IpAddress).HasMaxLength(64);
                 entity.Property(attempt => attempt.UserAgent).HasMaxLength(512);
                 entity.Property(attempt => attempt.DeviceFingerprint).HasMaxLength(256);
+                entity.HasIndex(attempt => new { attempt.ExamId, attempt.UserId }).IsUnique();
 
                 entity.HasOne(attempt => attempt.Exam)
                     .WithMany(exam => exam.Attempts)
@@ -199,7 +210,7 @@ namespace LT_Web_Nhom4.Data
             builder.Entity<AttemptAnswer>(entity =>
             {
                 entity.Property(answer => answer.AwardedScore).HasPrecision(6, 2);
-                entity.HasIndex(answer => new { answer.ExamAttemptId, answer.QuestionId });
+                entity.HasIndex(answer => new { answer.ExamAttemptId, answer.QuestionId }).IsUnique();
 
                 entity.HasOne(answer => answer.ExamAttempt)
                     .WithMany(attempt => attempt.Answers)
@@ -211,9 +222,20 @@ namespace LT_Web_Nhom4.Data
                     .HasForeignKey(answer => answer.QuestionId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(answer => answer.SelectedOption)
-                    .WithMany(option => option.AttemptAnswers)
-                    .HasForeignKey(answer => answer.SelectedOptionId)
+            });
+
+            builder.Entity<AttemptAnswerSelection>(entity =>
+            {
+                entity.HasKey(selection => new { selection.AttemptAnswerId, selection.QuestionOptionId });
+
+                entity.HasOne(selection => selection.AttemptAnswer)
+                    .WithMany(answer => answer.Selections)
+                    .HasForeignKey(selection => selection.AttemptAnswerId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(selection => selection.QuestionOption)
+                    .WithMany(option => option.AttemptAnswerSelections)
+                    .HasForeignKey(selection => selection.QuestionOptionId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

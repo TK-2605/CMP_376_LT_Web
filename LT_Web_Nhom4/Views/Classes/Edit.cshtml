@@ -1,0 +1,30 @@
+@model EditClassViewModel
+
+@{ ViewData["Title"] = "Chỉnh sửa lớp học"; }
+
+<section class="workspace-page">
+    <div class="container form-page-container">
+        <a asp-action="Details" asp-route-id="@Model.Id" class="back-link"><i class="ri-arrow-left-line"></i> Quay lại lớp</a>
+        <header class="form-page-heading"><span class="workspace-kicker">Mã lớp @Model.Code</span><h1>Chỉnh sửa lớp học</h1><p>Cập nhật nội dung hiển thị với các thành viên trong lớp.</p></header>
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="content-form">
+            <input asp-for="Id" type="hidden" /><input asp-for="RowVersion" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="form-grid">
+                <div class="form-field span-2"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control form-control-lg" /><span asp-validation-for="Name" class="text-danger"></span></div>
+                <div class="form-field span-2"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="4"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+                <div class="form-field"><label asp-for="SubjectId" class="form-label"></label><select asp-for="SubjectId" class="form-select">@foreach (var subject in Model.Subjects) { <option value="@subject.Id">@subject.Label</option> }</select></div>
+                <div class="form-field"><label asp-for="Semester" class="form-label"></label><input asp-for="Semester" class="form-control" /></div>
+                <div class="form-field"><label asp-for="AcademicYear" class="form-label"></label><input asp-for="AcademicYear" class="form-control" /></div>
+                <div class="form-field"><label asp-for="IntroVideoUrl" class="form-label"></label><input asp-for="IntroVideoUrl" class="form-control" /><span asp-validation-for="IntroVideoUrl" class="text-danger"></span></div>
+                <div class="form-field span-2">
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingCoverImageUrl)) { <img src="@Model.ExistingCoverImageUrl" class="current-cover-preview" alt="Ảnh bìa hiện tại" /> }
+                    <label class="upload-field"><i class="ri-image-edit-line"></i><span><strong>Thay ảnh bìa</strong><small>JPG, PNG hoặc WebP, tối đa 5 MB</small></span><input asp-for="CoverImage" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingCoverImageUrl)) { <label class="form-check mt-2"><input asp-for="RemoveCoverImage" class="form-check-input" /> <span class="form-check-label">Xoá ảnh bìa hiện tại</span></label> }
+                </div>
+            </div>
+            <div class="form-actions"><a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-light">Huỷ</a><button class="btn btn-primary" type="submit">Lưu thay đổi</button></div>
+        </form>
+    </div>
+</section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

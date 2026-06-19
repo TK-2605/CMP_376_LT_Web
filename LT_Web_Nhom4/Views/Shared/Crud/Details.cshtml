@@ -1,7 +1,7 @@
 @model CrudDetailsViewModel
 
 @{
-    ViewData["Title"] = $"Chi tiet {Model.Title}";
+    ViewData["Title"] = $"Chi tiết {Model.Title}";
 }
 
 @{
@@ -12,7 +12,7 @@
     <div class="container">
         <div class="card crud-form-card">
             <div class="card-body">
-                <span class="crud-kicker">Chi tiet</span>
+                <span class="crud-kicker">Chi tiết</span>
                 <h1>@Model.Title</h1>
 
                 <dl class="crud-detail-list">
@@ -26,8 +26,8 @@
                 </dl>
 
                 <div class="crud-form-actions">
-                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Quay lai</a>
-                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">Sua</a>
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Quay lại</a>
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">Sửa</a>
                 </div>
             </div>
         </div>

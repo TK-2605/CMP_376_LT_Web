@@ -1,64 +1,72 @@
 using System.Diagnostics;
+using System.Security.Claims;
+using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LT_Web_Nhom4.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ApplicationDbContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var model = new WebHomeViewModel
+            if (User.Identity?.IsAuthenticated != true)
             {
-                FeaturedSubjects =
-                {
-                    new FeaturedSubjectViewModel
-                    {
-                        Code = "WEB",
-                        Name = "Lap trinh Web",
-                        Description = "On tap ly thuyet, bai tap va cac tinh huong xay dung website.",
-                        ImageUrl = "/img/student/course-01.jpg",
-                        ExamCount = 6
-                    },
-                    new FeaturedSubjectViewModel
-                    {
-                        Code = "NET",
-                        Name = "Cong nghe .NET",
-                        Description = "Cung co kien thuc nen tang ve .NET, du lieu va ung dung web.",
-                        ImageUrl = "/img/student/course-02.jpg",
-                        ExamCount = 4
-                    }
-                },
-                UpcomingExams =
-                {
-                    new UpcomingExamViewModel
-                    {
-                        Id = 1,
-                        Title = "Kiem tra Lap trinh Web co ban",
-                        SubjectName = "Lap trinh Web",
-                        StartAt = DateTime.Now.AddHours(1),
-                        DurationMinutes = 60
-                    },
-                    new UpcomingExamViewModel
-                    {
-                        Id = 2,
-                        Title = "On tap Cong nghe .NET",
-                        SubjectName = "Cong nghe .NET",
-                        StartAt = DateTime.Now.AddDays(1),
-                        DurationMinutes = 45
-                    }
-                }
-            };
+                return View(new WebHomeViewModel());
+            }
 
-            return View(model);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var isAdmin = User.IsInRole("Admin");
+
+            var ownedClasses = await _context.Classes.AsNoTracking()
+                .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => isAdmin || item.TeacherId == userId)
+                .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
+
+            var joinedClasses = await _context.ClassMembers.AsNoTracking()
+                .Where(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)
+                .Select(member => member.Class)
+                .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
+
+            var upcoming = await _context.Exams.AsNoTracking()
+                .Include(item => item.Subject).Include(item => item.Class).Include(item => item.ExamQuestions)
+                .Where(item => item.Status == ExamStatus.Published
+                    && item.EndAt >= DateTime.Now
+                    && (isAdmin || item.CreatedById == userId || item.Class.TeacherId == userId
+                        || item.Class.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)))
+                .OrderBy(item => item.StartAt).Take(6).ToListAsync();
+
+            return View(new WebHomeViewModel
+            {
+                IsAuthenticated = true,
+                OwnedClasses = ownedClasses.Select(ToClassCard).ToList(),
+                ParticipatingClasses = joinedClasses.Where(item => item.TeacherId != userId).Select(ToClassCard).ToList(),
+                UpcomingExams = upcoming.Select(item => new ExamCardViewModel
+                {
+                    Id = item.Id,
+                    Code = item.Code,
+                    Title = item.Title,
+                    SubjectName = item.Subject.Name,
+                    ClassName = item.Class.Name,
+                    StartAt = item.StartAt,
+                    EndAt = item.EndAt,
+                    DurationMinutes = item.DurationMinutes,
+                    QuestionCount = item.ExamQuestions.Count,
+                    Status = item.Status,
+                    IsOwnedByCurrentUser = isAdmin || item.CreatedById == userId || item.Class.TeacherId == userId,
+                    IsParticipant = !isAdmin && item.CreatedById != userId && item.Class.TeacherId != userId
+                }).ToList()
+            });
         }
 
         public IActionResult Privacy()
@@ -70,6 +78,23 @@ namespace LT_Web_Nhom4.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private ClassCardViewModel ToClassCard(Models.Class item)
+        {
+            return new ClassCardViewModel
+            {
+                Id = item.Id,
+                Code = item.Code,
+                Name = item.Name,
+                SubjectName = item.Subject.Name,
+                Description = item.Description,
+                CoverImageUrl = item.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = item.Id }),
+                Semester = item.Semester,
+                AcademicYear = item.AcademicYear,
+                ExamCount = item.Exams.Count,
+                MemberCount = item.Members.Count(member => member.Status == ClassMemberStatus.Active)
+            };
         }
     }
 }

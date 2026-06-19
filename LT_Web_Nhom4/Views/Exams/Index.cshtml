@@ -1,117 +1,35 @@
 @model ExamListViewModel
 
-@{
-    ViewData["Title"] = "De thi";
-}
+@{ ViewData["Title"] = "Đề thi của tôi"; }
 
-<section class="student-section bg-light">
+<section class="workspace-page">
     <div class="container">
-        @if (TempData["ExamMessage"] is string message)
-        {
-            <div class="alert alert-success">@message</div>
-        }
+        @if (TempData["ExamMessage"] is string message) { <div class="alert alert-success workspace-alert">@message</div> }
+        <header class="workspace-header"><div><span class="workspace-kicker">Đúng lớp, đúng quyền</span><h1>Đề thi của tôi</h1><p>Đề bạn tạo được tách riêng với đề bạn tham gia.</p></div><a asp-controller="Classes" asp-action="Index" class="btn btn-primary"><i class="ri-group-line"></i> Mở lớp học</a></header>
 
-        <div class="row align-items-end mb-5">
-            <div class="col-lg-7">
-                <div class="student-eyebrow mb-2">Phong thi</div>
-                <h1 class="display-6 fw-bold">Phong thi cua ban</h1>
-                <p class="text-muted mb-0">Phong ban tao se vao bang quan ly. Phong ban tham gia se vao phong cho hoac phong lam bai.</p>
-            </div>
-        </div>
-
-        @if (Model.OwnedExams.Count > 0)
-        {
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h2 class="h4 fw-bold mb-0">Phong toi tao</h2>
-                <span class="text-muted small">@Model.OwnedExams.Count phong</span>
-            </div>
-            <div class="row g-4 mb-5">
+        <section class="workspace-section">
+            <div class="workspace-section-heading"><h2>Đề tôi quản lý</h2><span>@Model.OwnedExams.Count đề</span></div>
+            <div class="exam-card-grid">
+                @if (Model.OwnedExams.Count == 0) { <div class="empty-state"><i class="ri-file-add-line"></i><strong>Chưa tạo đề thi</strong><span>Hãy mở một lớp học để tạo đề.</span></div> }
                 @foreach (var exam in Model.OwnedExams)
                 {
-                    var now = DateTime.Now;
-                    var isOpen = now >= exam.StartAt && now <= exam.EndAt;
-                    var isClosed = now > exam.EndAt;
-                    <div class="col-lg-6">
-                        <article class="card student-exam-card h-100">
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                                    <span class="badge rounded-pill">@exam.SubjectName</span>
-                                    <span class="badge rounded-pill text-bg-primary">@exam.RoleLabel</span>
-                                </div>
-                                <h3 class="h4 fw-bold">@exam.Title</h3>
-                                <p class="text-muted">@exam.ClassName - @exam.QuestionCount cau</p>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-sm-6">
-                                        <div class="p-3 bg-light rounded-3">
-                                            <small class="text-muted d-block">Bat dau</small>
-                                            <strong>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="p-3 bg-light rounded-3">
-                                            <small class="text-muted d-block">Trang thai</small>
-                                            <strong>@(isOpen ? "Dang mo" : isClosed ? "Da ket thuc" : "Chua mo")</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                <a asp-controller="Exams" asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary">
-                                    Quan ly phong
-                                </a>
-                            </div>
-                        </article>
-                    </div>
+                    <article class="exam-tile"><div class="exam-tile-heading"><span class="status-chip owner">Chủ phòng</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary w-100">Quản lý đề thi</a></article>
                 }
             </div>
-        }
+        </section>
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h4 fw-bold mb-0">Phong toi tham gia</h2>
-            <span class="text-muted small">@Model.ParticipatingExams.Count phong</span>
-        </div>
-        <div class="row g-4">
-            @if (Model.ParticipatingExams.Count == 0)
-            {
-                <div class="col-12">
-                    <div class="alert alert-light border">Ban chua duoc them vao phong thi nao.</div>
-                </div>
-            }
-            @foreach (var exam in Model.ParticipatingExams)
-            {
-                var now = DateTime.Now;
-                var isOpen = now >= exam.StartAt && now <= exam.EndAt;
-                var isClosed = now > exam.EndAt;
-                <div class="col-lg-6">
-                    <article class="card student-exam-card h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                                <span class="badge rounded-pill">@exam.SubjectName</span>
-                                <span class="badge rounded-pill @(isOpen ? "text-bg-success" : isClosed ? "text-bg-secondary" : "text-bg-warning")">
-                                    @(isOpen ? "Dang mo" : isClosed ? "Da ket thuc" : "Phong cho")
-                                </span>
-                            </div>
-                            <h3 class="h4 fw-bold">@exam.Title</h3>
-                            <p class="text-muted">@exam.ClassName - @exam.QuestionCount cau</p>
-                            <div class="row g-3 mb-4">
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-light rounded-3">
-                                        <small class="text-muted d-block">Bat dau</small>
-                                        <strong>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-light rounded-3">
-                                        <small class="text-muted d-block">Thoi luong</small>
-                                        <strong>@exam.DurationMinutes phut</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">
-                                @(isOpen ? "Vao phong thi" : "Vao phong cho")
-                            </a>
-                        </div>
-                    </article>
-                </div>
-            }
-        </div>
+        <section class="workspace-section">
+            <div class="workspace-section-heading"><h2>Đề tôi tham gia</h2><span>@Model.ParticipatingExams.Count đề</span></div>
+            <div class="exam-card-grid">
+                @if (Model.ParticipatingExams.Count == 0) { <div class="empty-state"><i class="ri-calendar-check-line"></i><strong>Chưa có đề thi</strong><span>Các đề được công bố trong lớp của bạn sẽ xuất hiện tại đây.</span></div> }
+                @foreach (var exam in Model.ParticipatingExams)
+                {
+                    var now = DateTime.Now;
+                    var state = now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
+                    var stateText = now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Phòng chờ";
+                    <article class="exam-tile"><div class="exam-tile-heading"><span class="status-chip @state">@stateText</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">@(state == "open" ? "Vào làm bài" : "Mở phòng thi")</a></article>
+                }
+            </div>
+        </section>
     </div>
 </section>

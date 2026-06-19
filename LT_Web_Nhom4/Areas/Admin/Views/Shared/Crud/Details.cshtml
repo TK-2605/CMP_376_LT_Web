@@ -1,7 +1,7 @@
 @model CrudDetailsViewModel
 
 @{
-    ViewData["Title"] = $"Chi tiet {Model.Title}";
+    ViewData["Title"] = $"Chi tiết {Model.Title}";
     var visibleFields = Model.Fields.Where(field => field.ShowInDetails).ToList();
 }
 
@@ -9,7 +9,7 @@
     <div class="admin-form-shell">
         <div class="admin-crud-header">
             <div>
-                <span class="admin-crud-kicker">Chi tiet ban ghi</span>
+                <span class="admin-crud-kicker">Chi tiết bản ghi</span>
                 <h1>@Model.Title</h1>
                 @if (!string.IsNullOrWhiteSpace(Model.Description))
                 {
@@ -25,7 +25,7 @@
                     {
                         <div>
                             <dt>@field.Label</dt>
-                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Co" : "Khong") : field.Value ?? "-")</dd>
+                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Có" : "Không") : field.Value ?? "-")</dd>
                         </div>
                     }
                 </dl>
@@ -33,17 +33,17 @@
                 <div class="admin-form-actions">
                     <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">
                         <i class="icon-base ri ri-arrow-left-line me-1"></i>
-                        Quay lai
+                        Quay lại
                     </a>
                     <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">
                         <i class="icon-base ri ri-edit-2-line me-1"></i>
-                        Sua
+                        Sửa
                     </a>
                     @if (string.Equals(Model.ControllerName, "Users", StringComparison.OrdinalIgnoreCase))
                     {
                         <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@Model.Key" class="btn btn-info">
                             <i class="icon-base ri ri-shield-user-line me-1"></i>
-                            Phan quyen
+                            Phân quyền
                         </a>
                     }
                 </div>

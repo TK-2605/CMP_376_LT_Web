@@ -164,18 +164,29 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Property<int>("QuestionId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SelectedOptionId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("QuestionId");
 
-                    b.HasIndex("SelectedOptionId");
-
-                    b.HasIndex("ExamAttemptId", "QuestionId");
+                    b.HasIndex("ExamAttemptId", "QuestionId")
+                        .IsUnique();
 
                     b.ToTable("AttemptAnswers");
+                });
+
+            modelBuilder.Entity("LT_Web_Nhom4.Models.AttemptAnswerSelection", b =>
+                {
+                    b.Property<int>("AttemptAnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionOptionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AttemptAnswerId", "QuestionOptionId");
+
+                    b.HasIndex("QuestionOptionId");
+
+                    b.ToTable("AttemptAnswerSelections");
                 });
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.Class", b =>
@@ -195,10 +206,31 @@ namespace LT_Web_Nhom4.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("CoverImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("IntroVideoUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Semester")
                         .HasMaxLength(50)
@@ -299,6 +331,11 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Property<int>("ClassId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -312,13 +349,17 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Property<DateTime>("EndAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<decimal>("MaxScore")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(6, 2)
                         .HasColumnType("decimal(6,2)")
                         .HasDefaultValue(10m);
 
-                    b.Property<int?>("MaxTabSwitchCount")
+                    b.Property<int?>("MaxWarningCount")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("PassingScore")
@@ -327,6 +368,18 @@ namespace LT_Web_Nhom4.Data.Migrations
 
                     b.Property<bool>("RequireFullscreen")
                         .HasColumnType("bit");
+
+                    b.Property<int>("ResultReleaseMode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResultsReleasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<bool>("ShuffleOptions")
                         .HasColumnType("bit");
@@ -351,6 +404,9 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClassId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("CreatedById");
 
@@ -407,9 +463,10 @@ namespace LT_Web_Nhom4.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExamId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("ExamId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("ExamAttempts");
                 });
@@ -472,9 +529,9 @@ namespace LT_Web_Nhom4.Data.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
@@ -765,16 +822,28 @@ namespace LT_Web_Nhom4.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LT_Web_Nhom4.Models.QuestionOption", "SelectedOption")
-                        .WithMany("AttemptAnswers")
-                        .HasForeignKey("SelectedOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("ExamAttempt");
 
                     b.Navigation("Question");
+                });
 
-                    b.Navigation("SelectedOption");
+            modelBuilder.Entity("LT_Web_Nhom4.Models.AttemptAnswerSelection", b =>
+                {
+                    b.HasOne("LT_Web_Nhom4.Models.AttemptAnswer", "AttemptAnswer")
+                        .WithMany("Selections")
+                        .HasForeignKey("AttemptAnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LT_Web_Nhom4.Models.QuestionOption", "QuestionOption")
+                        .WithMany("AttemptAnswerSelections")
+                        .HasForeignKey("QuestionOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AttemptAnswer");
+
+                    b.Navigation("QuestionOption");
                 });
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.Class", b =>
@@ -1000,6 +1069,11 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Navigation("RefreshTokens");
                 });
 
+            modelBuilder.Entity("LT_Web_Nhom4.Models.AttemptAnswer", b =>
+                {
+                    b.Navigation("Selections");
+                });
+
             modelBuilder.Entity("LT_Web_Nhom4.Models.Class", b =>
                 {
                     b.Navigation("Exams");
@@ -1032,7 +1106,7 @@ namespace LT_Web_Nhom4.Data.Migrations
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.QuestionOption", b =>
                 {
-                    b.Navigation("AttemptAnswers");
+                    b.Navigation("AttemptAnswerSelections");
                 });
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.Subject", b =>

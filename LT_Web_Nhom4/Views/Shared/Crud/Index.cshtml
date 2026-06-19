@@ -12,14 +12,14 @@
     <div class="container">
         <div class="crud-header">
             <div>
-                <span class="crud-kicker">Quan ly</span>
+                <span class="crud-kicker">Quản lý</span>
                 <h1>@Model.Title</h1>
                 @if (!string.IsNullOrWhiteSpace(Model.Description))
                 {
                     <p>@Model.Description</p>
                 }
             </div>
-            <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">Them moi</a>
+            <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">Thêm mới</a>
         </div>
 
         <div class="card crud-card">
@@ -31,7 +31,7 @@
                             {
                                 <th>@field.Label</th>
                             }
-                            <th class="text-end">Thao tac</th>
+                            <th class="text-end">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -40,8 +40,8 @@
                             <tr>
                                 <td colspan="@(visibleFields.Count + 1)">
                                     <div class="crud-empty">
-                                        <strong>Chua co du lieu</strong>
-                                        <span>Hay them ban ghi dau tien de bat dau quan ly.</span>
+                                        <strong>Chưa có dữ liệu</strong>
+                                        <span>Hãy thêm bản ghi đầu tiên để bắt đầu quản lý.</span>
                                     </div>
                                 </td>
                             </tr>
@@ -57,8 +57,8 @@
                                 }
                                 <td class="text-end text-nowrap">
                                     <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-light">Xem</a>
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary">Sua</a>
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger">Xoa</a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary">Sửa</a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger">Xoá</a>
                                 </td>
                             </tr>
                         }

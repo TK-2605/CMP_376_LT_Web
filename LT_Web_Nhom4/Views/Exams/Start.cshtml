@@ -1,111 +1,51 @@
 @model ExamStartViewModel
 
-@{
-    ViewData["Title"] = Model.Title;
-    ViewData["BodyClass"] = "exam-body";
-}
+@{ ViewData["Title"] = Model.Title; ViewData["BodyClass"] = "exam-taking-body"; }
+@section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
-}
+<section class="take-exam-page" data-exam-app data-attempt-id="@Model.AttemptId" data-duration-minutes="@Model.DurationMinutes" data-expires-at="@Model.ExpiresAt.ToString("O")" data-autosave-url="@Url.Action("Autosave")" data-warning-url="@Url.Action("RecordWarning")" data-result-url="@Url.Action("Result", new { attemptId = Model.AttemptId })" data-require-fullscreen="@Model.RequireFullscreen.ToString().ToLowerInvariant()">
+    <div class="container-fluid take-exam-container">
+        <header class="take-exam-header">
+            <div class="take-title"><span>@Model.SubjectName</span><h1>@Model.Title</h1><small>Tiến độ: <b data-progress-label>0/@Model.Questions.Count</b></small></div>
+            <div class="take-timer"><span><i class="ri-time-line"></i> Thời gian còn lại</span><strong data-exam-timer>--:--</strong><div><i data-timer-progress></i></div></div>
+            <div class="take-save-state"><i class="ri-cloud-line"></i><span data-save-state>Đáp án được tự động lưu</span></div>
+        </header>
 
-<div class="exam-shell">
-    <div class="container">
-        <div class="exam-header mb-4">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-8">
-                    <span class="badge text-bg-light text-primary mb-3">@Model.SubjectName</span>
-                    <h1 class="h2 fw-bold mb-2">@Model.Title</h1>
-                    <p class="mb-0 text-white-50">Moi cau hoi chi chon mot dap an. Lua chon cua ban duoc luu khi thay doi.</p>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card exam-timer-card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="fw-semibold text-dark">Thoi gian con lai</span>
-                                <span class="h4 mb-0 text-primary" data-exam-timer-label>--:--</span>
-                            </div>
-                            <div class="exam-timer-bar">
-                                <span data-exam-timer-bar></span>
-                            </div>
-                            <div class="exam-autosave small mt-3" data-exam-autosave></div>
+        <div class="take-exam-layout">
+            <main class="take-question-stage">
+                @for (var questionIndex = 0; questionIndex < Model.Questions.Count; questionIndex++)
+                {
+                    var question = Model.Questions[questionIndex];
+                    <article class="take-question" data-take-question data-question-id="@question.QuestionId" data-question-index="@questionIndex" data-question-type="@question.QuestionType" hidden="@(questionIndex != 0)">
+                        <div class="take-question-meta"><span>Câu @(questionIndex + 1) / @Model.Questions.Count</span><span>@question.Score.ToString("0.##") điểm</span></div>
+                        <h2>@question.Content</h2>
+                        @if (!string.IsNullOrWhiteSpace(question.ImageUrl)) { <img src="@question.ImageUrl" class="take-question-image" alt="Ảnh minh hoạ câu hỏi" /> }
+                        @if (!string.IsNullOrWhiteSpace(question.VideoUrl)) { <a href="@question.VideoUrl" target="_blank" rel="noopener noreferrer" class="question-video-link"><i class="ri-video-line"></i> Mở video của câu hỏi</a> }
+                        <div class="take-options">
+                            @for (var optionIndex = 0; optionIndex < question.Options.Count; optionIndex++)
+                            {
+                                var option = question.Options[optionIndex];
+                                var selected = question.SelectedOptionIds.Contains(option.OptionId);
+                                var inputType = question.QuestionType == QuestionType.SingleChoice ? "radio" : "checkbox";
+                                <label class="take-option"><input type="@inputType" name="question-@question.QuestionId" value="@option.OptionId" checked="@selected" /><span class="option-letter">@((char)('A' + optionIndex))</span><span>@option.Content</span></label>
+                            }
                         </div>
-                    </div>
+                    </article>
+                }
+                <footer class="take-question-footer"><button type="button" class="btn btn-light" data-take-previous><i class="ri-arrow-left-line"></i> Câu trước</button><button type="button" class="btn btn-primary" data-take-next>Câu tiếp <i class="ri-arrow-right-line"></i></button></footer>
+            </main>
+
+            <aside class="take-navigation">
+                <div class="take-navigation-heading"><div><span>Điều hướng câu hỏi</span><strong><span data-answered-count>0</span>/@Model.Questions.Count đã trả lời</strong></div></div>
+                <div class="take-number-grid">
+                    @for (var index = 0; index < Model.Questions.Count; index++) { <button type="button" data-take-jump="@index">@(index + 1)</button> }
                 </div>
-            </div>
+                <div class="warning-counter"><i class="ri-shield-line"></i><span><strong>Cảnh báo <b data-warning-count>@Model.WarningCount</b>/@(Model.MaxWarningCount?.ToString() ?? "∞")</strong><small>Giữ trang thi ở trạng thái hoạt động.</small></span></div>
+                @if (Model.RequireFullscreen) { <button type="button" class="btn btn-outline-primary w-100 mb-2" data-enter-fullscreen><i class="ri-fullscreen-line"></i> Bật toàn màn hình</button> }
+                <form asp-action="Submit" method="post" data-submit-form><input type="hidden" name="AttemptId" value="@Model.AttemptId" /><button type="submit" class="btn btn-danger w-100">Nộp bài</button></form>
+            </aside>
         </div>
-
-        <form asp-controller="Exams"
-              asp-action="Submit"
-              method="post"
-              data-exam-form
-              data-duration-minutes="@Model.DurationMinutes"
-              data-started-at="@Model.StartedAt.ToUniversalTime().ToString("O")"
-              data-autosave-url="@Url.Action("Autosave", "Exams")">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-            <input type="hidden" name="ExamId" value="@Model.ExamId" />
-            <input type="hidden" name="AttemptId" value="@Model.AttemptId" />
-
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    @for (var i = 0; i < Model.Questions.Count; i++)
-                    {
-                        var question = Model.Questions[i];
-                        <section class="card exam-question-card mb-4" data-question-id="@question.QuestionId">
-                            <div class="card-body p-4">
-                                <input type="hidden" name="Answers[@i].QuestionId" value="@question.QuestionId" />
-                                <div class="d-flex justify-content-between gap-3 mb-3">
-                                    <h2 class="h5 fw-bold mb-0">Cau @(i + 1). @question.Content</h2>
-                                    <span class="badge text-bg-light">@question.Score diem</span>
-                                </div>
-
-                                <div class="d-grid gap-3">
-                                    @foreach (var option in question.Options)
-                                    {
-                                        var inputId = $"q_{question.QuestionId}_o_{option.OptionId}";
-                                        <label class="exam-option" for="@inputId">
-                                            <input id="@inputId"
-                                                   class="form-check-input me-2"
-                                                   type="radio"
-                                                   name="Answers[@i].SelectedOptionId"
-                                                   value="@option.OptionId" />
-                                            <span>@option.Content</span>
-                                        </label>
-                                    }
-                                </div>
-                                <span class="text-danger field-validation-valid" data-valmsg-for="Answers[@i].SelectedOptionId" data-valmsg-replace="true"></span>
-                            </div>
-                        </section>
-                    }
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card exam-navigation-card sticky-top" style="top: 96px;">
-                        <div class="card-body p-4">
-                            <h2 class="h5 fw-bold">Tien do lam bai</h2>
-                            <p class="text-muted small">Cham xanh la cau da chon dap an.</p>
-                            <div class="d-flex flex-wrap gap-2 mb-4">
-                                @foreach (var question in Model.Questions)
-                                {
-                                    <span class="exam-progress-dot" data-progress-question="@question.QuestionId"></span>
-                                }
-                            </div>
-
-                            <div class="alert alert-warning small">
-                                Khong tat trinh duyet khi dang thi. Neu mat ket noi, lua chon gan nhat se duoc luu lai khi co the.
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-100">Nop bai</button>
-                            <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Thoat</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
     </div>
-</div>
+</section>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/exam.js" asp-append-version="true"></script>
-}
+@section Scripts { <script src="~/js/exam.js" asp-append-version="true"></script> }

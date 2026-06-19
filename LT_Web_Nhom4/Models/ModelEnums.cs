@@ -42,6 +42,13 @@ namespace LT_Web_Nhom4.Models
         Cancelled = 4
     }
 
+    public enum ResultReleaseMode
+    {
+        Immediately = 1,
+        AfterExamClosed = 2,
+        Manual = 3
+    }
+
     public enum ExamAttemptStatus
     {
         InProgress = 1,

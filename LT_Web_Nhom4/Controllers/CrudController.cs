@@ -15,40 +15,40 @@ namespace LT_Web_Nhom4.Controllers
         private const string Separator = "|";
         private static readonly Dictionary<string, string> EntityTitles = new()
         {
-            ["Subject"] = "Mon hoc",
-            ["Class"] = "Lop hoc",
-            ["ClassMember"] = "Thanh vien lop",
-            ["Question"] = "Cau hoi",
-            ["QuestionOption"] = "Lua chon dap an",
-            ["Exam"] = "De thi",
-            ["ExamQuestion"] = "Cau hoi trong de",
-            ["ExamAttempt"] = "Luot lam bai",
-            ["AttemptAnswer"] = "Dap an bai lam",
-            ["AntiCheatEvent"] = "Canh bao bai thi"
+            ["Subject"] = "Môn học",
+            ["Class"] = "Lớp học",
+            ["ClassMember"] = "Thành viên lớp",
+            ["Question"] = "Câu hỏi",
+            ["QuestionOption"] = "Lựa chọn đáp án",
+            ["Exam"] = "Đề thi",
+            ["ExamQuestion"] = "Câu hỏi trong đề",
+            ["ExamAttempt"] = "Lượt làm bài",
+            ["AttemptAnswer"] = "Đáp án bài làm",
+            ["AntiCheatEvent"] = "Cảnh báo bài thi"
         };
 
         private static readonly Dictionary<string, string> EntityDescriptions = new()
         {
-            ["Subject"] = "Quan ly cac mon hoc dung de phan loai lop, cau hoi va de thi.",
-            ["Class"] = "Quan ly lop hoc, hoc ky va giang vien phu trach.",
-            ["ClassMember"] = "Quan ly sinh vien trong tung lop hoc.",
-            ["Question"] = "Quan ly ngan hang cau hoi va trang thai su dung.",
-            ["QuestionOption"] = "Quan ly cac lua chon cua tung cau hoi.",
-            ["Exam"] = "Quan ly thong tin de thi, thoi gian va cau hinh lam bai.",
-            ["ExamQuestion"] = "Gan cau hoi vao de thi va thiet lap diem.",
-            ["ExamAttempt"] = "Theo doi cac luot lam bai cua sinh vien.",
-            ["AttemptAnswer"] = "Xem dap an da luu va diem tung cau.",
-            ["AntiCheatEvent"] = "Theo doi cac canh bao can giang vien xem lai."
+            ["Subject"] = "Quản lý các môn học dùng để phân loại lớp, câu hỏi và đề thi.",
+            ["Class"] = "Quản lý lớp học và người phụ trách.",
+            ["ClassMember"] = "Quản lý học viên trong từng lớp học.",
+            ["Question"] = "Quản lý ngân hàng câu hỏi và trạng thái sử dụng.",
+            ["QuestionOption"] = "Quản lý các lựa chọn của từng câu hỏi.",
+            ["Exam"] = "Quản lý thông tin đề thi, thời gian và cấu hình làm bài.",
+            ["ExamQuestion"] = "Gắn câu hỏi vào đề thi và thiết lập điểm.",
+            ["ExamAttempt"] = "Theo dõi các lượt làm bài của học viên.",
+            ["AttemptAnswer"] = "Xem đáp án đã lưu và điểm từng câu.",
+            ["AntiCheatEvent"] = "Theo dõi các cảnh báo cần xem lại."
         };
 
         private static readonly Dictionary<string, string[]> ListFields = new()
         {
             ["Subject"] = new[] { "Code", "Name", "Description" },
-            ["Class"] = new[] { "Code", "Name", "Semester", "AcademicYear" },
+            ["Class"] = new[] { "Code", "Name", "Semester", "AcademicYear", "CreatedAt" },
             ["ClassMember"] = new[] { "ClassId", "UserId", "Status", "JoinedAt" },
             ["Question"] = new[] { "Content", "QuestionType", "Difficulty", "Status" },
             ["QuestionOption"] = new[] { "QuestionId", "Content", "IsCorrect", "DisplayOrder" },
-            ["Exam"] = new[] { "Title", "DurationMinutes", "MaxScore", "StartAt", "EndAt", "Status" },
+            ["Exam"] = new[] { "Code", "Title", "DurationMinutes", "MaxScore", "StartAt", "EndAt", "Status" },
             ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
             ["ExamAttempt"] = new[] { "ExamId", "UserId", "StartedAt", "SubmittedAt", "Score", "Status" },
             ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "IsCorrect", "AwardedScore", "LastSavedAt" },
@@ -58,58 +58,62 @@ namespace LT_Web_Nhom4.Controllers
         private static readonly Dictionary<string, string[]> FormFields = new()
         {
             ["Subject"] = new[] { "Code", "Name", "Description" },
-            ["Class"] = new[] { "SubjectId", "TeacherId", "Code", "Name", "Semester", "AcademicYear" },
+            ["Class"] = new[] { "SubjectId", "TeacherId", "Name", "Description", "Semester", "AcademicYear", "IntroVideoUrl" },
             ["ClassMember"] = new[] { "ClassId", "UserId", "Status" },
-            ["Question"] = new[] { "SubjectId", "CreatedById", "Content", "QuestionType", "Difficulty", "Explanation", "Status" },
+            ["Question"] = new[] { "SubjectId", "CreatedById", "Content", "VideoUrl", "QuestionType", "Difficulty", "Explanation", "Status" },
             ["QuestionOption"] = new[] { "QuestionId", "Content", "IsCorrect", "DisplayOrder" },
-            ["Exam"] = new[] { "SubjectId", "ClassId", "CreatedById", "Title", "DurationMinutes", "StartAt", "EndAt", "MaxScore", "PassingScore", "ShuffleQuestions", "ShuffleOptions", "RequireFullscreen", "MaxTabSwitchCount", "Status" },
+            ["Exam"] = new[] { "SubjectId", "ClassId", "CreatedById", "Title", "Instructions", "DurationMinutes", "StartAt", "EndAt", "MaxScore", "PassingScore", "ShuffleQuestions", "ShuffleOptions", "RequireFullscreen", "MaxWarningCount", "ResultReleaseMode", "Status" },
             ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
             ["ExamAttempt"] = new[] { "ExamId", "UserId", "SubmittedAt", "Score", "Status", "IsAutoSubmitted" },
-            ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "SelectedOptionId", "IsCorrect", "AwardedScore" },
+            ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "IsCorrect", "AwardedScore" },
             ["AntiCheatEvent"] = new[] { "ExamAttemptId", "EventType", "Severity", "Description", "OccurredAt" }
         };
 
         private static readonly Dictionary<string, string> FieldLabels = new()
         {
-            ["AcademicYear"] = "Nam hoc",
-            ["AwardedScore"] = "Diem dat duoc",
-            ["ClassId"] = "Lop hoc",
-            ["Code"] = "Ma",
-            ["Content"] = "Noi dung",
-            ["CreatedById"] = "Nguoi tao",
-            ["Description"] = "Mo ta",
-            ["Difficulty"] = "Do kho",
-            ["DisplayOrder"] = "Thu tu hien thi",
-            ["DurationMinutes"] = "Thoi luong",
-            ["EndAt"] = "Ket thuc",
-            ["EventType"] = "Loai su kien",
-            ["ExamAttemptId"] = "Luot lam bai",
-            ["ExamId"] = "De thi",
-            ["Explanation"] = "Giai thich",
-            ["IsAutoSubmitted"] = "Tu dong nop bai",
-            ["IsCorrect"] = "Dap an dung",
-            ["MaxTabSwitchCount"] = "So lan roi man hinh toi da",
-            ["MaxScore"] = "Diem toi da",
-            ["Name"] = "Ten",
-            ["OccurredAt"] = "Thoi diem",
-            ["PassingScore"] = "Diem dat",
-            ["QuestionId"] = "Cau hoi",
-            ["QuestionType"] = "Loai cau hoi",
-            ["RequireFullscreen"] = "Yeu cau toan man hinh",
-            ["Score"] = "Diem",
-            ["SelectedOptionId"] = "Dap an da chon",
-            ["Semester"] = "Hoc ky",
-            ["Severity"] = "Muc do",
-            ["ShuffleOptions"] = "Tron dap an",
-            ["ShuffleQuestions"] = "Tron cau hoi",
-            ["StartAt"] = "Bat dau",
-            ["StartedAt"] = "Bat dau lam",
-            ["Status"] = "Trang thai",
-            ["SubjectId"] = "Mon hoc",
-            ["SubmittedAt"] = "Thoi gian nop",
-            ["TeacherId"] = "Giang vien",
-            ["Title"] = "Tieu de",
-            ["UserId"] = "Nguoi dung"
+            ["AcademicYear"] = "Năm học",
+            ["AwardedScore"] = "Điểm đạt được",
+            ["ClassId"] = "Lớp học",
+            ["Code"] = "Mã",
+            ["Content"] = "Nội dung",
+            ["CreatedAt"] = "Ngày tạo",
+            ["CreatedById"] = "Người tạo",
+            ["Description"] = "Mô tả",
+            ["Difficulty"] = "Độ khó",
+            ["DisplayOrder"] = "Thứ tự hiển thị",
+            ["DurationMinutes"] = "Thời lượng",
+            ["EndAt"] = "Kết thúc",
+            ["EventType"] = "Loại sự kiện",
+            ["ExamAttemptId"] = "Lượt làm bài",
+            ["ExamId"] = "Đề thi",
+            ["Explanation"] = "Giải thích",
+            ["Instructions"] = "Hướng dẫn làm bài",
+            ["IntroVideoUrl"] = "Video giới thiệu",
+            ["IsAutoSubmitted"] = "Tự động nộp bài",
+            ["IsCorrect"] = "Đáp án đúng",
+            ["MaxWarningCount"] = "Giới hạn cảnh báo",
+            ["MaxScore"] = "Điểm tối đa",
+            ["Name"] = "Tên",
+            ["OccurredAt"] = "Thời điểm",
+            ["PassingScore"] = "Điểm đạt",
+            ["QuestionId"] = "Câu hỏi",
+            ["QuestionType"] = "Loại câu hỏi",
+            ["RequireFullscreen"] = "Yêu cầu toàn màn hình",
+            ["ResultReleaseMode"] = "Công bố kết quả",
+            ["Score"] = "Điểm",
+            ["Semester"] = "Học kỳ",
+            ["Severity"] = "Mức độ",
+            ["ShuffleOptions"] = "Trộn đáp án",
+            ["ShuffleQuestions"] = "Trộn câu hỏi",
+            ["StartAt"] = "Bắt đầu",
+            ["StartedAt"] = "Bắt đầu làm",
+            ["Status"] = "Trạng thái",
+            ["SubjectId"] = "Môn học",
+            ["SubmittedAt"] = "Thời gian nộp",
+            ["TeacherId"] = "Chủ lớp",
+            ["Title"] = "Tiêu đề",
+            ["UserId"] = "Người dùng",
+            ["VideoUrl"] = "Liên kết video"
         };
 
         protected readonly ApplicationDbContext Context;
@@ -568,7 +572,13 @@ namespace LT_Web_Nhom4.Controllers
             {
                 null => null,
                 DateTime dateTime => dateTime.ToString("dd/MM/yyyy HH:mm"),
-                bool boolean => boolean ? "Co" : "Khong",
+                bool boolean => boolean ? "Có" : "Không",
+                ExamStatus status => status.ToVietnamese(),
+                ExamAttemptStatus status => status.ToVietnamese(),
+                ResultReleaseMode mode => mode.ToVietnamese(),
+                QuestionType type => type.ToVietnamese(),
+                QuestionDifficulty difficulty => difficulty.ToVietnamese(),
+                AntiCheatEventType eventType => eventType.ToVietnamese(),
                 decimal number => number.ToString("0.##", CultureInfo.InvariantCulture),
                 _ => Convert.ToString(value, CultureInfo.InvariantCulture)
             };
@@ -617,7 +627,7 @@ namespace LT_Web_Nhom4.Controllers
             if (underlyingType.IsEnum)
             {
                 return Enum.GetNames(underlyingType)
-                    .Select(name => new CrudOptionViewModel { Value = name, Text = SplitPascalCase(name) })
+                    .Select(name => new CrudOptionViewModel { Value = name, Text = FormatEnumName(underlyingType, name) })
                     .ToList();
             }
 
@@ -631,7 +641,6 @@ namespace LT_Web_Nhom4.Controllers
                 "ExamId" => BuildExamOptions(),
                 "UserId" => BuildUserOptions(),
                 "ExamAttemptId" => BuildAttemptOptions(),
-                "SelectedOptionId" => BuildQuestionOptionOptions(),
                 _ => new List<CrudOptionViewModel>()
             };
         }
@@ -684,26 +693,6 @@ namespace LT_Web_Nhom4.Controllers
                 {
                     Value = question.Id.ToString(CultureInfo.InvariantCulture),
                     Text = question.Content.Length > 80 ? question.Content.Substring(0, 80) + "..." : question.Content
-                })
-                .ToList();
-        }
-
-        private IReadOnlyList<CrudOptionViewModel> BuildQuestionOptionOptions()
-        {
-            IQueryable<QuestionOption> query = Context.QuestionOptions.AsNoTracking().Include(option => option.Question);
-            if (!IsAdmin)
-            {
-                query = query.Where(option => option.Question.CreatedById == CurrentUserId);
-            }
-
-            return query
-                .OrderBy(option => option.QuestionId)
-                .ThenBy(option => option.DisplayOrder)
-                .Take(300)
-                .Select(option => new CrudOptionViewModel
-                {
-                    Value = option.Id.ToString(CultureInfo.InvariantCulture),
-                    Text = "#" + option.QuestionId + " - " + option.Content
                 })
                 .ToList();
         }
@@ -819,6 +808,21 @@ namespace LT_Web_Nhom4.Controllers
         {
             return string.Concat(value.Select((character, index) =>
                 index > 0 && char.IsUpper(character) ? " " + character : character.ToString()));
+        }
+
+        private static string FormatEnumName(Type type, string name)
+        {
+            var value = Enum.Parse(type, name);
+            return value switch
+            {
+                ExamStatus status => status.ToVietnamese(),
+                ExamAttemptStatus status => status.ToVietnamese(),
+                ResultReleaseMode mode => mode.ToVietnamese(),
+                QuestionType questionType => questionType.ToVietnamese(),
+                QuestionDifficulty difficulty => difficulty.ToVietnamese(),
+                AntiCheatEventType eventType => eventType.ToVietnamese(),
+                _ => SplitPascalCase(name)
+            };
         }
     }
 }

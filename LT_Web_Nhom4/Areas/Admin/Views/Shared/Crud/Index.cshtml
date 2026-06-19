@@ -8,7 +8,7 @@
 <section class="admin-crud-page">
     <div class="admin-crud-header">
         <div>
-            <span class="admin-crud-kicker">Danh muc quan tri</span>
+            <span class="admin-crud-kicker">Danh mục quản trị</span>
             <h1>@Model.Title</h1>
             @if (!string.IsNullOrWhiteSpace(Model.Description))
             {
@@ -17,18 +17,18 @@
         </div>
         <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">
             <i class="icon-base ri ri-add-line me-1"></i>
-            Them moi
+            Thêm mới
         </a>
     </div>
 
     <div class="admin-crud-toolbar">
         <div class="admin-crud-search">
             <i class="icon-base ri ri-search-line"></i>
-            <input type="search" class="form-control" placeholder="Tim trong @Model.Title.ToLowerInvariant()" data-admin-table-filter />
+            <input type="search" class="form-control" placeholder="Tìm trong @Model.Title.ToLowerInvariant()" data-admin-table-filter />
         </div>
         <div class="admin-crud-count">
             <strong>@Model.Rows.Count</strong>
-            <span>ban ghi</span>
+            <span>bản ghi</span>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                         {
                             <th>@field.Label</th>
                         }
-                        <th class="text-end">Thao tac</th>
+                        <th class="text-end">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody data-admin-table-body>
@@ -58,8 +58,8 @@
                             <td colspan="@(visibleFields.Count + 1)">
                                 <div class="admin-crud-empty">
                                     <i class="icon-base ri ri-inbox-line"></i>
-                                    <strong>Chua co du lieu</strong>
-                                    <span>Hay them ban ghi dau tien cho danh muc nay.</span>
+                                    <strong>Chưa có dữ liệu</strong>
+                                    <span>Hãy thêm bản ghi đầu tiên cho danh mục này.</span>
                                 </div>
                             </td>
                         </tr>
@@ -74,19 +74,19 @@
                                 </td>
                             }
                             <td class="text-end text-nowrap">
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary" title="Xem chi tiet">
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary" title="Xem chi tiết">
                                     <i class="icon-base ri ri-eye-line"></i>
                                 </a>
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sua">
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sửa">
                                     <i class="icon-base ri ri-edit-2-line"></i>
                                 </a>
                                 @if (string.Equals(Model.ControllerName, "Users", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@row.Key" class="btn btn-sm btn-outline-info" title="Phan quyen">
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@row.Key" class="btn btn-sm btn-outline-info" title="Phân quyền">
                                         <i class="icon-base ri ri-shield-user-line"></i>
                                     </a>
                                 }
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoa">
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoá">
                                     <i class="icon-base ri ri-delete-bin-6-line"></i>
                                 </a>
                             </td>

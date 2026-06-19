@@ -10,7 +10,11 @@ namespace LT_Web_Nhom4.Models
 
         public string CreatedById { get; set; } = string.Empty;
 
+        public string Code { get; set; } = string.Empty;
+
         public string Title { get; set; } = string.Empty;
+
+        public string? Instructions { get; set; }
 
         public int DurationMinutes { get; set; }
 
@@ -28,11 +32,17 @@ namespace LT_Web_Nhom4.Models
 
         public bool RequireFullscreen { get; set; }
 
-        public int? MaxTabSwitchCount { get; set; }
+        public int? MaxWarningCount { get; set; } = 3;
+
+        public ResultReleaseMode ResultReleaseMode { get; set; } = ResultReleaseMode.AfterExamClosed;
+
+        public DateTime? ResultsReleasedAt { get; set; }
 
         public ExamStatus Status { get; set; } = ExamStatus.Draft;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
         public Subject Subject { get; set; } = null!;
 

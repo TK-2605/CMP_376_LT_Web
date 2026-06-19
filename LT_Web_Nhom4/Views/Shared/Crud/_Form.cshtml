@@ -14,7 +14,7 @@
                 <select id="@field.Name" name="@field.Name" class="form-select" disabled="@field.IsReadOnly">
                     @if (field.IsNullable)
                     {
-                        <option value="">Chua chon</option>
+                        <option value="">Chưa chọn</option>
                     }
                     @foreach (var option in field.Options)
                     {
@@ -55,7 +55,7 @@
     </div>
 
     <div class="crud-form-actions">
-        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Huy</a>
-        <button type="submit" class="btn btn-primary">Luu</button>
+        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Huỷ</a>
+        <button type="submit" class="btn btn-primary">Lưu</button>
     </div>
 </form>

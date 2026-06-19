@@ -14,6 +14,6 @@ namespace LT_Web_Nhom4.Models
 
         public Question Question { get; set; } = null!;
 
-        public ICollection<AttemptAnswer> AttemptAnswers { get; set; } = new List<AttemptAnswer>();
+        public ICollection<AttemptAnswerSelection> AttemptAnswerSelections { get; set; } = new List<AttemptAnswerSelection>();
     }
 }

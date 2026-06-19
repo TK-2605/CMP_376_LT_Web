@@ -1,7 +1,7 @@
 @model LoginViewModel
 
 @{
-    ViewData["Title"] = "Dang nhap";
+    ViewData["Title"] = "Đăng nhập";
 }
 
 <section class="auth-shell">
@@ -16,17 +16,17 @@
                                 <span>QuizHub</span>
                             </div>
                             <div class="auth-panel-content">
-                                <h1>Chao mung tro lai</h1>
-                                <p>Dang nhap de vao lop hoc, xem de thi va tiep tuc bai lam cua ban.</p>
+                                <h1>Chào mừng trở lại</h1>
+                                <p>Đăng nhập để vào lớp học, xem đề thi và tiếp tục bài làm của bạn.</p>
                             </div>
                             <div class="auth-panel-note">
-                                <span>Lich thi, bai lam va ket qua duoc quan ly tap trung.</span>
+                                <span>Lịch thi, bài làm và kết quả được quản lý tập trung.</span>
                             </div>
                         </div>
                         <div class="col-lg-7 auth-form-side">
                             <div class="auth-form-heading">
-                                <h2>Dang nhap</h2>
-                                <p>Su dung email da dang ky voi he thong.</p>
+                                <h2>Đăng nhập</h2>
+                                <p>Sử dụng email đã đăng ký với hệ thống.</p>
                             </div>
 
                             @if (TempData["AuthMessage"] is string message)
@@ -45,40 +45,39 @@
                                 </div>
 
                                 <div class="auth-field">
-                                    <label asp-for="Password" class="form-label">Mat khau</label>
-                                    <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Nhap mat khau" />
+                                    <label asp-for="Password" class="form-label">Mật khẩu</label>
+                                    <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu" />
                                     <span asp-validation-for="Password" class="text-danger"></span>
                                 </div>
 
                                 <div class="auth-row">
                                     <div class="form-check">
                                         <input asp-for="RememberMe" class="form-check-input" />
-                                        <label asp-for="RememberMe" class="form-check-label">Ghi nho toi</label>
+                                        <label asp-for="RememberMe" class="form-check-label">Ghi nhớ tôi</label>
                                     </div>
-                                    <a asp-area="Identity" asp-controller="Account" asp-action="ForgotPassword">Quen mat khau?</a>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary auth-submit">Dang nhap</button>
+                                <button type="submit" class="btn btn-primary auth-submit">Đăng nhập</button>
                             </form>
 
                             @if (Model.ExternalLogins.Count > 0)
                             {
-                                <div class="auth-divider"><span>hoac</span></div>
+                                <div class="auth-divider"><span>hoặc</span></div>
                                 @foreach (var provider in Model.ExternalLogins)
                                 {
                                     <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLogin" method="post" class="mb-2">
                                         <input type="hidden" name="provider" value="@provider.Name" />
                                         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                                         <button type="submit" class="btn btn-outline-secondary auth-provider-button w-100">
-                                            Dang nhap bang @provider.DisplayName
+                                            Đăng nhập bằng @provider.DisplayName
                                         </button>
                                     </form>
                                 }
                             }
 
                             <p class="auth-switch">
-                                Chua co tai khoan?
-                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Dang ky</a>
+                                Chưa có tài khoản?
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Đăng ký</a>
                             </p>
                         </div>
                     </div>

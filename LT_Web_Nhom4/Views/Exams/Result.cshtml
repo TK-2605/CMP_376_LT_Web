@@ -1,0 +1,23 @@
+@model ExamResultViewModel
+
+@{ ViewData["Title"] = "Kết quả bài thi"; }
+@section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
+
+<section class="result-page">
+    <div class="container result-container">
+        <div class="result-icon @(Model.IsReleased ? "released" : "pending")"><i class="@(Model.IsReleased ? "ri-checkbox-circle-line" : "ri-time-line")"></i></div>
+        <span class="workspace-kicker">Bài làm đã được ghi nhận</span>
+        <h1>@Model.ExamTitle</h1><p>@Model.ClassName</p>
+        @if (Model.IsAutoSubmitted) { <div class="alert alert-warning">Bài được tự động nộp do hết giờ hoặc đạt giới hạn cảnh báo.</div> }
+        @if (Model.IsReleased)
+        {
+            <div class="result-score"><strong>@Model.Score?.ToString("0.##")</strong><span>/ @Model.MaxScore.ToString("0.##") điểm</span></div>
+            <div class="result-facts"><div><span>Số câu đúng</span><strong>@Model.CorrectCount/@Model.QuestionCount</strong></div><div><span>Kết quả</span><strong>@(Model.PassingScore.HasValue && Model.Score < Model.PassingScore ? "Chưa đạt" : "Đạt")</strong></div></div>
+        }
+        else
+        {
+            <div class="result-pending"><h2>Điểm chưa được công bố</h2><p>Giáo viên sẽ công bố kết quả theo cài đặt của đề thi.</p></div>
+        }
+        <div class="result-actions"><a asp-action="Index" class="btn btn-primary">Đề thi của tôi</a><a asp-controller="Classes" asp-action="Index" class="btn btn-light">Lớp học</a></div>
+    </div>
+</section>

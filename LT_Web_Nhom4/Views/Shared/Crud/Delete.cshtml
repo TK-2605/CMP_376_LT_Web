@@ -1,7 +1,7 @@
 @model CrudDeleteViewModel
 
 @{
-    ViewData["Title"] = $"Xoa {Model.Title}";
+    ViewData["Title"] = $"Xoá {Model.Title}";
 }
 
 @{
@@ -12,24 +12,24 @@
     <div class="container">
         <div class="card crud-form-card border-danger">
             <div class="card-body">
-                <span class="crud-kicker text-danger">Xac nhan xoa</span>
-                <h1>Xoa @Model.Title</h1>
-                <p class="crud-form-description text-danger">Ban ghi se bi xoa khoi he thong sau khi xac nhan.</p>
+                <span class="crud-kicker text-danger">Xác nhận xóa</span>
+                <h1>Xoá @Model.Title</h1>
+                <p class="crud-form-description text-danger">Bản ghi sẽ bị xóa khỏi hệ thống sau khi xác nhận.</p>
 
                 <dl class="crud-detail-list">
                     @foreach (var field in visibleFields)
                     {
                         <div>
                             <dt>@field.Label</dt>
-                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Co" : "Khong") : field.Value ?? "-")</dd>
+                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Có" : "Không") : field.Value ?? "-")</dd>
                         </div>
                     }
                 </dl>
 
                 <form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@Model.Key" method="post">
                     <div class="crud-form-actions">
-                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Huy</a>
-                        <button type="submit" class="btn btn-danger">Xoa</button>
+                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Huỷ</a>
+                        <button type="submit" class="btn btn-danger">Xoá</button>
                     </div>
                 </form>
             </div>

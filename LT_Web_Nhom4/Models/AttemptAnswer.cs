@@ -8,8 +8,6 @@ namespace LT_Web_Nhom4.Models
 
         public int QuestionId { get; set; }
 
-        public int? SelectedOptionId { get; set; }
-
         public bool? IsCorrect { get; set; }
 
         public decimal? AwardedScore { get; set; }
@@ -20,6 +18,6 @@ namespace LT_Web_Nhom4.Models
 
         public Question Question { get; set; } = null!;
 
-        public QuestionOption? SelectedOption { get; set; }
+        public ICollection<AttemptAnswerSelection> Selections { get; set; } = new List<AttemptAnswerSelection>();
     }
 }

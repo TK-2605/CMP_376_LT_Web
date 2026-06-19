@@ -12,9 +12,19 @@ namespace LT_Web_Nhom4.Models
 
         public string Name { get; set; } = string.Empty;
 
+        public string? Description { get; set; }
+
+        public string? CoverImagePath { get; set; }
+
+        public string? IntroVideoUrl { get; set; }
+
         public string? Semester { get; set; }
 
         public string? AcademicYear { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
         public Subject Subject { get; set; } = null!;
 

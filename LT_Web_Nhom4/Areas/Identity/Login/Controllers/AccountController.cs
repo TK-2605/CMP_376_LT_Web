@@ -54,13 +54,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user is null)
             {
-                ModelState.AddModelError(string.Empty, "Email hoac mat khau khong dung.");
+                ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
                 return View(model);
             }
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError(string.Empty, "Tai khoan dang tam khoa. Vui long lien he quan tri vien.");
+                ModelState.AddModelError(string.Empty, "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.");
                 return View(model);
             }
 
@@ -73,23 +73,23 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             if (result.RequiresTwoFactor)
             {
-                ModelState.AddModelError(string.Empty, "Tai khoan yeu cau xac thuc hai buoc. Chuc nang nay se duoc bo sung sau.");
+                ModelState.AddModelError(string.Empty, "Tài khoản yêu cầu xác thực hai bước.");
                 return View(model);
             }
 
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError(string.Empty, "Tai khoan dang bi khoa tam thoi.");
+                ModelState.AddModelError(string.Empty, "Tài khoản đang bị khóa tạm thời.");
                 return View(model);
             }
 
             if (result.IsNotAllowed)
             {
-                ModelState.AddModelError(string.Empty, "Tai khoan chua duoc xac nhan email hoac chua duoc phe duyet.");
+                ModelState.AddModelError(string.Empty, "Tài khoản chưa được phép đăng nhập.");
                 return View(model);
             }
 
-            ModelState.AddModelError(string.Empty, "Email hoac mat khau khong dung.");
+            ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
             return View(model);
         }
 
@@ -146,7 +146,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 await AddDefaultStudentRoleAsync(user);
 
-                TempData["AuthMessage"] = "Dang ky thanh cong. Ban co the dang nhap bang tai khoan vua tao.";
+                TempData["AuthMessage"] = "Đăng ký thành công. Bạn có thể đăng nhập bằng tài khoản vừa tạo.";
                 return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
             }
 
@@ -181,7 +181,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return View(model);
             }
 
-            TempData["AuthMessage"] = "Neu email ton tai, he thong se gui huong dan dat lai mat khau.";
+            TempData["AuthMessage"] = "Chức năng đặt lại mật khẩu qua Gmail chưa được kích hoạt.";
             return RedirectToAction(nameof(Login));
         }
 
@@ -199,14 +199,14 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             if (remoteError is not null)
             {
-                TempData["AuthMessage"] = $"Dang nhap OAuth that bai: {remoteError}";
+                TempData["AuthMessage"] = $"Đăng nhập OAuth thất bại: {remoteError}";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info is null)
             {
-                TempData["AuthMessage"] = "Khong doc duoc thong tin dang nhap tu nha cung cap OAuth.";
+                TempData["AuthMessage"] = "Không đọc được thông tin đăng nhập từ nhà cung cấp OAuth.";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -258,7 +258,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info is null)
             {
-                TempData["AuthMessage"] = "Phien dang nhap OAuth da het han.";
+                TempData["AuthMessage"] = "Phiên đăng nhập OAuth đã hết hạn.";
                 return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
             }
 
@@ -345,14 +345,14 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             if (await _userManager.FindByEmailAsync(email) is not null || await _userManager.FindByNameAsync(email) is not null)
             {
-                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email nay da duoc dang ky.");
+                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email này đã được đăng ký.");
                 hasError = true;
             }
 
             if (!string.IsNullOrWhiteSpace(studentCode)
                 && await _userManager.Users.AnyAsync(user => user.StudentCode == studentCode))
             {
-                ModelState.AddModelError(nameof(RegisterViewModel.StudentCode), "Ma sinh vien nay da duoc su dung.");
+                ModelState.AddModelError(nameof(RegisterViewModel.StudentCode), "Mã sinh viên này đã được sử dụng.");
                 hasError = true;
             }
 
@@ -362,7 +362,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         private void AddDatabaseRegistrationError(DbUpdateException exception, string email)
         {
             _logger.LogWarning(exception, "Registration failed because user data is duplicated for {Email}.", email);
-            ModelState.AddModelError(string.Empty, "Email hoac ma sinh vien da ton tai. Vui long kiem tra lai thong tin dang ky.");
+            ModelState.AddModelError(string.Empty, "Email hoặc mã sinh viên đã tồn tại. Vui lòng kiểm tra lại thông tin đăng ký.");
         }
 
         private static string? NormalizeOptional(string? value)

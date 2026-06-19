@@ -1,52 +1,29 @@
 @model CreateClassViewModel
 
-@{
-    ViewData["Title"] = "Tạo lớp";
-}
+@{ ViewData["Title"] = "Tạo lớp học"; }
 
-<section class="student-section bg-light">
-    <div class="container">
-        <div class="class-form-shell">
-            <div class="student-eyebrow mb-2">Lớp học</div>
-            <h1 class="display-6 fw-bold">Tạo lớp</h1>
-            <p class="text-muted">Mã lớp dùng để học viên tham gia. Lớp chỉ hiển thị với người tạo, học viên đã tham gia và admin.</p>
-
-            <form asp-controller="Classes" asp-action="Create" method="post" class="mt-4">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="Code" class="form-label"></label>
-                        <input asp-for="Code" class="form-control" placeholder="Ví dụ: WEB-2026-01" autocomplete="off" />
-                        <span asp-validation-for="Code" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Name" class="form-label"></label>
-                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: Lập trình Web nhóm 4" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Semester" class="form-label"></label>
-                        <input asp-for="Semester" class="form-control" placeholder="Ví dụ: Học kỳ 2B" />
-                        <span asp-validation-for="Semester" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="AcademicYear" class="form-label"></label>
-                        <input asp-for="AcademicYear" class="form-control" placeholder="Ví dụ: 2025-2026" />
-                        <span asp-validation-for="AcademicYear" class="text-danger"></span>
-                    </div>
+<section class="workspace-page">
+    <div class="container form-page-container">
+        <a asp-action="Index" class="back-link"><i class="ri-arrow-left-line"></i> Lớp học của tôi</a>
+        <header class="form-page-heading"><span class="workspace-kicker">Lớp học mới</span><h1>Tạo không gian học tập</h1><p>Mã tham gia sẽ được hệ thống tạo tự động sau khi lưu.</p></header>
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="content-form">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="form-grid">
+                <div class="form-field span-2"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control form-control-lg" placeholder="Ví dụ: Lập trình Web - Nhóm 4" autofocus /><span asp-validation-for="Name" class="text-danger"></span></div>
+                <div class="form-field span-2"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="4" placeholder="Giới thiệu ngắn về lớp học"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+                <div class="form-field"><label asp-for="SubjectId" class="form-label"></label><select asp-for="SubjectId" class="form-select">@foreach (var subject in Model.Subjects) { <option value="@subject.Id">@subject.Label</option> }</select><span asp-validation-for="SubjectId" class="text-danger"></span></div>
+                <div class="form-field"><label asp-for="Semester" class="form-label"></label><input asp-for="Semester" class="form-control" placeholder="Ví dụ: Học kỳ 2B" /></div>
+                <div class="form-field"><label asp-for="AcademicYear" class="form-label"></label><input asp-for="AcademicYear" class="form-control" placeholder="2025-2026" /></div>
+                <div class="form-field"><label asp-for="IntroVideoUrl" class="form-label"></label><input asp-for="IntroVideoUrl" class="form-control" placeholder="https://..." /><span asp-validation-for="IntroVideoUrl" class="text-danger"></span></div>
+                <div class="form-field span-2">
+                    <label asp-for="CoverImage" class="form-label"></label>
+                    <label class="upload-field"><i class="ri-image-add-line" aria-hidden="true"></i><span><strong>Chọn ảnh bìa</strong><small>JPG, PNG hoặc WebP, tối đa 5 MB</small></span><input asp-for="CoverImage" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+                    <span asp-validation-for="CoverImage" class="text-danger"></span>
                 </div>
-
-                <div class="class-media-note mt-4">
-                    <strong>Ảnh và video lớp</strong>
-                    <span>Phần media sẽ dùng storage riêng sau khi chốt schema. Hiện form chỉ lưu dữ liệu lớp cốt lõi để tránh lỗi dữ liệu giả.</span>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a asp-controller="Classes" asp-action="Index" class="btn btn-light">Huỷ</a>
-                    <button type="submit" class="btn btn-primary">Tạo lớp</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="form-actions"><a asp-action="Index" class="btn btn-light">Huỷ</a><button type="submit" class="btn btn-primary">Tạo lớp học</button></div>
+        </form>
     </div>
 </section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

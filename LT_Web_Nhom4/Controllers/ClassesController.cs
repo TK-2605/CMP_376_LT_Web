@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,106 +11,84 @@ using ClassEntity = LT_Web_Nhom4.Models.Class;
 namespace LT_Web_Nhom4.Controllers
 {
     [Authorize]
-    public class ClassesController : CrudController<ClassEntity>
+    public class ClassesController : Controller
     {
-        public ClassesController(ApplicationDbContext context) : base(context)
+        private readonly ApplicationDbContext _context;
+        private readonly IUniqueCodeGenerator _codeGenerator;
+        private readonly IAccessPolicy _accessPolicy;
+        private readonly IPrivateMediaStorage _mediaStorage;
+
+        public ClassesController(
+            ApplicationDbContext context,
+            IUniqueCodeGenerator codeGenerator,
+            IAccessPolicy accessPolicy,
+            IPrivateMediaStorage mediaStorage)
         {
+            _context = context;
+            _codeGenerator = codeGenerator;
+            _accessPolicy = accessPolicy;
+            _mediaStorage = mediaStorage;
         }
 
-        public override async Task<IActionResult> Index()
+        public async Task<IActionResult> Index()
         {
-            var userId = CurrentUserId;
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return Forbid();
-            }
-
-            var ownedClasses = await Context.Classes
-                .AsNoTracking()
-                .Include(classRoom => classRoom.Subject)
-                .Include(classRoom => classRoom.Exams)
-                .Include(classRoom => classRoom.Members)
-                .Where(classRoom => IsAdmin || classRoom.TeacherId == userId)
-                .OrderByDescending(classRoom => classRoom.Id)
-                .Take(100)
-                .ToListAsync();
-
-            var participatingClasses = await Context.ClassMembers
-                .AsNoTracking()
-                .Include(member => member.Class)
-                    .ThenInclude(classRoom => classRoom.Subject)
-                .Include(member => member.Class)
-                    .ThenInclude(classRoom => classRoom.Exams)
-                .Include(member => member.Class)
-                    .ThenInclude(classRoom => classRoom.Members)
-                .Where(member => member.UserId == userId
-                    && member.Status == ClassMemberStatus.Active
-                    && member.Class.TeacherId != userId)
-                .Select(member => member.Class)
-                .OrderByDescending(classRoom => classRoom.Id)
-                .Take(100)
-                .ToListAsync();
-
-            return View(new ClassListViewModel
-            {
-                OwnedClasses = ownedClasses.Select(ToClassCard).ToList(),
-                ParticipatingClasses = participatingClasses.Select(ToClassCard).ToList()
-            });
+            return View(await BuildListModelAsync());
         }
 
-        public override IActionResult Create()
+        [HttpGet]
+        public async Task<IActionResult> Create()
         {
-            return View(new CreateClassViewModel
+            var model = new CreateClassViewModel
             {
-                AcademicYear = DateTime.Now.Year.ToString()
-            });
+                AcademicYear = $"{DateTime.Now.Year}-{DateTime.Now.Year + 1}"
+            };
+            await PopulateSubjectsAsync(model);
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public override async Task<IActionResult> Create(IFormCollection form)
+        public async Task<IActionResult> Create(CreateClassViewModel model, CancellationToken cancellationToken)
         {
-            var model = new CreateClassViewModel
-            {
-                Code = form[nameof(CreateClassViewModel.Code)].ToString(),
-                Name = form[nameof(CreateClassViewModel.Name)].ToString(),
-                Semester = form[nameof(CreateClassViewModel.Semester)].ToString(),
-                AcademicYear = form[nameof(CreateClassViewModel.AcademicYear)].ToString()
-            };
-
-            ModelState.Clear();
-            TryValidateModel(model);
-
+            await PopulateSubjectsAsync(model);
+            ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            if (await Context.Classes.AnyAsync(classRoom => classRoom.Code == model.Code.Trim()))
+            string? coverImagePath = null;
+            try
             {
-                ModelState.AddModelError(nameof(model.Code), "Mã lớp đã tồn tại.");
+                if (model.CoverImage is not null)
+                {
+                    coverImagePath = await _mediaStorage.SaveImageAsync(model.CoverImage, "classes", cancellationToken);
+                }
+
+                var classRoom = new ClassEntity
+                {
+                    SubjectId = model.SubjectId,
+                    TeacherId = CurrentUserId,
+                    Code = await _codeGenerator.GenerateClassCodeAsync(cancellationToken),
+                    Name = model.Name.Trim(),
+                    Description = NormalizeOptional(model.Description),
+                    Semester = NormalizeOptional(model.Semester),
+                    AcademicYear = NormalizeOptional(model.AcademicYear),
+                    IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl),
+                    CoverImagePath = coverImagePath
+                };
+
+                _context.Classes.Add(classRoom);
+                await _context.SaveChangesAsync(cancellationToken);
+                TempData["ClassMessage"] = "Lớp học đã được tạo. Mã tham gia được sinh tự động.";
+                return RedirectToAction(nameof(Details), new { id = classRoom.Id });
+            }
+            catch (InvalidOperationException exception)
+            {
+                await _mediaStorage.DeleteAsync(coverImagePath, cancellationToken);
+                ModelState.AddModelError(nameof(model.CoverImage), exception.Message);
                 return View(model);
             }
-
-            var classRoom = new ClassEntity
-            {
-                SubjectId = await EnsureDefaultSubjectAsync(),
-                TeacherId = CurrentUserId ?? string.Empty,
-                Code = model.Code.Trim(),
-                Name = model.Name.Trim(),
-                Semester = model.Semester?.Trim(),
-                AcademicYear = model.AcademicYear?.Trim()
-            };
-
-            if (!await CanCreateAsync(classRoom))
-            {
-                return Forbid();
-            }
-
-            Context.Classes.Add(classRoom);
-            await Context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Details), new { id = classRoom.Id });
         }
 
         [HttpPost]
@@ -117,59 +97,61 @@ namespace LT_Web_Nhom4.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return await Index();
+                var listModel = await BuildListModelAsync();
+                listModel.JoinClass = model;
+                return View(nameof(Index), listModel);
             }
 
-            var code = model.Code.Trim();
-            var classRoom = await Context.Classes.FirstOrDefaultAsync(item => item.Code == code);
+            var code = model.Code.Trim().ToUpperInvariant();
+            var classRoom = await _context.Classes.FirstOrDefaultAsync(item => item.Code == code);
             if (classRoom is null)
             {
-                TempData["ClassMessage"] = "Không tìm thấy lớp theo mã đã nhập.";
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError(nameof(model.Code), "Không tìm thấy lớp với mã này.");
+                var listModel = await BuildListModelAsync();
+                listModel.JoinClass = model;
+                return View(nameof(Index), listModel);
             }
 
             if (classRoom.TeacherId == CurrentUserId)
             {
-                TempData["ClassMessage"] = "Bạn đang là người tạo lớp này.";
                 return RedirectToAction(nameof(Details), new { id = classRoom.Id });
             }
 
-            var existingMember = await Context.ClassMembers.FindAsync(classRoom.Id, CurrentUserId);
+            var existingMember = await _context.ClassMembers.FindAsync(classRoom.Id, CurrentUserId);
             if (existingMember is null)
             {
-                Context.ClassMembers.Add(new ClassMember
+                _context.ClassMembers.Add(new ClassMember
                 {
                     ClassId = classRoom.Id,
-                    UserId = CurrentUserId ?? string.Empty,
+                    UserId = CurrentUserId,
                     Status = ClassMemberStatus.Active
                 });
             }
             else
             {
                 existingMember.Status = ClassMemberStatus.Active;
+                existingMember.JoinedAt = DateTime.UtcNow;
             }
 
-            await Context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            TempData["ClassMessage"] = "Bạn đã tham gia lớp thành công.";
             return RedirectToAction(nameof(Details), new { id = classRoom.Id });
         }
 
-        public override async Task<IActionResult> Details(string id)
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
         {
-            if (!int.TryParse(id, out var classId))
+            if (!await _accessPolicy.CanAccessClassAsync(id, CurrentUserId, IsAdmin))
             {
-                return NotFound();
+                return Forbid();
             }
 
-            var classRoom = await Context.Classes
+            var classRoom = await _context.Classes
                 .AsNoTracking()
                 .Include(item => item.Subject)
-                .Include(item => item.Members)
-                    .ThenInclude(member => member.User)
-                .Include(item => item.Exams)
-                    .ThenInclude(exam => exam.Subject)
-                .Include(item => item.Exams)
-                    .ThenInclude(exam => exam.ExamQuestions)
-                .FirstOrDefaultAsync(item => item.Id == classId);
+                .Include(item => item.Members).ThenInclude(member => member.User)
+                .Include(item => item.Exams).ThenInclude(exam => exam.ExamQuestions)
+                .FirstOrDefaultAsync(item => item.Id == id);
 
             if (classRoom is null)
             {
@@ -177,132 +159,222 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var isOwner = IsAdmin || classRoom.TeacherId == CurrentUserId;
-            var isMember = classRoom.Members.Any(member =>
-                member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active);
-
-            if (!isOwner && !isMember)
-            {
-                return Forbid();
-            }
+            var visibleExams = isOwner
+                ? classRoom.Exams
+                : classRoom.Exams.Where(exam => exam.Status != ExamStatus.Draft && exam.Status != ExamStatus.Cancelled);
 
             return View(new ClassDetailsViewModel
             {
                 Id = classRoom.Id,
                 Code = classRoom.Code,
                 Name = classRoom.Name,
-                SubjectName = classRoom.Subject?.Name ?? "Môn học chung",
+                SubjectName = classRoom.Subject.Name,
+                Description = classRoom.Description,
+                CoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = classRoom.Id }),
+                IntroVideoUrl = classRoom.IntroVideoUrl,
                 Semester = classRoom.Semester,
                 AcademicYear = classRoom.AcademicYear,
-                ExamCount = classRoom.Exams.Count,
+                ExamCount = visibleExams.Count(),
                 MemberCount = classRoom.Members.Count(member => member.Status == ClassMemberStatus.Active),
                 IsOwner = isOwner,
-                Members = classRoom.Members
-                    .Where(member => member.Status == ClassMemberStatus.Active)
-                    .Select(member => new ClassMemberItemViewModel
+                Members = isOwner
+                    ? classRoom.Members.Where(member => member.Status == ClassMemberStatus.Active).Select(member => new ClassMemberItemViewModel
                     {
+                        UserId = member.UserId,
                         DisplayName = string.IsNullOrWhiteSpace(member.User.FullName) ? member.User.Email ?? "Học viên" : member.User.FullName,
                         Email = member.User.Email ?? string.Empty,
-                        Status = ToVietnameseStatus(member.Status)
-                    })
-                    .ToList(),
-                Exams = classRoom.Exams
-                    .OrderByDescending(exam => exam.StartAt)
-                    .Select(exam => new ExamCardViewModel
-                    {
-                        Id = exam.Id,
-                        Title = exam.Title,
-                        SubjectName = exam.Subject?.Name ?? classRoom.Subject?.Name ?? "Môn học chung",
-                        ClassName = classRoom.Name,
-                        StartAt = exam.StartAt,
-                        EndAt = exam.EndAt,
-                        DurationMinutes = exam.DurationMinutes,
-                        QuestionCount = exam.ExamQuestions.Count,
-                        IsOwnedByCurrentUser = isOwner,
-                        IsParticipant = !isOwner
-                    })
-                    .ToList()
+                        Status = "Đang tham gia"
+                    }).ToList()
+                    : new List<ClassMemberItemViewModel>(),
+                Exams = visibleExams.OrderByDescending(exam => exam.StartAt).Select(exam => new ExamCardViewModel
+                {
+                    Id = exam.Id,
+                    Code = exam.Code,
+                    Title = exam.Title,
+                    SubjectName = classRoom.Subject.Name,
+                    ClassName = classRoom.Name,
+                    StartAt = exam.StartAt,
+                    EndAt = exam.EndAt,
+                    DurationMinutes = exam.DurationMinutes,
+                    QuestionCount = exam.ExamQuestions.Count,
+                    Status = exam.Status,
+                    IsOwnedByCurrentUser = isOwner,
+                    IsParticipant = !isOwner
+                }).ToList()
             });
         }
 
-        protected override IQueryable<ClassEntity> ApplyReadScope(IQueryable<ClassEntity> query)
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
         {
-            return IsAdmin ? query : query.Where(classRoom => classRoom.TeacherId == CurrentUserId);
-        }
-
-        protected override Task<bool> CanReadAsync(ClassEntity entity)
-        {
-            return Task.FromResult(IsAdmin || entity.TeacherId == CurrentUserId);
-        }
-
-        protected override Task<bool> CanCreateAsync(ClassEntity entity)
-        {
-            return Task.FromResult(User.Identity?.IsAuthenticated == true);
-        }
-
-        protected override Task<bool> CanUpdateAsync(ClassEntity entity)
-        {
-            return CanReadAsync(entity);
-        }
-
-        protected override Task<bool> CanDeleteAsync(ClassEntity entity)
-        {
-            return CanReadAsync(entity);
-        }
-
-        protected override async Task OnCreatingAsync(ClassEntity entity)
-        {
-            if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
+            if (!await _accessPolicy.IsClassOwnerAsync(id, CurrentUserId, IsAdmin))
             {
-                entity.TeacherId = CurrentUserId;
+                return Forbid();
             }
 
-            if (entity.SubjectId <= 0)
+            var classRoom = await _context.Classes.AsNoTracking().FirstOrDefaultAsync(item => item.Id == id);
+            if (classRoom is null)
             {
-                entity.SubjectId = await EnsureDefaultSubjectAsync();
-            }
-        }
-
-        protected override async Task OnUpdatingAsync(ClassEntity entity)
-        {
-            if (!IsAdmin && !string.IsNullOrWhiteSpace(CurrentUserId))
-            {
-                entity.TeacherId = CurrentUserId;
+                return NotFound();
             }
 
-            if (entity.SubjectId <= 0)
+            var model = new EditClassViewModel
             {
-                entity.SubjectId = await EnsureDefaultSubjectAsync();
-            }
-        }
-
-        private async Task<int> EnsureDefaultSubjectAsync()
-        {
-            var subject = await Context.Subjects.FirstOrDefaultAsync(item => item.Code == "GENERAL");
-            if (subject is not null)
-            {
-                return subject.Id;
-            }
-
-            subject = new LT_Web_Nhom4.Models.Subject
-            {
-                Code = "GENERAL",
-                Name = "Mon hoc chung",
-                Description = "Mon hoc mac dinh de tao lop/phong thi nhanh."
+                Id = classRoom.Id,
+                Code = classRoom.Code,
+                SubjectId = classRoom.SubjectId,
+                Name = classRoom.Name,
+                Description = classRoom.Description,
+                Semester = classRoom.Semester,
+                AcademicYear = classRoom.AcademicYear,
+                IntroVideoUrl = classRoom.IntroVideoUrl,
+                ExistingCoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id }),
+                RowVersion = classRoom.RowVersion
             };
-
-            Context.Subjects.Add(subject);
-            await Context.SaveChangesAsync();
-            return subject.Id;
+            await PopulateSubjectsAsync(model);
+            return View(model);
         }
 
-        private static ClassCardViewModel ToClassCard(ClassEntity classRoom)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(EditClassViewModel model, CancellationToken cancellationToken)
+        {
+            if (!await _accessPolicy.IsClassOwnerAsync(model.Id, CurrentUserId, IsAdmin))
+            {
+                return Forbid();
+            }
+
+            await PopulateSubjectsAsync(model);
+            ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
+            var classRoom = await _context.Classes.FirstOrDefaultAsync(item => item.Id == model.Id);
+            if (classRoom is null)
+            {
+                return NotFound();
+            }
+
+            model.Code = classRoom.Code;
+            model.ExistingCoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = model.Id });
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var oldImagePath = classRoom.CoverImagePath;
+            string? newImagePath = null;
+            try
+            {
+                if (model.CoverImage is not null)
+                {
+                    newImagePath = await _mediaStorage.SaveImageAsync(model.CoverImage, "classes", cancellationToken);
+                    classRoom.CoverImagePath = newImagePath;
+                }
+                else if (model.RemoveCoverImage)
+                {
+                    classRoom.CoverImagePath = null;
+                }
+
+                classRoom.SubjectId = model.SubjectId;
+                classRoom.Name = model.Name.Trim();
+                classRoom.Description = NormalizeOptional(model.Description);
+                classRoom.Semester = NormalizeOptional(model.Semester);
+                classRoom.AcademicYear = NormalizeOptional(model.AcademicYear);
+                classRoom.IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl);
+                _context.Entry(classRoom).Property(item => item.RowVersion).OriginalValue = model.RowVersion;
+                await _context.SaveChangesAsync(cancellationToken);
+
+                if ((newImagePath is not null || model.RemoveCoverImage) && oldImagePath != classRoom.CoverImagePath)
+                {
+                    await _mediaStorage.DeleteAsync(oldImagePath, cancellationToken);
+                }
+
+                TempData["ClassMessage"] = "Thông tin lớp đã được cập nhật.";
+                return RedirectToAction(nameof(Details), new { id = classRoom.Id });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await _mediaStorage.DeleteAsync(newImagePath, cancellationToken);
+                ModelState.AddModelError(string.Empty, "Lớp vừa được cập nhật ở nơi khác. Vui lòng tải lại trang.");
+                return View(model);
+            }
+            catch (InvalidOperationException exception)
+            {
+                await _mediaStorage.DeleteAsync(newImagePath, cancellationToken);
+                ModelState.AddModelError(nameof(model.CoverImage), exception.Message);
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegenerateCode(int id)
+        {
+            if (!await _accessPolicy.IsClassOwnerAsync(id, CurrentUserId, IsAdmin))
+            {
+                return Forbid();
+            }
+
+            var classRoom = await _context.Classes.FirstOrDefaultAsync(item => item.Id == id);
+            if (classRoom is null)
+            {
+                return NotFound();
+            }
+
+            classRoom.Code = await _codeGenerator.GenerateClassCodeAsync();
+            await _context.SaveChangesAsync();
+            TempData["ClassMessage"] = "Mã lớp mới đã được tạo. Mã cũ không còn hiệu lực.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveMember(int id, string userId)
+        {
+            if (!await _accessPolicy.IsClassOwnerAsync(id, CurrentUserId, IsAdmin))
+            {
+                return Forbid();
+            }
+
+            var member = await _context.ClassMembers.FindAsync(id, userId);
+            if (member is not null)
+            {
+                member.Status = ClassMemberStatus.Removed;
+                await _context.SaveChangesAsync();
+                TempData["ClassMessage"] = "Học viên đã được xoá khỏi lớp.";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private async Task<ClassListViewModel> BuildListModelAsync()
+        {
+            var ownedClasses = await _context.Classes.AsNoTracking()
+                .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => IsAdmin || item.TeacherId == CurrentUserId)
+                .OrderByDescending(item => item.CreatedAt).ToListAsync();
+
+            var participatingClasses = await _context.ClassMembers.AsNoTracking()
+                .Where(member => member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active)
+                .Select(member => member.Class)
+                .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .OrderByDescending(item => item.CreatedAt).ToListAsync();
+
+            return new ClassListViewModel
+            {
+                OwnedClasses = ownedClasses.Select(ToCard).ToList(),
+                ParticipatingClasses = participatingClasses.Where(item => item.TeacherId != CurrentUserId).Select(ToCard).ToList()
+            };
+        }
+
+        private ClassCardViewModel ToCard(ClassEntity classRoom)
         {
             return new ClassCardViewModel
             {
                 Id = classRoom.Id,
                 Code = classRoom.Code,
                 Name = classRoom.Name,
-                SubjectName = classRoom.Subject?.Name ?? "Môn học chung",
+                SubjectName = classRoom.Subject.Name,
+                Description = classRoom.Description,
+                CoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = classRoom.Id }),
                 Semester = classRoom.Semester,
                 AcademicYear = classRoom.AcademicYear,
                 ExamCount = classRoom.Exams.Count,
@@ -310,15 +382,34 @@ namespace LT_Web_Nhom4.Controllers
             };
         }
 
-        private static string ToVietnameseStatus(ClassMemberStatus status)
+        private async Task PopulateSubjectsAsync(CreateClassViewModel model)
         {
-            return status switch
+            model.Subjects = await _context.Subjects.AsNoTracking().OrderBy(item => item.Name)
+                .Select(item => new SubjectOptionViewModel { Id = item.Id, Label = item.Code + " - " + item.Name })
+                .ToListAsync();
+            if (model.SubjectId == 0 && model.Subjects.Count > 0)
             {
-                ClassMemberStatus.Active => "Đang tham gia",
-                ClassMemberStatus.Pending => "Chờ duyệt",
-                ClassMemberStatus.Removed => "Đã xoá",
-                _ => status.ToString()
-            };
+                model.SubjectId = model.Subjects[0].Id;
+            }
+        }
+
+        private void ValidateVideoUrl(string? value, string key)
+        {
+            if (!string.IsNullOrWhiteSpace(value)
+                && (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps))
+            {
+                ModelState.AddModelError(key, "Video phải dùng liên kết HTTPS hợp lệ.");
+            }
+        }
+
+        private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        private bool IsAdmin => User.IsInRole("Admin");
+
+        private static string? NormalizeOptional(string? value)
+        {
+            var normalized = value?.Trim();
+            return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
         }
     }
 }

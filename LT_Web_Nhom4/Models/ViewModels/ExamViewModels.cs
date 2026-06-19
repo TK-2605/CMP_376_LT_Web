@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace LT_Web_Nhom4.Models.ViewModels
 {
@@ -6,14 +7,16 @@ namespace LT_Web_Nhom4.Models.ViewModels
     {
         public IList<ExamCardViewModel> Exams { get; set; } = new List<ExamCardViewModel>();
 
-        public IList<ExamCardViewModel> OwnedExams => Exams.Where(exam => exam.IsOwnedByCurrentUser).ToList();
+        public IList<ExamCardViewModel> OwnedExams => Exams.Where(item => item.IsOwnedByCurrentUser).ToList();
 
-        public IList<ExamCardViewModel> ParticipatingExams => Exams.Where(exam => !exam.IsOwnedByCurrentUser).ToList();
+        public IList<ExamCardViewModel> ParticipatingExams => Exams.Where(item => !item.IsOwnedByCurrentUser).ToList();
     }
 
     public class ExamCardViewModel
     {
         public int Id { get; set; }
+
+        public string Code { get; set; } = string.Empty;
 
         public string Title { get; set; } = string.Empty;
 
@@ -29,24 +32,39 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public int QuestionCount { get; set; }
 
+        public ExamStatus Status { get; set; }
+
         public bool IsOwnedByCurrentUser { get; set; }
 
         public bool IsParticipant { get; set; }
-
-        public string RoleLabel => IsOwnedByCurrentUser ? "Giao vien phong" : "Hoc sinh";
     }
 
-    public class CreateExamInClassViewModel
+    public class ExamBuilderViewModel
     {
+        public int? ExamId { get; set; }
+
         public int ClassId { get; set; }
 
         public string ClassName { get; set; } = string.Empty;
 
         public string ClassCode { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Vui lòng nhập tiêu đề đề thi.")]
-        [Display(Name = "Tiêu đề")]
+        public string ExamCode { get; set; } = string.Empty;
+
+        public bool IsLocked { get; set; }
+
+        public string ActivePanel { get; set; } = "questions";
+
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
+        [Required(ErrorMessage = "Vui lòng nhập tên đề thi.")]
+        [StringLength(200, ErrorMessage = "Tên đề thi không được vượt quá 200 ký tự.")]
+        [Display(Name = "Tên đề thi")]
         public string Title { get; set; } = string.Empty;
+
+        [StringLength(4000, ErrorMessage = "Hướng dẫn không được vượt quá 4.000 ký tự.")]
+        [Display(Name = "Hướng dẫn làm bài")]
+        public string? Instructions { get; set; }
 
         [Range(1, 600, ErrorMessage = "Thời lượng phải từ 1 đến 600 phút.")]
         [Display(Name = "Thời lượng")]
@@ -58,10 +76,11 @@ namespace LT_Web_Nhom4.Models.ViewModels
         [Display(Name = "Kết thúc")]
         public DateTime EndAt { get; set; } = DateTime.Now.AddHours(2);
 
-        [Range(1, 1000, ErrorMessage = "Điểm tối đa phải lớn hơn 0.")]
+        [Range(0.01, 1000, ErrorMessage = "Điểm tối đa phải lớn hơn 0.")]
         [Display(Name = "Điểm tối đa")]
         public decimal MaxScore { get; set; } = 10;
 
+        [Range(0, 1000, ErrorMessage = "Điểm đạt không hợp lệ.")]
         [Display(Name = "Điểm đạt")]
         public decimal? PassingScore { get; set; }
 
@@ -74,11 +93,12 @@ namespace LT_Web_Nhom4.Models.ViewModels
         [Display(Name = "Yêu cầu toàn màn hình")]
         public bool RequireFullscreen { get; set; }
 
-        [Display(Name = "Số lần rời màn hình tối đa")]
-        public int? MaxTabSwitchCount { get; set; } = 3;
+        [Range(1, 20, ErrorMessage = "Giới hạn cảnh báo phải từ 1 đến 20.")]
+        [Display(Name = "Giới hạn cảnh báo")]
+        public int? MaxWarningCount { get; set; } = 3;
 
-        [Display(Name = "Trạng thái")]
-        public ExamStatus Status { get; set; } = ExamStatus.Draft;
+        [Display(Name = "Công bố kết quả")]
+        public ResultReleaseMode ResultReleaseMode { get; set; } = ResultReleaseMode.AfterExamClosed;
 
         public IList<ExamBuilderQuestionInputModel> Questions { get; set; } = new List<ExamBuilderQuestionInputModel>
         {
@@ -88,26 +108,29 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
     public class ExamBuilderQuestionInputModel
     {
+        public int? QuestionId { get; set; }
+
         [Required(ErrorMessage = "Vui lòng nhập nội dung câu hỏi.")]
-        [Display(Name = "Nội dung câu hỏi")]
+        [StringLength(4000, ErrorMessage = "Câu hỏi không được vượt quá 4.000 ký tự.")]
         public string Content { get; set; } = string.Empty;
 
-        [Display(Name = "Loại câu hỏi")]
         public QuestionType QuestionType { get; set; } = QuestionType.SingleChoice;
 
-        [Display(Name = "Điểm")]
+        [Range(0.01, 1000, ErrorMessage = "Điểm câu hỏi phải lớn hơn 0.")]
         public decimal? Score { get; set; }
 
-        [Display(Name = "Độ khó")]
         public QuestionDifficulty Difficulty { get; set; } = QuestionDifficulty.Medium;
 
-        [Display(Name = "Đường dẫn ảnh")]
-        public string? ImageUrl { get; set; }
+        public IFormFile? ImageFile { get; set; }
 
-        [Display(Name = "Đường dẫn video")]
+        public string? ExistingImageUrl { get; set; }
+
+        public bool RemoveImage { get; set; }
+
+        [Url(ErrorMessage = "Liên kết video không hợp lệ.")]
         public string? VideoUrl { get; set; }
 
-        [Display(Name = "Giải thích")]
+        [StringLength(4000, ErrorMessage = "Giải thích không được vượt quá 4.000 ký tự.")]
         public string? Explanation { get; set; }
 
         public IList<ExamBuilderOptionInputModel> Options { get; set; } = new List<ExamBuilderOptionInputModel>();
@@ -118,10 +141,10 @@ namespace LT_Web_Nhom4.Models.ViewModels
             {
                 Options =
                 {
-                    new ExamBuilderOptionInputModel { Content = string.Empty, IsCorrect = true },
-                    new ExamBuilderOptionInputModel { Content = string.Empty },
-                    new ExamBuilderOptionInputModel { Content = string.Empty },
-                    new ExamBuilderOptionInputModel { Content = string.Empty }
+                    new ExamBuilderOptionInputModel { IsCorrect = true },
+                    new ExamBuilderOptionInputModel(),
+                    new ExamBuilderOptionInputModel(),
+                    new ExamBuilderOptionInputModel()
                 }
             };
         }
@@ -129,7 +152,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
     public class ExamBuilderOptionInputModel
     {
-        [Display(Name = "Đáp án")]
+        public int? OptionId { get; set; }
+
         public string Content { get; set; } = string.Empty;
 
         public bool IsCorrect { get; set; }
@@ -139,11 +163,17 @@ namespace LT_Web_Nhom4.Models.ViewModels
     {
         public int Id { get; set; }
 
+        public string Code { get; set; } = string.Empty;
+
         public string Title { get; set; } = string.Empty;
 
         public string SubjectName { get; set; } = string.Empty;
 
         public string ClassName { get; set; } = string.Empty;
+
+        public string? CoverImageUrl { get; set; }
+
+        public string? Instructions { get; set; }
 
         public DateTime StartAt { get; set; }
 
@@ -153,6 +183,12 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public int QuestionCount { get; set; }
 
+        public decimal MaxScore { get; set; }
+
+        public bool RequireFullscreen { get; set; }
+
+        public int? MaxWarningCount { get; set; }
+
         public DateTime Now { get; set; } = DateTime.Now;
 
         public bool IsOpen => Now >= StartAt && Now <= EndAt;
@@ -160,19 +196,15 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public bool IsClosed => Now > EndAt;
 
         public TimeSpan TimeUntilStart => StartAt > Now ? StartAt - Now : TimeSpan.Zero;
-
-        public IList<string> Rules { get; set; } = new List<string>
-        {
-            "Doc ky thong tin de thi truoc khi bat dau.",
-            "Moi cau hoi chi chon mot dap an.",
-            "Khong tat trinh duyet trong khi dang lam bai.",
-            "Kiem tra tien do tra loi truoc khi nop bai."
-        };
     }
 
     public class ExamManageViewModel
     {
         public int Id { get; set; }
+
+        public int ClassId { get; set; }
+
+        public string Code { get; set; } = string.Empty;
 
         public string Title { get; set; } = string.Empty;
 
@@ -180,11 +212,23 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public string ClassName { get; set; } = string.Empty;
 
+        public ExamStatus Status { get; set; }
+
+        public ResultReleaseMode ResultReleaseMode { get; set; }
+
+        public bool ResultsReleased { get; set; }
+
+        public bool CanEditContent { get; set; }
+
         public DateTime StartAt { get; set; }
 
         public DateTime EndAt { get; set; }
 
         public int DurationMinutes { get; set; }
+
+        public decimal MaxScore { get; set; }
+
+        public int? MaxWarningCount { get; set; }
 
         public int QuestionCount { get; set; }
 
@@ -203,6 +247,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public IList<ExamAttemptSummaryViewModel> Attempts { get; set; } = new List<ExamAttemptSummaryViewModel>();
 
         public IList<ExamQuestionManageViewModel> Questions { get; set; } = new List<ExamQuestionManageViewModel>();
+
+        public IList<AntiCheatEventItemViewModel> Warnings { get; set; } = new List<AntiCheatEventItemViewModel>();
     }
 
     public class ExamParticipantViewModel
@@ -212,8 +258,6 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public string DisplayName { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
-
-        public string Status { get; set; } = string.Empty;
     }
 
     public class ExamAttemptSummaryViewModel
@@ -228,7 +272,9 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public decimal? Score { get; set; }
 
-        public string Status { get; set; } = string.Empty;
+        public ExamAttemptStatus Status { get; set; }
+
+        public int WarningCount { get; set; }
     }
 
     public class ExamQuestionManageViewModel
@@ -240,6 +286,15 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public decimal Score { get; set; }
 
         public int OptionCount { get; set; }
+    }
+
+    public class AntiCheatEventItemViewModel
+    {
+        public string StudentName { get; set; } = string.Empty;
+
+        public AntiCheatEventType EventType { get; set; }
+
+        public DateTime OccurredAt { get; set; }
     }
 
     public class ExamStartViewModel
@@ -254,7 +309,13 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public int DurationMinutes { get; set; }
 
-        public DateTime StartedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
+
+        public bool RequireFullscreen { get; set; }
+
+        public int WarningCount { get; set; }
+
+        public int? MaxWarningCount { get; set; }
 
         public IList<ExamQuestionViewModel> Questions { get; set; } = new List<ExamQuestionViewModel>();
     }
@@ -265,7 +326,15 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public string Content { get; set; } = string.Empty;
 
+        public string? ImageUrl { get; set; }
+
+        public string? VideoUrl { get; set; }
+
+        public QuestionType QuestionType { get; set; }
+
         public decimal Score { get; set; }
+
+        public IList<int> SelectedOptionIds { get; set; } = new List<int>();
 
         public IList<ExamOptionViewModel> Options { get; set; } = new List<ExamOptionViewModel>();
     }
@@ -277,23 +346,54 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public string Content { get; set; } = string.Empty;
     }
 
-    public class ExamSubmitViewModel
-    {
-        [Required]
-        public int ExamId { get; set; }
-
-        [Required]
-        public int AttemptId { get; set; }
-
-        [MinLength(1)]
-        public IList<AttemptAnswerInputModel> Answers { get; set; } = new List<AttemptAnswerInputModel>();
-    }
-
     public class AttemptAnswerInputModel
     {
         [Required]
+        public int AttemptId { get; set; }
+
+        [Required]
         public int QuestionId { get; set; }
 
-        public int? SelectedOptionId { get; set; }
+        public IList<int> SelectedOptionIds { get; set; } = new List<int>();
+    }
+
+    public class ExamSubmitViewModel
+    {
+        [Required]
+        public int AttemptId { get; set; }
+    }
+
+    public class AntiCheatEventInputModel
+    {
+        [Required]
+        public int AttemptId { get; set; }
+
+        [Required]
+        public AntiCheatEventType EventType { get; set; }
+    }
+
+    public class ExamResultViewModel
+    {
+        public int AttemptId { get; set; }
+
+        public string ExamTitle { get; set; } = string.Empty;
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public decimal? Score { get; set; }
+
+        public decimal MaxScore { get; set; }
+
+        public decimal? PassingScore { get; set; }
+
+        public int CorrectCount { get; set; }
+
+        public int QuestionCount { get; set; }
+
+        public bool IsReleased { get; set; }
+
+        public bool IsAutoSubmitted { get; set; }
+
+        public DateTime? SubmittedAt { get; set; }
     }
 }

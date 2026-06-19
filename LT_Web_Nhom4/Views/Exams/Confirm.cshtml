@@ -1,65 +1,27 @@
 @model ExamRoomViewModel
 
-@{
-    ViewData["Title"] = "Xac nhan vao phong thi";
-}
+@{ ViewData["Title"] = "Xác nhận làm bài"; }
+@section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
-}
-
-<section class="exam-room-shell">
-    <div class="container">
-        <div class="exam-room-card">
-            <div class="exam-room-main">
-                <span class="exam-room-kicker">Phong thi da mo</span>
-                <h1>@Model.Title</h1>
-                <p>@Model.SubjectName - @Model.ClassName</p>
-
-                <div class="exam-room-meta">
-                    <div>
-                        <span>Bat dau</span>
-                        <strong>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
-                    </div>
-                    <div>
-                        <span>Ket thuc</span>
-                        <strong>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</strong>
-                    </div>
-                    <div>
-                        <span>Thoi luong</span>
-                        <strong>@Model.DurationMinutes phut</strong>
-                    </div>
-                    <div>
-                        <span>So cau</span>
-                        <strong>@Model.QuestionCount cau</strong>
-                    </div>
+<section class="waiting-page">
+    <div class="container waiting-container">
+        <a asp-controller="Classes" asp-action="Index" class="back-link"><i class="ri-arrow-left-line"></i> Lớp học của tôi</a>
+        <div class="waiting-layout confirm-layout">
+            <main class="waiting-main">
+                @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl)) { <img src="@Model.CoverImageUrl" class="waiting-cover" alt="Ảnh lớp @Model.ClassName" /> }
+                <div class="waiting-copy">
+                    <div class="manage-labels"><span class="status-chip open">Đang mở</span><code>@Model.Code</code></div>
+                    <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
+                    <div class="room-facts"><div><span>Thời lượng</span><strong>@Model.DurationMinutes phút</strong></div><div><span>Số câu</span><strong>@Model.QuestionCount câu</strong></div><div><span>Điểm tối đa</span><strong>@Model.MaxScore.ToString("0.##")</strong></div><div><span>Cảnh báo tối đa</span><strong>@(Model.MaxWarningCount?.ToString() ?? "Không giới hạn")</strong></div></div>
+                    <section class="exam-instructions"><h2>Hướng dẫn trước khi làm bài</h2><p>@(string.IsNullOrWhiteSpace(Model.Instructions) ? "Đọc kỹ từng câu hỏi, kiểm tra đáp án và thời gian còn lại trước khi nộp bài." : Model.Instructions)</p><ul><li>Mỗi học viên chỉ có một lượt làm bài.</li><li>Đáp án được tự động lưu sau mỗi thay đổi.</li><li>Đạt giới hạn cảnh báo sẽ tự động nộp bài.</li></ul></section>
                 </div>
-
-                <div class="exam-rule-box">
-                    <h2>Quy dinh truoc khi lam bai</h2>
-                    <ul>
-                        @foreach (var rule in Model.Rules)
-                        {
-                            <li>@rule</li>
-                        }
-                    </ul>
-                </div>
-            </div>
-
-            <aside class="exam-room-side">
-                <div class="exam-status-pill is-open">San sang</div>
-                <h2>Xac nhan bat dau</h2>
-                <p>Bai thi se tinh thoi gian sau khi ban vao phong lam bai.</p>
-
-                <form asp-controller="Exams" asp-action="Start" asp-route-id="@Model.Id" method="post">
+            </main>
+            <aside class="waiting-side">
+                <i class="ri-shield-check-line waiting-icon success"></i><h2>Sẵn sàng bắt đầu?</h2><p>Đồng hồ sẽ tính ngay sau khi bạn xác nhận.</p>
+                <form asp-action="Start" asp-route-id="@Model.Id" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    <label class="exam-confirm-check">
-                        <input type="checkbox" name="acceptRules" value="true" />
-                        <span>Toi da doc quy dinh va san sang lam bai.</span>
-                    </label>
-
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Bat dau lam bai</button>
-                    <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Quay lai danh sach</a>
+                    <label class="confirm-check"><input type="checkbox" name="acceptRules" value="true" /><span>Tôi đã đọc hướng dẫn và sẵn sàng làm bài.</span></label>
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Bắt đầu làm bài</button>
                 </form>
             </aside>
         </div>

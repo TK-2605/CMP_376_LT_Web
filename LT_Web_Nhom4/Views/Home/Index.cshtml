@@ -1,115 +1,53 @@
 @model WebHomeViewModel
 
-@{
-    ViewData["Title"] = "Trang chu";
+@{ ViewData["Title"] = Model.IsAuthenticated ? "Bảng điều khiển" : "Trang chủ"; }
+
+@if (!Model.IsAuthenticated)
+{
+    <section class="student-hero">
+        <div class="container student-hero-inner">
+            <div class="student-hero-copy">
+                <span class="hero-brand">QuizHub</span>
+                <h1>Thi trực tuyến rõ ràng, riêng tư và đúng thời gian.</h1>
+                <p>Lớp học chỉ mở bằng mã mời. Mỗi bài thi có phòng chờ, tự lưu đáp án và kết quả được quản lý tập trung.</p>
+                <div class="hero-actions"><a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-light btn-lg">Đăng nhập</a><a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg">Tạo tài khoản</a></div>
+            </div>
+            <div class="hero-feature-list">
+                <article><span>01</span><div><h2>Lớp học riêng tư</h2><p>Chỉ thành viên có mã mời mới thấy nội dung lớp.</p></div></article>
+                <article><span>02</span><div><h2>Phòng thi tập trung</h2><p>Thời gian, tiến độ và đáp án hiển thị nhất quán.</p></div></article>
+                <article><span>03</span><div><h2>Kết quả minh bạch</h2><p>Bài làm được chấm và lưu theo từng lượt thi.</p></div></article>
+            </div>
+        </div>
+    </section>
+    <section class="home-next-section"><div class="container"><span class="workspace-kicker">Bắt đầu</span><h2>Đăng nhập để mở lớp học của bạn</h2></div></section>
 }
+else
+{
+    <section class="workspace-page dashboard-page">
+        <div class="container">
+            @if (TempData["ClassMessage"] is string message) { <div class="alert alert-success workspace-alert">@message</div> }
+            <header class="dashboard-greeting"><div><span class="workspace-kicker">Không gian cá nhân</span><h1>Chào mừng trở lại</h1><p>Tiếp tục quản lý lớp hoặc chuẩn bị cho bài thi sắp tới.</p></div><a asp-controller="Classes" asp-action="Create" class="btn btn-primary"><i class="ri-add-line"></i> Tạo lớp</a></header>
 
-<section class="student-hero">
-    <div class="container">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-                <span class="badge rounded-pill bg-light text-primary mb-4 px-3 py-2">QuizHub</span>
-                <h1>Lam bai thi truc tuyen ro rang va dung thoi gian.</h1>
-                <p class="lead mt-4 mb-5">
-                    Sinh vien vao dung de thi cua lop, theo doi thoi gian con lai va nop bai trong mot giao dien gon gang, de tap trung.
-                </p>
-                <div class="d-flex flex-wrap gap-3">
-                    @if (User.Identity?.IsAuthenticated == true)
+            <form asp-controller="Classes" asp-action="Join" method="post" class="dashboard-join">
+                <div><i class="ri-key-2-line"></i><span><strong>Tham gia lớp học</strong><small>Nhập mã gồm ba nhóm ký tự.</small></span></div>
+                <div class="input-group"><input asp-for="JoinClass.Code" name="Code" class="form-control" placeholder="ABC-DEF-GHJ" data-class-code /><button class="btn btn-primary" type="submit">Tham gia</button></div>
+            </form>
+
+            <section class="dashboard-section">
+                <div class="workspace-section-heading"><h2>Đề thi sắp tới</h2><a asp-controller="Exams" asp-action="Index">Xem tất cả <i class="ri-arrow-right-line"></i></a></div>
+                <div class="upcoming-strip">
+                    @if (Model.UpcomingExams.Count == 0) { <div class="empty-state compact"><i class="ri-calendar-line"></i><strong>Chưa có lịch thi sắp tới</strong><span>Các đề đã công bố sẽ xuất hiện tại đây.</span></div> }
+                    @foreach (var exam in Model.UpcomingExams)
                     {
-                        <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Phong thi cua toi</a>
-                        <a asp-controller="Classes" asp-action="Create" class="btn btn-outline-light btn-lg px-4">Tao lop hoc</a>
-                    }
-                    else
-                    {
-                        <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Xem de thi</a>
-                        <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-4">Dang ky</a>
+                        <article><time><strong>@exam.StartAt.ToString("dd")</strong><span>Tháng @exam.StartAt.ToString("MM")</span></time><div><span>@exam.ClassName</span><h3>@exam.Title</h3><p>@exam.StartAt.ToString("HH:mm") · @exam.DurationMinutes phút · @exam.QuestionCount câu</p></div><a asp-controller="Exams" asp-action="@(exam.IsOwnedByCurrentUser ? "Manage" : "Room")" asp-route-id="@exam.Id" class="btn btn-outline-primary">Mở</a></article>
                     }
                 </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="student-hero-card p-4 p-lg-5">
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <span class="student-feature-icon bg-white text-primary">01</span>
-                        <div>
-                            <h2 class="h4 mb-1">De thi dung lop</h2>
-                            <p class="mb-0 text-white-50">Chi hien cac bai thi phu hop voi lop cua ban.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <span class="student-feature-icon bg-white text-primary">02</span>
-                        <div>
-                            <h2 class="h4 mb-1">Thoi gian ro rang</h2>
-                            <p class="mb-0 text-white-50">Dong ho dem nguoc giup ban chu dong khi lam bai.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="student-feature-icon bg-white text-primary">03</span>
-                        <div>
-                            <h2 class="h4 mb-1">Ket qua de theo doi</h2>
-                            <p class="mb-0 text-white-50">Sau khi nop bai, ket qua duoc luu de giang vien xem lai.</p>
-                        </div>
-                    </div>
-                </div>
+            </section>
+
+            <div class="dashboard-class-columns">
+                <section class="dashboard-section"><div class="workspace-section-heading"><h2>Lớp tôi tạo</h2><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.OwnedClasses.Count == 0) { <p class="muted-copy">Bạn chưa tạo lớp học.</p> } @foreach (var item in Model.OwnedClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-icon"><i class="ri-graduation-cap-line"></i></span><span><strong>@item.Name</strong><small>@item.SubjectName · @item.MemberCount học viên</small></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
+                <section class="dashboard-section"><div class="workspace-section-heading"><h2>Lớp tôi tham gia</h2><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.ParticipatingClasses.Count == 0) { <p class="muted-copy">Bạn chưa tham gia lớp học.</p> } @foreach (var item in Model.ParticipatingClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-icon teal"><i class="ri-book-open-line"></i></span><span><strong>@item.Name</strong><small>@item.SubjectName · @item.ExamCount đề thi</small></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
             </div>
         </div>
-    </div>
-</section>
-
-<section class="student-section">
-    <div class="container">
-        <div class="row align-items-end mb-5">
-            <div class="col-lg-7">
-                <div class="student-eyebrow mb-2">Mon hoc</div>
-                <h2 class="display-6 fw-bold">Mon hoc noi bat</h2>
-            </div>
-            <div class="col-lg-5 text-lg-end">
-                <a asp-controller="Exams" asp-action="Index" class="btn btn-primary">Tim de thi</a>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            @foreach (var subject in Model.FeaturedSubjects)
-            {
-                <div class="col-md-6">
-                    <article class="card student-subject-card h-100">
-                        <img src="@subject.ImageUrl" alt="@subject.Name" />
-                        <div class="card-body p-4">
-                            <span class="badge rounded-pill text-bg-light mb-3">@subject.Code</span>
-                            <h3 class="h4 fw-bold">@subject.Name</h3>
-                            <p class="text-muted">@subject.Description</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold">@subject.ExamCount de thi</span>
-                                <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-primary">Xem</a>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-            }
-        </div>
-    </div>
-</section>
-
-<section class="student-section bg-light">
-    <div class="container">
-        <div class="student-eyebrow mb-2">Sap dien ra</div>
-        <h2 class="display-6 fw-bold mb-5">De thi sap dien ra</h2>
-
-        <div class="row g-4">
-            @foreach (var exam in Model.UpcomingExams)
-            {
-                <div class="col-lg-6">
-                    <div class="card student-exam-card h-100">
-                        <div class="card-body p-4">
-                            <span class="badge rounded-pill mb-3">@exam.SubjectName</span>
-                            <h3 class="h4 fw-bold">@exam.Title</h3>
-                            <p class="text-muted mb-4">
-                                Bat dau @exam.StartAt.ToString("dd/MM/yyyy HH:mm") - @exam.DurationMinutes phut
-                            </p>
-                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">Vao phong thi</a>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-</section>
+    </section>
+}

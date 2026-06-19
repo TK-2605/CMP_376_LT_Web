@@ -1,105 +1,93 @@
 @model ClassListViewModel
 
 @{
-    ViewData["Title"] = "Lớp học";
+    ViewData["Title"] = "Lớp học của tôi";
 }
 
-<section class="student-section bg-light">
+<section class="workspace-page">
     <div class="container">
         @if (TempData["ClassMessage"] is string message)
         {
-            <div class="alert alert-info border">@message</div>
+            <div class="alert alert-success workspace-alert">@message</div>
         }
 
-        <div class="row align-items-end g-4 mb-5">
-            <div class="col-lg-7">
-                <div class="student-eyebrow mb-2">Lớp học</div>
-                <h1 class="display-6 fw-bold">Lớp của bạn</h1>
-                <p class="text-muted mb-0">Lớp không hiển thị công khai. Người học tham gia bằng mã lớp, người tạo lớp quản lý đề thi và thành viên trong lớp đó.</p>
+        <header class="workspace-header">
+            <div>
+                <span class="workspace-kicker">Không gian học tập riêng tư</span>
+                <h1>Lớp học của tôi</h1>
+                <p>Chỉ lớp bạn tạo hoặc đã tham gia mới xuất hiện tại đây.</p>
             </div>
-            <div class="col-lg-5">
-                <form asp-controller="Classes" asp-action="Join" method="post" class="class-join-box">
+            <a asp-action="Create" class="btn btn-primary"><i class="ri-add-line" aria-hidden="true"></i> Tạo lớp</a>
+        </header>
+
+        <div class="workspace-tools">
+            <form asp-action="Join" method="post" class="join-code-form">
+                <div>
                     <label asp-for="JoinClass.Code" class="form-label">Tham gia bằng mã lớp</label>
                     <div class="input-group">
-                        <input asp-for="JoinClass.Code" name="Code" class="form-control" placeholder="Nhập mã lớp" autocomplete="off" />
+                        <span class="input-group-text"><i class="ri-key-2-line" aria-hidden="true"></i></span>
+                        <input asp-for="JoinClass.Code" name="Code" class="form-control" placeholder="ABC-DEF-GHJ" autocomplete="off" data-class-code />
                         <button type="submit" class="btn btn-primary">Tham gia</button>
                     </div>
                     <span asp-validation-for="JoinClass.Code" class="text-danger"></span>
-                </form>
+                </div>
+            </form>
+            <label class="class-filter">
+                <span>Tìm trong lớp của tôi</span>
+                <span class="input-with-icon"><i class="ri-search-line" aria-hidden="true"></i><input class="form-control" type="search" placeholder="Tên lớp hoặc môn học" data-class-filter /></span>
+            </label>
+        </div>
+
+        <section class="workspace-section">
+            <div class="workspace-section-heading"><h2>Lớp tôi tạo</h2><span>@Model.OwnedClasses.Count lớp</span></div>
+            <div class="class-grid" data-class-grid>
+                @if (Model.OwnedClasses.Count == 0)
+                {
+                    <div class="empty-state"><i class="ri-layout-grid-line"></i><strong>Chưa có lớp nào</strong><span>Tạo lớp đầu tiên để bắt đầu soạn đề.</span></div>
+                }
+                @foreach (var classRoom in Model.OwnedClasses)
+                {
+                    <article class="class-tile" data-class-card data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
+                        <div class="class-tile-cover">
+                            @if (!string.IsNullOrWhiteSpace(classRoom.CoverImageUrl)) { <img src="@classRoom.CoverImageUrl" alt="Ảnh bìa lớp @classRoom.Name" /> }
+                            else { <span><i class="ri-graduation-cap-line" aria-hidden="true"></i></span> }
+                        </div>
+                        <div class="class-tile-body">
+                            <div class="class-tile-topline"><span class="status-chip owner">Chủ lớp</span><code>@classRoom.Code</code></div>
+                            <h3>@classRoom.Name</h3><p>@classRoom.SubjectName</p>
+                            <div class="class-tile-meta"><span>@classRoom.ExamCount đề thi</span><span>@classRoom.MemberCount học viên</span></div>
+                            <a asp-action="Details" asp-route-id="@classRoom.Id" class="btn btn-primary w-100">Mở lớp</a>
+                        </div>
+                    </article>
+                }
             </div>
-        </div>
+        </section>
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h4 fw-bold mb-0">Lớp tôi tạo</h2>
-            <a asp-controller="Classes" asp-action="Create" class="btn btn-primary">Tạo lớp</a>
-        </div>
-
-        <div class="row g-4 mb-5">
-            @if (Model.OwnedClasses.Count == 0)
-            {
-                <div class="col-12">
-                    <div class="alert alert-light border">Bạn chưa tạo lớp nào.</div>
-                </div>
-            }
-            @foreach (var classRoom in Model.OwnedClasses)
-            {
-                <div class="col-lg-6">
-                    <article class="card class-card h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between gap-3 mb-3">
-                                <span class="badge rounded-pill text-bg-primary">Người tạo lớp</span>
-                                <span class="class-code">@classRoom.Code</span>
-                            </div>
-                            <h3 class="h4 fw-bold">@classRoom.Name</h3>
-                            <p class="text-muted">@classRoom.SubjectName</p>
-                            <div class="class-card-meta">
-                                <span>@classRoom.ExamCount đề thi</span>
-                                <span>@classRoom.MemberCount học viên</span>
-                                <span>@(classRoom.AcademicYear ?? "Chưa đặt năm học")</span>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 mt-4">
-                                <a asp-controller="Classes" asp-action="Details" asp-route-id="@classRoom.Id" class="btn btn-primary">Vào lớp</a>
-                                <a asp-controller="Exams" asp-action="CreateInClass" asp-route-classId="@classRoom.Id" class="btn btn-outline-primary">Tạo đề</a>
-                            </div>
+        <section class="workspace-section">
+            <div class="workspace-section-heading"><h2>Lớp tôi tham gia</h2><span>@Model.ParticipatingClasses.Count lớp</span></div>
+            <div class="class-grid" data-class-grid>
+                @if (Model.ParticipatingClasses.Count == 0)
+                {
+                    <div class="empty-state"><i class="ri-key-2-line"></i><strong>Chưa tham gia lớp</strong><span>Nhập mã lớp do người tạo cung cấp.</span></div>
+                }
+                @foreach (var classRoom in Model.ParticipatingClasses)
+                {
+                    <article class="class-tile" data-class-card data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
+                        <div class="class-tile-cover">
+                            @if (!string.IsNullOrWhiteSpace(classRoom.CoverImageUrl)) { <img src="@classRoom.CoverImageUrl" alt="Ảnh bìa lớp @classRoom.Name" /> }
+                            else { <span><i class="ri-book-open-line" aria-hidden="true"></i></span> }
+                        </div>
+                        <div class="class-tile-body">
+                            <div class="class-tile-topline"><span class="status-chip member">Thành viên</span><code>@classRoom.Code</code></div>
+                            <h3>@classRoom.Name</h3><p>@classRoom.SubjectName</p>
+                            <div class="class-tile-meta"><span>@classRoom.ExamCount đề thi</span><span>@classRoom.MemberCount học viên</span></div>
+                            <a asp-action="Details" asp-route-id="@classRoom.Id" class="btn btn-outline-primary w-100">Vào lớp</a>
                         </div>
                     </article>
-                </div>
-            }
-        </div>
-
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h4 fw-bold mb-0">Lớp tôi tham gia</h2>
-            <span class="text-muted small">@Model.ParticipatingClasses.Count lớp</span>
-        </div>
-
-        <div class="row g-4">
-            @if (Model.ParticipatingClasses.Count == 0)
-            {
-                <div class="col-12">
-                    <div class="alert alert-light border">Bạn chưa tham gia lớp nào.</div>
-                </div>
-            }
-            @foreach (var classRoom in Model.ParticipatingClasses)
-            {
-                <div class="col-lg-6">
-                    <article class="card class-card h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between gap-3 mb-3">
-                                <span class="badge rounded-pill text-bg-success">Đang tham gia</span>
-                                <span class="class-code">@classRoom.Code</span>
-                            </div>
-                            <h3 class="h4 fw-bold">@classRoom.Name</h3>
-                            <p class="text-muted">@classRoom.SubjectName</p>
-                            <div class="class-card-meta">
-                                <span>@classRoom.ExamCount đề thi</span>
-                                <span>@classRoom.MemberCount học viên</span>
-                                <span>@(classRoom.AcademicYear ?? "Chưa đặt năm học")</span>
-                            </div>
-                            <a asp-controller="Classes" asp-action="Details" asp-route-id="@classRoom.Id" class="btn btn-primary mt-4">Vào lớp</a>
-                        </div>
-                    </article>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        </section>
     </div>
 </section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

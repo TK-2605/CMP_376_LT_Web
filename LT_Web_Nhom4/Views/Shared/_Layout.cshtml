@@ -1,11 +1,12 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - LT_Web_Nhom4</title>
+    <title>@ViewData["Title"] - QuizHub</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/vendor/fonts/iconify-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/crud.css" asp-append-version="true" />
@@ -24,11 +25,13 @@
                 <div class="navbar-collapse collapse">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chu</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">De thi</a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Classes" asp-action="Index">Lớp học</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">Đề thi</a></li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -43,7 +46,7 @@
 
     <footer class="border-top py-4 text-muted">
         <div class="container">
-            &copy; 2026 - QuizHub - He thong thi trac nghiem truc tuyen
+            &copy; @DateTime.Now.Year QuizHub · Hệ thống thi trắc nghiệm trực tuyến
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

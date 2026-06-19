@@ -1,7 +1,7 @@
 @model CrudDeleteViewModel
 
 @{
-    ViewData["Title"] = $"Xoa {Model.Title}";
+    ViewData["Title"] = $"Xoá {Model.Title}";
     var visibleFields = Model.Fields.Where(field => field.ShowInDetails).Take(6).ToList();
 }
 
@@ -9,9 +9,9 @@
     <div class="admin-form-shell">
         <div class="admin-crud-header">
             <div>
-                <span class="admin-crud-kicker text-danger">Xac nhan xoa</span>
-                <h1>Xoa @Model.Title</h1>
-                <p>Ban ghi se bi xoa khoi khu vuc quan tri sau khi xac nhan.</p>
+                <span class="admin-crud-kicker text-danger">Xác nhận xóa</span>
+                <h1>Xoá @Model.Title</h1>
+                <p>Bản ghi sẽ bị xóa khỏi khu vực quản trị sau khi xác nhận.</p>
             </div>
         </div>
 
@@ -31,11 +31,11 @@
                     <div class="admin-form-actions">
                         <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">
                             <i class="icon-base ri ri-arrow-left-line me-1"></i>
-                            Huy
+                            Huỷ
                         </a>
                         <button type="submit" class="btn btn-danger">
                             <i class="icon-base ri ri-delete-bin-6-line me-1"></i>
-                            Xoa
+                            Xoá
                         </button>
                     </div>
                 </form>

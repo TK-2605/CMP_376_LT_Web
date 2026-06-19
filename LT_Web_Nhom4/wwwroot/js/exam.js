@@ -1,115 +1,160 @@
 (() => {
-  const form = document.querySelector('[data-exam-form]');
-  if (!form) {
+  const waitingRoom = document.querySelector('[data-waiting-room]');
+  if (waitingRoom) {
+    const startAt = new Date(waitingRoom.dataset.startAt).getTime();
+    const countdown = waitingRoom.querySelector('[data-wait-countdown]');
+    const updateWaiting = () => {
+      const remaining = Math.max(Math.floor((startAt - Date.now()) / 1000), 0);
+      const hours = String(Math.floor(remaining / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
+      const seconds = String(remaining % 60).padStart(2, '0');
+      if (countdown) countdown.textContent = hours + ':' + minutes + ':' + seconds;
+      if (remaining === 0) window.location.assign(waitingRoom.dataset.refreshUrl);
+    };
+    updateWaiting();
+    window.setInterval(updateWaiting, 1000);
     return;
   }
 
-  const durationMinutes = Number(form.dataset.durationMinutes || '0');
-  const startedAt = new Date(form.dataset.startedAt || new Date().toISOString()).getTime();
-  const totalSeconds = Math.max(durationMinutes * 60, 1);
-  const timerLabel = document.querySelector('[data-exam-timer-label]');
-  const timerBar = document.querySelector('[data-exam-timer-bar]');
-  const autosaveLabel = document.querySelector('[data-exam-autosave]');
-  let isSubmitting = false;
-  let autosaveTimer = null;
+  const app = document.querySelector('[data-exam-app]');
+  if (!app) return;
 
-  const updateProgressDots = () => {
-    document.querySelectorAll('[data-question-id]').forEach((questionElement) => {
-      const questionId = questionElement.getAttribute('data-question-id');
-      const dot = document.querySelector(`[data-progress-question="${questionId}"]`);
-      const answered = questionElement.querySelector('input[type="radio"]:checked');
-      if (dot) {
-        dot.classList.toggle('is-answered', Boolean(answered));
-      }
+  const questions = Array.from(app.querySelectorAll('[data-take-question]'));
+  const submitForm = app.querySelector('[data-submit-form]');
+  const antiforgeryToken = submitForm.querySelector('input[name="__RequestVerificationToken"]').value;
+  const expiresAt = new Date(app.dataset.expiresAt).getTime();
+  const totalSeconds = Math.max(Number(app.dataset.durationMinutes || 1) * 60, 1);
+  let currentQuestion = 0;
+  let isFinishing = false;
+  let saveTimer = null;
+  const warningTimes = new Map();
+
+  const selectedIds = (question) => Array.from(question.querySelectorAll('input:checked')).map((input) => input.value);
+  const answeredCount = () => questions.filter((question) => selectedIds(question).length > 0).length;
+
+  const showQuestion = (index) => {
+    currentQuestion = Math.max(0, Math.min(index, questions.length - 1));
+    questions.forEach((question, questionIndex) => { question.hidden = questionIndex !== currentQuestion; });
+    app.querySelectorAll('[data-take-jump]').forEach((button, buttonIndex) => {
+      button.classList.toggle('active', buttonIndex === currentQuestion);
+      button.classList.toggle('answered', selectedIds(questions[buttonIndex]).length > 0);
     });
+    app.querySelector('[data-take-previous]').disabled = currentQuestion === 0;
+    app.querySelector('[data-take-next]').disabled = currentQuestion === questions.length - 1;
+    const count = answeredCount();
+    app.querySelector('[data-answered-count]').textContent = count;
+    app.querySelector('[data-progress-label]').textContent = count + '/' + questions.length;
+  };
+
+  const setSaveState = (message, isError) => {
+    const label = app.querySelector('[data-save-state]');
+    label.textContent = message;
+    label.closest('.take-save-state').classList.toggle('error', Boolean(isError));
+  };
+
+  const autosave = async (question) => {
+    if (isFinishing) return;
+    const formData = new FormData();
+    formData.append('__RequestVerificationToken', antiforgeryToken);
+    formData.append('AttemptId', app.dataset.attemptId);
+    formData.append('QuestionId', question.dataset.questionId);
+    selectedIds(question).forEach((id) => formData.append('SelectedOptionIds', id));
+    setSaveState('Đang lưu đáp án...', false);
+    try {
+      const response = await fetch(app.dataset.autosaveUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await response.json();
+      if (response.status === 409 || data.locked) {
+        isFinishing = true;
+        window.location.assign(app.dataset.resultUrl);
+        return;
+      }
+      if (!response.ok) throw new Error(data.message || 'Không thể lưu');
+      setSaveState('Đã lưu lúc ' + data.savedAt, false);
+    } catch {
+      setSaveState('Chưa lưu được, hệ thống sẽ thử lại khi bạn đổi đáp án.', true);
+    }
+  };
+
+  const recordWarning = async (eventType) => {
+    if (isFinishing) return;
+    const now = Date.now();
+    if (now - (warningTimes.get(eventType) || 0) < 3000) return;
+    warningTimes.set(eventType, now);
+    const formData = new FormData();
+    formData.append('__RequestVerificationToken', antiforgeryToken);
+    formData.append('AttemptId', app.dataset.attemptId);
+    formData.append('EventType', eventType);
+    try {
+      const response = await fetch(app.dataset.warningUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }, keepalive: true });
+      const data = await response.json();
+      if (typeof data.warningCount === 'number') app.querySelector('[data-warning-count]').textContent = data.warningCount;
+      if (data.locked) {
+        isFinishing = true;
+        window.location.assign(app.dataset.resultUrl);
+      }
+    } catch {
+      // A transient warning request must not interrupt the exam UI.
+    }
   };
 
   const updateTimer = () => {
-    const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
-    const remaining = Math.max(totalSeconds - elapsedSeconds, 0);
-    const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
-    const seconds = (remaining % 60).toString().padStart(2, '0');
-    const percent = (remaining / totalSeconds) * 100;
-
-    if (timerLabel) {
-      timerLabel.textContent = `${minutes}:${seconds}`;
-    }
-
-    if (timerBar) {
-      timerBar.style.width = `${percent}%`;
-      timerBar.classList.toggle('is-warning', remaining <= 60);
-    }
-
-    if (remaining === 0 && !isSubmitting) {
-      isSubmitting = true;
-      form.submit();
+    const remaining = Math.max(Math.floor((expiresAt - Date.now()) / 1000), 0);
+    const minutes = String(Math.floor(remaining / 60)).padStart(2, '0');
+    const seconds = String(remaining % 60).padStart(2, '0');
+    app.querySelector('[data-exam-timer]').textContent = minutes + ':' + seconds;
+    app.querySelector('[data-timer-progress]').style.width = Math.min(100, (remaining / totalSeconds) * 100) + '%';
+    if (remaining === 0 && !isFinishing) {
+      isFinishing = true;
+      submitForm.submit();
     }
   };
 
-  const autosave = async () => {
-    const url = form.dataset.autosaveUrl;
-    if (!url || isSubmitting) {
-      return;
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
-
-      if (autosaveLabel) {
-        if (response.ok) {
-          const data = await response.json();
-          autosaveLabel.textContent = `Da luu luc ${data.savedAt}`;
-          autosaveLabel.classList.remove('text-danger');
-          autosaveLabel.classList.add('text-muted');
-        } else {
-          autosaveLabel.textContent = 'Chua luu duoc. Lua chon cua ban van dang hien tren man hinh.';
-          autosaveLabel.classList.add('text-danger');
-        }
-      }
-    } catch {
-      if (autosaveLabel) {
-        autosaveLabel.textContent = 'Ket noi chua on dinh. He thong se thu luu lai.';
-        autosaveLabel.classList.add('text-danger');
-      }
-    }
-  };
-
-  form.addEventListener('change', (event) => {
-    if (event.target.matches('input[type="radio"]')) {
-      updateProgressDots();
-      window.clearTimeout(autosaveTimer);
-      autosaveTimer = window.setTimeout(autosave, 500);
+  app.addEventListener('click', (event) => {
+    const jump = event.target.closest('[data-take-jump]');
+    if (jump) showQuestion(Number(jump.dataset.takeJump));
+    if (event.target.closest('[data-take-previous]')) showQuestion(currentQuestion - 1);
+    if (event.target.closest('[data-take-next]')) showQuestion(currentQuestion + 1);
+    if (event.target.closest('[data-enter-fullscreen]') && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
     }
   });
 
-  form.addEventListener('submit', (event) => {
-    if (isSubmitting) {
-      return;
-    }
+  app.addEventListener('change', (event) => {
+    if (!event.target.matches('.take-option input')) return;
+    const question = event.target.closest('[data-take-question]');
+    showQuestion(currentQuestion);
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => autosave(question), 250);
+  });
 
-    const totalQuestions = document.querySelectorAll('[data-question-id]').length;
-    const answeredQuestions = document.querySelectorAll('[data-question-id] input[type="radio"]:checked').length;
-    const unansweredCount = totalQuestions - answeredQuestions;
-
-    if (unansweredCount > 0 && !window.confirm(`Ban con ${unansweredCount} cau chua tra loi. Van nop bai?`)) {
+  submitForm.addEventListener('submit', (event) => {
+    if (isFinishing) return;
+    const missing = questions.length - answeredCount();
+    const message = missing > 0 ? 'Bạn còn ' + missing + ' câu chưa trả lời. Vẫn nộp bài?' : 'Nộp bài và kết thúc lượt thi?';
+    if (!window.confirm(message)) {
       event.preventDefault();
       return;
     }
-
-    isSubmitting = true;
-    form.querySelectorAll('button[type="submit"]').forEach((button) => {
-      button.disabled = true;
-      button.textContent = 'Dang nop bai...';
-    });
+    isFinishing = true;
+    submitForm.querySelector('button').disabled = true;
+    submitForm.querySelector('button').textContent = 'Đang nộp bài...';
   });
 
-  updateProgressDots();
+  document.addEventListener('visibilitychange', () => { if (document.hidden) recordWarning('TabHidden'); });
+  window.addEventListener('blur', () => recordWarning('WindowBlur'));
+  document.addEventListener('fullscreenchange', () => {
+    if (app.dataset.requireFullscreen === 'true' && !document.fullscreenElement) recordWarning('FullscreenExited');
+  });
+  document.addEventListener('copy', () => recordWarning('CopyAttempt'));
+  document.addEventListener('paste', () => recordWarning('PasteAttempt'));
+  window.addEventListener('beforeunload', (event) => {
+    if (!isFinishing) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  });
+
+  showQuestion(0);
   updateTimer();
   window.setInterval(updateTimer, 1000);
 })();

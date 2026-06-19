@@ -1,15 +1,15 @@
 @model AdminRoleAssignmentViewModel
 
 @{
-    ViewData["Title"] = "Phan quyen tai khoan";
+    ViewData["Title"] = "Phân quyền tài khoản";
 
     string RoleDescription(string role)
     {
         return role switch
         {
-            "Admin" => "Toan quyen quan tri he thong, tai khoan, du lieu va cau hinh.",
-            "Student" => "Vao lop hoc, xem de thi va thuc hien bai lam.",
-            _ => "Nhom quyen tuy chinh trong he thong."
+            "Admin" => "Toàn quyền quản trị hệ thống, tài khoản, dữ liệu và cấu hình.",
+            "Student" => "Vào lớp học, xem đề thi và thực hiện bài làm.",
+            _ => "Nhóm quyền tùy chỉnh trong hệ thống."
         };
     }
 }
@@ -18,9 +18,9 @@
     <div class="admin-form-shell">
         <div class="admin-crud-header">
             <div>
-                <span class="admin-crud-kicker">Phan quyen truy cap</span>
-                <h1>Cap quyen tai khoan</h1>
-                <p>Chon nhom quyen dung voi vai tro thuc te cua nguoi dung trong he thong.</p>
+                <span class="admin-crud-kicker">Phân quyền truy cập</span>
+                <h1>Cấp quyền tài khoản</h1>
+                <p>Chọn nhóm quyền đúng với vai trò thực tế của người dùng trong hệ thống.</p>
             </div>
         </div>
 
@@ -48,8 +48,8 @@
                     {
                         <div class="admin-crud-empty">
                             <i class="icon-base ri ri-shield-user-line"></i>
-                            <strong>Chua co vai tro</strong>
-                            <span>Tao vai tro truoc, sau do quay lai cap quyen cho tai khoan.</span>
+                            <strong>Chưa có vai trò</strong>
+                            <span>Tạo vai trò trước, sau đó quay lại cấp quyền cho tài khoản.</span>
                         </div>
                     }
                     else
@@ -77,15 +77,15 @@
                     <div class="admin-form-actions">
                         <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="btn btn-outline-secondary">
                             <i class="icon-base ri ri-arrow-left-line me-1"></i>
-                            Huy
+                            Huỷ
                         </a>
                         <a asp-area="Admin" asp-controller="Roles" asp-action="Index" class="btn btn-outline-primary">
                             <i class="icon-base ri ri-lock-2-line me-1"></i>
-                            Quan ly vai tro
+                            Quản lý vai trò
                         </a>
                         <button type="submit" class="btn btn-primary" disabled="@(Model.AvailableRoles.Count == 0)">
                             <i class="icon-base ri ri-save-3-line me-1"></i>
-                            Luu phan quyen
+                            Lưu phân quyền
                         </button>
                     </div>
                 </form>

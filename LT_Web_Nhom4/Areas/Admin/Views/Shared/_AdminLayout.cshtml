@@ -9,7 +9,7 @@
 }
 
 <!DOCTYPE html>
-<html lang="en" class="layout-menu-fixed layout-compact" data-assets-path="/" data-template="vertical-menu-template-free">
+<html lang="vi" class="layout-menu-fixed layout-compact" data-assets-path="/" data-template="vertical-menu-template-free">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
@@ -41,7 +41,7 @@
                         <span class="app-brand-logo demo">
                             <i class="icon-base ri ri-graduation-cap-line text-primary fs-3"></i>
                         </span>
-                        <span class="app-brand-text demo menu-text fw-semibold ms-2">Quan tri thi</span>
+                        <span class="app-brand-text demo menu-text fw-semibold ms-2">Quản trị thi</span>
                     </a>
                     <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
                         <i class="menu-toggle-icon d-xl-inline-block align-middle"></i>
@@ -54,65 +54,65 @@
                     <li class="menu-item@(IsActive("/Admin/Dashboard"))">
                         <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="menu-link">
                             <i class="menu-icon icon-base ri ri-dashboard-line"></i>
-                            <div>Tong quan</div>
+                            <div>Tổng quan</div>
                         </a>
                     </li>
 
                     <li class="menu-header mt-4">
-                        <span class="menu-header-text">Quan ly</span>
+                        <span class="menu-header-text">Quản lý</span>
                     </li>
 
                     <li class="menu-item@(IsActive("/Admin/Users"))">
                         <a href="/Admin/Users" class="menu-link">
                             <i class="menu-icon icon-base ri ri-user-settings-line"></i>
-                            <div>Tai khoan</div>
+                            <div>Tài khoản</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Roles"))">
                         <a href="/Admin/Roles" class="menu-link">
                             <i class="menu-icon icon-base ri ri-lock-2-line"></i>
-                            <div>Vai tro</div>
+                            <div>Vai trò</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Subjects"))">
                         <a href="/Admin/Subjects" class="menu-link">
                             <i class="menu-icon icon-base ri ri-book-2-line"></i>
-                            <div>Mon hoc</div>
+                            <div>Môn học</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Classes"))">
                         <a href="/Admin/Classes" class="menu-link">
                             <i class="menu-icon icon-base ri ri-group-line"></i>
-                            <div>Lop hoc</div>
+                            <div>Lớp học</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Questions"))">
                         <a href="/Admin/Questions" class="menu-link">
                             <i class="menu-icon icon-base ri ri-question-answer-line"></i>
-                            <div>Cau hoi</div>
+                            <div>Câu hỏi</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Exams"))">
                         <a href="/Admin/Exams" class="menu-link">
                             <i class="menu-icon icon-base ri ri-file-list-3-line"></i>
-                            <div>De thi</div>
+                            <div>Đề thi</div>
                         </a>
                     </li>
 
                     <li class="menu-header mt-4">
-                        <span class="menu-header-text">Theo doi</span>
+                        <span class="menu-header-text">Theo dõi</span>
                     </li>
 
                     <li class="menu-item@(IsActive("/Admin/ExamAttempts"))">
                         <a href="/Admin/ExamAttempts" class="menu-link">
                             <i class="menu-icon icon-base ri ri-bar-chart-box-line"></i>
-                            <div>Luot thi</div>
+                            <div>Lượt thi</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/AntiCheatEvents"))">
                         <a href="/Admin/AntiCheatEvents" class="menu-link">
                             <i class="menu-icon icon-base ri ri-shield-check-line"></i>
-                            <div>Canh bao</div>
+                            <div>Cảnh báo</div>
                         </a>
                     </li>
                 </ul>
@@ -128,13 +128,13 @@
 
                     <div class="navbar-nav-right d-flex align-items-center justify-content-between w-100">
                         <div>
-                            <span class="text-muted fw-normal">Quan tri</span>
+                            <span class="text-muted fw-normal">Quản trị</span>
                             <span class="text-heading fw-semibold">/ @title</span>
                         </div>
                         <div class="d-flex align-items-center gap-3">
                             <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">
                                 <i class="icon-base ri ri-home-4-line me-1"></i>
-                                Trang chu
+                                Trang chủ
                             </a>
                             @if (User.Identity?.IsAuthenticated == true)
                             {
@@ -144,7 +144,7 @@
                                       asp-action="Logout"
                                       asp-route-returnUrl="@Url.Action("Login", "Account", new { area = "Identity" })"
                                       method="post">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Dang xuat</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Đăng xuất</button>
                                 </form>
                                 <div class="avatar avatar-sm">
                                     <span class="avatar-initial rounded-circle bg-label-primary">
@@ -154,7 +154,7 @@
                             }
                             else
                             {
-                                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">Dang nhap</a>
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">Đăng nhập</a>
                             }
                         </div>
                     </div>
@@ -172,7 +172,7 @@
                                     &copy; @DateTime.Now.Year QuizHub
                                 </div>
                                 <div class="d-none d-lg-inline-block">
-                                    <span class="text-muted">Khu vuc quan tri he thong thi</span>
+                                    <span class="text-muted">Khu vực quản trị hệ thống thi</span>
                                 </div>
                             </div>
                         </div>

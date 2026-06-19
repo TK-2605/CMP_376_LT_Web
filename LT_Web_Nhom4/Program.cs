@@ -2,6 +2,8 @@ using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Repositories.Implementations;
 using LT_Web_Nhom4.Repositories.Interfaces;
+using LT_Web_Nhom4.Services.Implementations;
+using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -43,6 +45,9 @@ builder.Services.AddScoped<IExamQuestionRepository, ExamQuestionRepository>();
 builder.Services.AddScoped<IExamAttemptRepository, ExamAttemptRepository>();
 builder.Services.AddScoped<IAttemptAnswerRepository, AttemptAnswerRepository>();
 builder.Services.AddScoped<IAntiCheatEventRepository, AntiCheatEventRepository>();
+builder.Services.AddScoped<IUniqueCodeGenerator, UniqueCodeGenerator>();
+builder.Services.AddScoped<IAccessPolicy, AccessPolicy>();
+builder.Services.AddSingleton<IPrivateMediaStorage, PrivateMediaStorage>();
 
 builder.Services.AddControllersWithViews()
     .AddRazorOptions(options =>
@@ -113,8 +118,8 @@ static async Task SeedDefaultDataAsync(WebApplication app)
             context.Subjects.Add(new Subject
             {
                 Code = "GENERAL",
-                Name = "Mon hoc chung",
-                Description = "Mon hoc mac dinh de tao lop/phong thi khi database moi chua co danh muc."
+                Name = "Môn học chung",
+                Description = "Môn học mặc định dùng khi cơ sở dữ liệu chưa có danh mục."
             });
 
             await context.SaveChangesAsync();
