@@ -1,0 +1,46 @@
+@model CrudDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Chi tiet {Model.Title}";
+    var visibleFields = Model.Fields.Where(field => field.ShowInDetails).ToList();
+}
+
+<section class="admin-crud-page">
+    <div class="admin-form-shell">
+        <div class="admin-crud-header">
+            <div>
+                <span class="admin-crud-kicker">Chi tiet ban ghi</span>
+                <h1>@Model.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p>@Model.Description</p>
+                }
+            </div>
+        </div>
+
+        <div class="card admin-crud-card admin-form-card">
+            <div class="card-body">
+                <dl class="admin-detail-list">
+                    @foreach (var field in visibleFields)
+                    {
+                        <div>
+                            <dt>@field.Label</dt>
+                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Co" : "Khong") : field.Value ?? "-")</dd>
+                        </div>
+                    }
+                </dl>
+
+                <div class="admin-form-actions">
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="icon-base ri ri-arrow-left-line me-1"></i>
+                        Quay lai
+                    </a>
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">
+                        <i class="icon-base ri ri-edit-2-line me-1"></i>
+                        Sua
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

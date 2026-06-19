@@ -7,4 +7,18 @@
       }
     });
   });
+
+  document.querySelectorAll('[data-admin-table-filter]').forEach((input) => {
+    const table = input.closest('.admin-crud-page')?.querySelector('[data-admin-table-body]');
+    if (!table) {
+      return;
+    }
+
+    input.addEventListener('input', () => {
+      const keyword = input.value.trim().toLowerCase();
+      table.querySelectorAll('[data-admin-table-row]').forEach((row) => {
+        row.hidden = keyword.length > 0 && !row.innerText.toLowerCase().includes(keyword);
+      });
+    });
+  });
 })();

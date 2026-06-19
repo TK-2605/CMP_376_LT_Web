@@ -21,7 +21,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Index()
         {
             var users = await _userManager.Users.AsNoTracking().ToListAsync();
-            return View("/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
                 Title = "Tai khoan",
                 Description = "Quan ly tai khoan sinh vien, giang vien va trang thai truy cap.",
@@ -52,7 +52,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            return View("/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
                 Title = "Tai khoan",
                 Description = "Thong tin lien he va trang thai truy cap cua tai khoan.",
@@ -65,7 +65,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
         public IActionResult Create()
         {
-            return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
                 Title = "Them tai khoan",
                 Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
@@ -97,7 +97,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             }
 
             AddErrors(result);
-            return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
                 Title = "Them tai khoan",
                 Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
@@ -116,7 +116,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
                 Title = "Sua tai khoan",
                 Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
@@ -152,7 +152,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             }
 
             AddErrors(result);
-            return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
                 Title = "Sua tai khoan",
                 Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
@@ -172,7 +172,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            return View("/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
+            return View("/Areas/Admin/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
             {
                 Title = "Tai khoan",
                 Description = "Tai khoan se khong con dang nhap duoc sau khi bi xoa.",

@@ -302,6 +302,11 @@ namespace LT_Web_Nhom4.Controllers
 
         private IActionResult SharedCrudView(string viewName, object model)
         {
+            if (string.Equals(AreaName, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return View($"/Areas/Admin/Views/Shared/Crud/{viewName}.cshtml", model);
+            }
+
             return View($"/Views/Shared/Crud/{viewName}.cshtml", model);
         }
 

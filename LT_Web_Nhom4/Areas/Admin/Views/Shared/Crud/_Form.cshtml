@@ -1,0 +1,67 @@
+@model CrudFormViewModel
+
+<form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="@Model.ActionName" asp-route-id="@Model.Key" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="admin-form-grid">
+        @foreach (var field in Model.Fields.Where(field => field.ShowInForm))
+        {
+            <div class="admin-form-field">
+                <label class="form-label" for="@field.Name">@field.Label</label>
+
+                @if (field.Options.Count > 0)
+                {
+                    <select id="@field.Name" name="@field.Name" class="form-select" disabled="@field.IsReadOnly">
+                        @if (field.IsNullable)
+                        {
+                            <option value="">Chua chon</option>
+                        }
+                        @foreach (var option in field.Options)
+                        {
+                            <option value="@option.Value" selected="@(option.Value == field.Value)">@option.Text</option>
+                        }
+                    </select>
+                }
+                else if (field.IsBoolean)
+                {
+                    <div class="form-check form-switch admin-switch">
+                        <input id="@field.Name" name="@field.Name" type="checkbox" value="true" class="form-check-input" checked="@(field.Value == "true")" disabled="@field.IsReadOnly" />
+                        <label class="form-check-label" for="@field.Name">Bat</label>
+                    </div>
+                }
+                else
+                {
+                    <input id="@field.Name"
+                           name="@field.Name"
+                           type="@field.InputType"
+                           value="@field.Value"
+                           class="form-control"
+                           placeholder="@field.Placeholder"
+                           readonly="@field.IsReadOnly"
+                           step="any" />
+                }
+
+                @if (field.IsReadOnly)
+                {
+                    <input type="hidden" name="@field.Name" value="@field.Value" />
+                }
+                @if (!string.IsNullOrWhiteSpace(field.HelpText))
+                {
+                    <div class="form-text">@field.HelpText</div>
+                }
+                <span class="text-danger field-validation-valid" data-valmsg-for="@field.Name" data-valmsg-replace="true"></span>
+            </div>
+        }
+    </div>
+
+    <div class="admin-form-actions">
+        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="icon-base ri ri-arrow-left-line me-1"></i>
+            Huy
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="icon-base ri ri-save-3-line me-1"></i>
+            Luu
+        </button>
+    </div>
+</form>

@@ -1,0 +1,45 @@
+@model CrudDeleteViewModel
+
+@{
+    ViewData["Title"] = $"Xoa {Model.Title}";
+    var visibleFields = Model.Fields.Where(field => field.ShowInDetails).Take(6).ToList();
+}
+
+<section class="admin-crud-page">
+    <div class="admin-form-shell">
+        <div class="admin-crud-header">
+            <div>
+                <span class="admin-crud-kicker text-danger">Xac nhan xoa</span>
+                <h1>Xoa @Model.Title</h1>
+                <p>Ban ghi se bi xoa khoi khu vuc quan tri sau khi xac nhan.</p>
+            </div>
+        </div>
+
+        <div class="card admin-crud-card admin-form-card border-danger">
+            <div class="card-body">
+                <dl class="admin-detail-list">
+                    @foreach (var field in visibleFields)
+                    {
+                        <div>
+                            <dt>@field.Label</dt>
+                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Co" : "Khong") : field.Value ?? "-")</dd>
+                        </div>
+                    }
+                </dl>
+
+                <form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@Model.Key" method="post">
+                    <div class="admin-form-actions">
+                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="icon-base ri ri-arrow-left-line me-1"></i>
+                            Huy
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="icon-base ri ri-delete-bin-6-line me-1"></i>
+                            Xoa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

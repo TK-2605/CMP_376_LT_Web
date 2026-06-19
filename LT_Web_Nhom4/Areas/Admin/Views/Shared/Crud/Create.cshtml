@@ -1,0 +1,26 @@
+@model CrudFormViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="admin-crud-page">
+    <div class="admin-form-shell">
+        <div class="admin-crud-header">
+            <div>
+                <span class="admin-crud-kicker">Bieu mau quan tri</span>
+                <h1>@Model.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p>@Model.Description</p>
+                }
+            </div>
+        </div>
+
+        <div class="card admin-crud-card admin-form-card">
+            <div class="card-body">
+                <partial name="/Areas/Admin/Views/Shared/Crud/_Form.cshtml" model="Model" />
+            </div>
+        </div>
+    </div>
+</section>

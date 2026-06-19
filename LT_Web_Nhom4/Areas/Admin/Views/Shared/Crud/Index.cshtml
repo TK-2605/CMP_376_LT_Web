@@ -1,0 +1,86 @@
+@model CrudIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+    var visibleFields = Model.Fields.Where(field => field.ShowInList).ToList();
+}
+
+<section class="admin-crud-page">
+    <div class="admin-crud-header">
+        <div>
+            <span class="admin-crud-kicker">Danh muc quan tri</span>
+            <h1>@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p>@Model.Description</p>
+            }
+        </div>
+        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">
+            <i class="icon-base ri ri-add-line me-1"></i>
+            Them moi
+        </a>
+    </div>
+
+    <div class="admin-crud-toolbar">
+        <div class="admin-crud-search">
+            <i class="icon-base ri ri-search-line"></i>
+            <input type="search" class="form-control" placeholder="Tim trong @Model.Title.ToLowerInvariant()" data-admin-table-filter />
+        </div>
+        <div class="admin-crud-count">
+            <strong>@Model.Rows.Count</strong>
+            <span>ban ghi</span>
+        </div>
+    </div>
+
+    <div class="card admin-crud-card">
+        <div class="table-responsive">
+            <table class="table admin-crud-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        @foreach (var field in visibleFields)
+                        {
+                            <th>@field.Label</th>
+                        }
+                        <th class="text-end">Thao tac</th>
+                    </tr>
+                </thead>
+                <tbody data-admin-table-body>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@(visibleFields.Count + 1)">
+                                <div class="admin-crud-empty">
+                                    <i class="icon-base ri ri-inbox-line"></i>
+                                    <strong>Chua co du lieu</strong>
+                                    <span>Hay them ban ghi dau tien cho danh muc nay.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr data-admin-table-row>
+                            @foreach (var field in visibleFields)
+                            {
+                                <td>
+                                    <span class="admin-crud-cell">@(row.Values.TryGetValue(field.Name, out var value) ? value : "-")</span>
+                                </td>
+                            }
+                            <td class="text-end text-nowrap">
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary" title="Xem chi tiet">
+                                    <i class="icon-base ri ri-eye-line"></i>
+                                </a>
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sua">
+                                    <i class="icon-base ri ri-edit-2-line"></i>
+                                </a>
+                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoa">
+                                    <i class="icon-base ri ri-delete-bin-6-line"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
