@@ -1,0 +1,121 @@
+@model ClassDetailsViewModel
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="class-detail-header mb-4">
+            <div>
+                <div class="student-eyebrow mb-2">Lớp học</div>
+                <h1>@Model.Name</h1>
+                <p>@Model.SubjectName • Mã lớp <strong>@Model.Code</strong></p>
+            </div>
+            <div class="class-detail-actions">
+                <a asp-controller="Classes" asp-action="Index" class="btn btn-light">Danh sách lớp</a>
+                @if (Model.IsOwner)
+                {
+                    <a asp-controller="Exams" asp-action="CreateInClass" asp-route-classId="@Model.Id" class="btn btn-primary">Tạo đề thi</a>
+                }
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card class-panel mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h2 class="h4 fw-bold mb-0">Đề thi trong lớp</h2>
+                            <span class="text-muted small">@Model.ExamCount đề</span>
+                        </div>
+
+                        @if (Model.Exams.Count == 0)
+                        {
+                            <div class="alert alert-light border mb-0">
+                                Lớp này chưa có đề thi.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="class-exam-list">
+                                @foreach (var exam in Model.Exams)
+                                {
+                                    var now = DateTime.Now;
+                                    var isOpen = now >= exam.StartAt && now <= exam.EndAt;
+                                    var isClosed = now > exam.EndAt;
+                                    <article>
+                                        <div>
+                                            <span class="badge rounded-pill @(isOpen ? "text-bg-success" : isClosed ? "text-bg-secondary" : "text-bg-warning")">
+                                                @(isOpen ? "Đang mở" : isClosed ? "Đã kết thúc" : "Chưa mở")
+                                            </span>
+                                            <h3>@exam.Title</h3>
+                                            <p>@exam.DurationMinutes phút • @exam.QuestionCount câu • Bắt đầu @exam.StartAt.ToString("dd/MM/yyyy HH:mm")</p>
+                                        </div>
+                                        @if (Model.IsOwner)
+                                        {
+                                            <a asp-controller="Exams" asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-outline-primary">Quản lý</a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">Vào phòng thi</a>
+                                        }
+                                    </article>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card class-panel">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold mb-3">Học liệu lớp</h2>
+                        <div class="class-media-empty">
+                            <strong>Ảnh, video và tài liệu lớp</strong>
+                            <span>Chờ thêm storage/media chuẩn. Không hiển thị field kỹ thuật khi chưa có dữ liệu thật.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card class-panel">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold mb-3">Thành viên</h2>
+                        <div class="class-stat-grid mb-4">
+                            <div>
+                                <span>Học viên</span>
+                                <strong>@Model.MemberCount</strong>
+                            </div>
+                            <div>
+                                <span>Năm học</span>
+                                <strong>@(Model.AcademicYear ?? "Chưa đặt")</strong>
+                            </div>
+                        </div>
+
+                        @if (!Model.IsOwner)
+                        {
+                            <p class="text-muted mb-0">Bạn đang tham gia lớp này với vai trò học viên.</p>
+                        }
+                        else if (Model.Members.Count == 0)
+                        {
+                            <div class="alert alert-light border mb-0">Chưa có học viên tham gia.</div>
+                        }
+                        else
+                        {
+                            <div class="class-member-list">
+                                @foreach (var member in Model.Members)
+                                {
+                                    <div>
+                                        <strong>@member.DisplayName</strong>
+                                        <span>@member.Email</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

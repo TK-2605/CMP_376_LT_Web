@@ -40,6 +40,100 @@ namespace LT_Web_Nhom4.Controllers
             return View(new ExamListViewModel { Exams = cards });
         }
 
+        public override IActionResult Create()
+        {
+            return RedirectToAction(nameof(Index), "Classes");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public override Task<IActionResult> Create(IFormCollection form)
+        {
+            return Task.FromResult<IActionResult>(RedirectToAction(nameof(Index), "Classes"));
+        }
+
+        public async Task<IActionResult> CreateInClass(int classId)
+        {
+            var classRoom = await Context.Classes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == classId && (IsAdmin || item.TeacherId == CurrentUserId));
+
+            if (classRoom is null)
+            {
+                return Forbid();
+            }
+
+            return View(new CreateExamInClassViewModel
+            {
+                ClassId = classRoom.Id,
+                ClassCode = classRoom.Code,
+                ClassName = classRoom.Name,
+                StartAt = DateTime.Now.AddHours(1),
+                EndAt = DateTime.Now.AddHours(2),
+                DurationMinutes = 45,
+                MaxScore = 10,
+                PassingScore = 5,
+                ShuffleQuestions = true,
+                ShuffleOptions = true,
+                MaxTabSwitchCount = 3
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateInClass(CreateExamInClassViewModel model)
+        {
+            var classRoom = await Context.Classes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == model.ClassId && (IsAdmin || item.TeacherId == CurrentUserId));
+
+            if (classRoom is null)
+            {
+                return Forbid();
+            }
+
+            model.ClassCode = classRoom.Code;
+            model.ClassName = classRoom.Name;
+
+            if (model.EndAt <= model.StartAt)
+            {
+                ModelState.AddModelError(nameof(model.EndAt), "Thời gian kết thúc phải sau thời gian bắt đầu.");
+            }
+
+            if (model.PassingScore.HasValue && model.PassingScore > model.MaxScore)
+            {
+                ModelState.AddModelError(nameof(model.PassingScore), "Điểm đạt không được lớn hơn điểm tối đa.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var exam = new Exam
+            {
+                ClassId = classRoom.Id,
+                SubjectId = classRoom.SubjectId,
+                CreatedById = CurrentUserId ?? string.Empty,
+                Title = model.Title.Trim(),
+                DurationMinutes = model.DurationMinutes,
+                StartAt = model.StartAt,
+                EndAt = model.EndAt,
+                MaxScore = model.MaxScore,
+                PassingScore = model.PassingScore,
+                ShuffleQuestions = model.ShuffleQuestions,
+                ShuffleOptions = model.ShuffleOptions,
+                RequireFullscreen = model.RequireFullscreen,
+                MaxTabSwitchCount = model.MaxTabSwitchCount,
+                Status = model.Status
+            };
+
+            Context.Exams.Add(exam);
+            await Context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Manage), new { id = exam.Id });
+        }
+
         protected override IQueryable<Exam> ApplyReadScope(IQueryable<Exam> query)
         {
             return IsAdmin

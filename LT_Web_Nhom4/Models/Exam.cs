@@ -20,6 +20,8 @@ namespace LT_Web_Nhom4.Models
 
         public decimal? PassingScore { get; set; }
 
+        public decimal MaxScore { get; set; } = 10;
+
         public bool ShuffleQuestions { get; set; }
 
         public bool ShuffleOptions { get; set; }

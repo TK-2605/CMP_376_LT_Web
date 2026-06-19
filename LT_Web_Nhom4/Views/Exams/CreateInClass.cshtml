@@ -1,0 +1,104 @@
+@model CreateExamInClassViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Tạo đề thi";
+    var statusOptions = new List<SelectListItem>
+    {
+        new("Bản nháp", ExamStatus.Draft.ToString()),
+        new("Đã mở cho học viên", ExamStatus.Published.ToString()),
+        new("Đã đóng", ExamStatus.Closed.ToString()),
+        new("Đã huỷ", ExamStatus.Cancelled.ToString())
+    };
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="exam-create-shell">
+            <div class="student-eyebrow mb-2">Đề thi</div>
+            <h1 class="display-6 fw-bold">Tạo đề thi</h1>
+            <p class="text-muted">Đề được tạo bên trong lớp hiện tại. Hệ thống tự gắn lớp, môn học và người tạo, không cần nhập ID hoặc chọn lại lớp.</p>
+
+            <form asp-controller="Exams" asp-action="CreateInClass" method="post" class="mt-4">
+                <input asp-for="ClassId" type="hidden" />
+                <input asp-for="ClassCode" type="hidden" />
+                <input asp-for="ClassName" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="exam-readonly-class mb-4">
+                    <span>Lớp hiện tại</span>
+                    <strong>@Model.ClassCode - @Model.ClassName</strong>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" placeholder="Ví dụ: Kiểm tra giữa kỳ" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="DurationMinutes" class="form-label">Thời lượng phút</label>
+                        <input asp-for="DurationMinutes" class="form-control" />
+                        <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="StartAt" class="form-label"></label>
+                        <input asp-for="StartAt" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="StartAt" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndAt" class="form-label"></label>
+                        <input asp-for="EndAt" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="EndAt" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="MaxScore" class="form-label"></label>
+                        <input asp-for="MaxScore" class="form-control" />
+                        <span asp-validation-for="MaxScore" class="text-danger"></span>
+                        <div class="form-text">Nếu câu hỏi chưa nhập điểm riêng, hệ thống có thể chia đều theo điểm tối đa ở bước thêm câu hỏi.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="PassingScore" class="form-label"></label>
+                        <input asp-for="PassingScore" class="form-control" placeholder="Ví dụ: 5" />
+                        <span asp-validation-for="PassingScore" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label"></label>
+                        <select asp-for="Status" asp-items="statusOptions" class="form-select"></select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="MaxTabSwitchCount" class="form-label"></label>
+                        <input asp-for="MaxTabSwitchCount" class="form-control" />
+                        <span asp-validation-for="MaxTabSwitchCount" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="exam-toggle-grid mt-4">
+                    <label class="exam-toggle-item">
+                        <input asp-for="ShuffleQuestions" />
+                        <span>Trộn câu hỏi</span>
+                    </label>
+                    <label class="exam-toggle-item">
+                        <input asp-for="ShuffleOptions" />
+                        <span>Trộn đáp án</span>
+                    </label>
+                    <label class="exam-toggle-item">
+                        <input asp-for="RequireFullscreen" />
+                        <span>Yêu cầu toàn màn hình</span>
+                    </label>
+                </div>
+
+                <div class="exam-builder-note mt-4">
+                    <strong>Trình tạo câu hỏi</strong>
+                    <span>Bước tiếp theo sẽ chuyển phần câu hỏi sang giao diện kiểu Google Form: thêm câu hỏi, đáp án, ảnh/video, điểm từng câu và tự chia điểm nếu để trống.</span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-controller="Classes" asp-action="Details" asp-route-id="@Model.ClassId" class="btn btn-light">Huỷ</a>
+                    <button type="submit" class="btn btn-primary">Tạo đề</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>

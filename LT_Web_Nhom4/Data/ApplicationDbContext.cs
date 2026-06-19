@@ -142,6 +142,7 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(exam => exam.Title).HasMaxLength(200);
                 entity.Property(exam => exam.PassingScore).HasPrecision(6, 2);
+                entity.Property(exam => exam.MaxScore).HasPrecision(6, 2).HasDefaultValue(10);
 
                 entity.HasOne(exam => exam.Subject)
                     .WithMany(subject => subject.Exams)

@@ -1,0 +1,52 @@
+@model CreateClassViewModel
+
+@{
+    ViewData["Title"] = "Tạo lớp";
+}
+
+<section class="student-section bg-light">
+    <div class="container">
+        <div class="class-form-shell">
+            <div class="student-eyebrow mb-2">Lớp học</div>
+            <h1 class="display-6 fw-bold">Tạo lớp</h1>
+            <p class="text-muted">Mã lớp dùng để học viên tham gia. Lớp chỉ hiển thị với người tạo, học viên đã tham gia và admin.</p>
+
+            <form asp-controller="Classes" asp-action="Create" method="post" class="mt-4">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Code" class="form-label"></label>
+                        <input asp-for="Code" class="form-control" placeholder="Ví dụ: WEB-2026-01" autocomplete="off" />
+                        <span asp-validation-for="Code" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Name" class="form-label"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Ví dụ: Lập trình Web nhóm 4" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Semester" class="form-label"></label>
+                        <input asp-for="Semester" class="form-control" placeholder="Ví dụ: Học kỳ 2B" />
+                        <span asp-validation-for="Semester" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AcademicYear" class="form-label"></label>
+                        <input asp-for="AcademicYear" class="form-control" placeholder="Ví dụ: 2025-2026" />
+                        <span asp-validation-for="AcademicYear" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="class-media-note mt-4">
+                    <strong>Ảnh và video lớp</strong>
+                    <span>Phần media sẽ dùng storage riêng sau khi chốt schema. Hiện form chỉ lưu dữ liệu lớp cốt lõi để tránh lỗi dữ liệu giả.</span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-controller="Classes" asp-action="Index" class="btn btn-light">Huỷ</a>
+                    <button type="submit" class="btn btn-primary">Tạo lớp</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>

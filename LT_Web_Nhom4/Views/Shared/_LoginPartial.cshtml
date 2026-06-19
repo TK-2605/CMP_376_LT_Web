@@ -7,16 +7,13 @@
     @if (SignInManager.IsSignedIn(User))
     {
         <li class="nav-item">
-            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">Phong thi</a>
+            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">Phòng thi</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" asp-area="" asp-controller="Classes" asp-action="Create">Tao lop</a>
+            <a class="nav-link" asp-area="" asp-controller="Classes" asp-action="Create">Tạo lớp</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Create">Tao de</a>
-        </li>
-        <li class="nav-item">
-            <span class="nav-link text-dark">Xin chao @User.Identity?.Name</span>
+            <span class="nav-link text-dark">Xin chào @User.Identity?.Name</span>
         </li>
         @if (User.IsInRole("Admin"))
         {
@@ -25,7 +22,7 @@
                    asp-area="Admin"
                    asp-controller="Dashboard"
                    asp-action="Index">
-                    Bang quan tri
+                    Bảng quản trị
                 </a>
             </li>
         }
@@ -35,17 +32,17 @@
                   asp-action="Logout"
                   asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
                   method="post">
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Dang xuat</button>
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Đăng xuất</button>
             </form>
         </li>
     }
     else
     {
         <li class="nav-item">
-            <a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Register">Dang ky</a>
+            <a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Register">Đăng ký</a>
         </li>
         <li class="nav-item">
-            <a class="btn btn-primary btn-sm" asp-area="Identity" asp-controller="Account" asp-action="Login">Dang nhap</a>
+            <a class="btn btn-primary btn-sm" asp-area="Identity" asp-controller="Account" asp-action="Login">Đăng nhập</a>
         </li>
     }
 </ul>

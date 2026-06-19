@@ -36,6 +36,51 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public string RoleLabel => IsOwnedByCurrentUser ? "Giao vien phong" : "Hoc sinh";
     }
 
+    public class CreateExamInClassViewModel
+    {
+        public int ClassId { get; set; }
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public string ClassCode { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập tiêu đề đề thi.")]
+        [Display(Name = "Tiêu đề")]
+        public string Title { get; set; } = string.Empty;
+
+        [Range(1, 600, ErrorMessage = "Thời lượng phải từ 1 đến 600 phút.")]
+        [Display(Name = "Thời lượng")]
+        public int DurationMinutes { get; set; } = 45;
+
+        [Display(Name = "Bắt đầu")]
+        public DateTime StartAt { get; set; } = DateTime.Now.AddHours(1);
+
+        [Display(Name = "Kết thúc")]
+        public DateTime EndAt { get; set; } = DateTime.Now.AddHours(2);
+
+        [Range(1, 1000, ErrorMessage = "Điểm tối đa phải lớn hơn 0.")]
+        [Display(Name = "Điểm tối đa")]
+        public decimal MaxScore { get; set; } = 10;
+
+        [Display(Name = "Điểm đạt")]
+        public decimal? PassingScore { get; set; }
+
+        [Display(Name = "Trộn câu hỏi")]
+        public bool ShuffleQuestions { get; set; } = true;
+
+        [Display(Name = "Trộn đáp án")]
+        public bool ShuffleOptions { get; set; } = true;
+
+        [Display(Name = "Yêu cầu toàn màn hình")]
+        public bool RequireFullscreen { get; set; }
+
+        [Display(Name = "Số lần rời màn hình tối đa")]
+        public int? MaxTabSwitchCount { get; set; } = 3;
+
+        [Display(Name = "Trạng thái")]
+        public ExamStatus Status { get; set; } = ExamStatus.Draft;
+    }
+
     public class ExamRoomViewModel
     {
         public int Id { get; set; }
