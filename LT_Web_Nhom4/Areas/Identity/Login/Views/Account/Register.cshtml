@@ -4,15 +4,12 @@
     ViewData["Title"] = "Dang ky";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
-}
-
 <section class="auth-shell">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8 col-xl-7">
                 <div class="auth-card auth-single-card">
+                    <partial name="_AuthHomeButton" />
                     <div class="auth-form-side">
                         <div class="auth-form-heading text-center">
                             <h1>Tao tai khoan</h1>

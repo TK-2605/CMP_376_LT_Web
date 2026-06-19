@@ -50,11 +50,24 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return View(model);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user is null)
+            {
+                ModelState.AddModelError(string.Empty, "Email hoac mat khau khong dung.");
+                return View(model);
+            }
+
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "Tai khoan dang tam khoa. Vui long lien he quan tri vien.");
+                return View(model);
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
             if (result.Succeeded)
             {
                 _logger.LogInformation("User logged in.");
-                return LocalRedirect(GetSafeReturnUrl(model.ReturnUrl));
+                return await RedirectAfterLoginAsync(user, model.ReturnUrl);
             }
 
             if (result.RequiresTwoFactor)
@@ -98,6 +111,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
+                EmailConfirmed = true,
                 FullName = model.FullName,
                 StudentCode = model.StudentCode,
                 IsActive = true
@@ -108,7 +122,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 await AddDefaultStudentRoleAsync(user);
 
-                TempData["AuthMessage"] = "Dang ky thanh cong. Vui long xac nhan email neu he thong yeu cau.";
+                TempData["AuthMessage"] = "Dang ky thanh cong. Ban co the dang nhap bang tai khoan vua tao.";
                 return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
             }
 
@@ -143,7 +157,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return View(model);
             }
 
-            TempData["AuthMessage"] = "Neu email ton tai, he thong se gui OTP dat lai mat khau.";
+            TempData["AuthMessage"] = "Neu email ton tai, he thong se gui huong dan dat lai mat khau.";
             return RedirectToAction(nameof(Login));
         }
 
@@ -175,6 +189,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
             if (signInResult.Succeeded)
             {
+                var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+                if (user is not null)
+                {
+                    return await RedirectAfterLoginAsync(user, returnUrl);
+                }
+
                 return LocalRedirect(GetSafeReturnUrl(returnUrl));
             }
 
@@ -222,7 +242,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 await AddDefaultStudentRoleAsync(user);
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return LocalRedirect(GetSafeReturnUrl(model.ReturnUrl));
+                return await RedirectAfterLoginAsync(user, model.ReturnUrl);
             }
 
             foreach (var error in createResult.Errors)
@@ -247,6 +267,21 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             }
 
             return Url.Action("Index", "Home", new { area = "" }) ?? "/";
+        }
+
+        private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            }
+
+            return RedirectToAction("Index", "Home", new { area = "" });
         }
 
         private async Task AddDefaultStudentRoleAsync(ApplicationUser user)
