@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace LT_Web_Nhom4.Controllers
 {
-    [Authorize(Roles = "Teacher,Admin")]
+    [Authorize(Roles = "Admin")]
     public class SubjectsController : CrudController<Subject>
     {
         public SubjectsController(ApplicationDbContext context) : base(context)

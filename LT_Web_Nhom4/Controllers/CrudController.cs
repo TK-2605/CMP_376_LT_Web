@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using System.Security.Claims;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -109,19 +110,19 @@ namespace LT_Web_Nhom4.Controllers
             ["UserId"] = "Nguoi dung"
         };
 
-        private readonly ApplicationDbContext _context;
+        protected readonly ApplicationDbContext Context;
         private readonly IEntityType _entityType;
 
         protected CrudController(ApplicationDbContext context)
         {
-            _context = context;
+            Context = context;
             _entityType = context.Model.FindEntityType(typeof(TEntity))
                 ?? throw new InvalidOperationException($"Entity {typeof(TEntity).Name} is not part of ApplicationDbContext.");
         }
 
         public virtual async Task<IActionResult> Index()
         {
-            var entities = await _context.Set<TEntity>().AsNoTracking().Take(200).ToListAsync();
+            var entities = await ApplyReadScope(Context.Set<TEntity>().AsNoTracking()).Take(200).ToListAsync();
             var fields = BuildFields();
             var rows = entities.Select(entity => new CrudRowViewModel
             {
@@ -148,6 +149,10 @@ namespace LT_Web_Nhom4.Controllers
             if (entity is null)
             {
                 return NotFound();
+            }
+            if (!await CanReadAsync(entity))
+            {
+                return Forbid();
             }
 
             return SharedCrudView("Details", new CrudDetailsViewModel
@@ -180,6 +185,12 @@ namespace LT_Web_Nhom4.Controllers
         {
             var entity = new TEntity();
             ApplyForm(entity, form, readOnlyKeys: false);
+            await OnCreatingAsync(entity);
+
+            if (!await CanCreateAsync(entity))
+            {
+                return Forbid();
+            }
 
             if (!ModelState.IsValid)
             {
@@ -194,8 +205,8 @@ namespace LT_Web_Nhom4.Controllers
                 });
             }
 
-            _context.Add(entity);
-            await _context.SaveChangesAsync();
+            Context.Add(entity);
+            await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index), new { area = AreaName });
         }
 
@@ -205,6 +216,10 @@ namespace LT_Web_Nhom4.Controllers
             if (entity is null)
             {
                 return NotFound();
+            }
+            if (!await CanUpdateAsync(entity))
+            {
+                return Forbid();
             }
 
             return SharedCrudView("Edit", new CrudFormViewModel
@@ -228,8 +243,13 @@ namespace LT_Web_Nhom4.Controllers
             {
                 return NotFound();
             }
+            if (!await CanUpdateAsync(entity))
+            {
+                return Forbid();
+            }
 
             ApplyForm(entity, form, readOnlyKeys: true);
+            await OnUpdatingAsync(entity);
 
             if (!ModelState.IsValid)
             {
@@ -245,7 +265,7 @@ namespace LT_Web_Nhom4.Controllers
                 });
             }
 
-            await _context.SaveChangesAsync();
+            await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index), new { area = AreaName });
         }
 
@@ -255,6 +275,10 @@ namespace LT_Web_Nhom4.Controllers
             if (entity is null)
             {
                 return NotFound();
+            }
+            if (!await CanDeleteAsync(entity))
+            {
+                return Forbid();
             }
 
             return SharedCrudView("Delete", new CrudDeleteViewModel
@@ -278,15 +302,58 @@ namespace LT_Web_Nhom4.Controllers
             {
                 return NotFound();
             }
+            if (!await CanDeleteAsync(entity))
+            {
+                return Forbid();
+            }
 
-            _context.Remove(entity);
-            await _context.SaveChangesAsync();
+            Context.Remove(entity);
+            await Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index), new { area = AreaName });
         }
 
         protected string ControllerName => ControllerContext.ActionDescriptor.ControllerName;
 
         protected string? AreaName => ControllerContext.ActionDescriptor.RouteValues.TryGetValue("area", out var area) ? area : null;
+
+        protected string? CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        protected bool IsAdmin => User.IsInRole("Admin");
+
+        protected virtual IQueryable<TEntity> ApplyReadScope(IQueryable<TEntity> query)
+        {
+            return query;
+        }
+
+        protected virtual Task<bool> CanReadAsync(TEntity entity)
+        {
+            return Task.FromResult(true);
+        }
+
+        protected virtual Task<bool> CanCreateAsync(TEntity entity)
+        {
+            return Task.FromResult(true);
+        }
+
+        protected virtual Task<bool> CanUpdateAsync(TEntity entity)
+        {
+            return Task.FromResult(true);
+        }
+
+        protected virtual Task<bool> CanDeleteAsync(TEntity entity)
+        {
+            return Task.FromResult(true);
+        }
+
+        protected virtual Task OnCreatingAsync(TEntity entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task OnUpdatingAsync(TEntity entity)
+        {
+            return Task.CompletedTask;
+        }
 
         private static string GetTitle()
         {
@@ -313,7 +380,7 @@ namespace LT_Web_Nhom4.Controllers
         private async Task<TEntity?> FindAsync(string id)
         {
             var keyValues = ParseKey(id);
-            return await _context.Set<TEntity>().FindAsync(keyValues);
+            return await Context.Set<TEntity>().FindAsync(keyValues);
         }
 
         private IReadOnlyList<object?> ParseKey(string id)

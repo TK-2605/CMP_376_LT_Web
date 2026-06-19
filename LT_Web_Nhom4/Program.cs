@@ -97,7 +97,7 @@ static async Task SeedDefaultRolesAsync(WebApplication app)
     try
     {
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var roles = new[] { "Admin", "Teacher", "Student" };
+        var roles = new[] { "Admin", "Student" };
 
         foreach (var role in roles)
         {

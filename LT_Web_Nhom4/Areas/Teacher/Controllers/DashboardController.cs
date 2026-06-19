@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LT_Web_Nhom4.Areas.Teacher.Controllers
 {
     [Area("Teacher")]
-    [Authorize(Roles = "Teacher,Admin")]
+    [Authorize]
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -34,7 +34,11 @@ namespace LT_Web_Nhom4.Areas.Teacher.Controllers
                 TotalExams = isAdmin
                     ? await _context.Exams.CountAsync()
                     : await _context.Exams.CountAsync(exam => exam.CreatedById == userId),
-                TotalWarnings = await _context.AntiCheatEvents.CountAsync()
+                TotalWarnings = isAdmin
+                    ? await _context.AntiCheatEvents.CountAsync()
+                    : await _context.AntiCheatEvents.CountAsync(antiCheatEvent =>
+                        antiCheatEvent.ExamAttempt.Exam.CreatedById == userId
+                        || antiCheatEvent.ExamAttempt.Exam.Class.TeacherId == userId)
             };
 
             return View(model);
