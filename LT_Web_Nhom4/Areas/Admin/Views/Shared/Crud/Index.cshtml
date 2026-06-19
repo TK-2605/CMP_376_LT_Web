@@ -33,6 +33,13 @@
     </div>
 
     <div class="card admin-crud-card">
+        @if (TempData["AdminMessage"] is string message)
+        {
+            <div class="alert alert-success admin-crud-alert mb-0" role="alert">
+                <i class="icon-base ri ri-check-line me-1"></i>
+                @message
+            </div>
+        }
         <div class="table-responsive">
             <table class="table admin-crud-table align-middle mb-0">
                 <thead>
@@ -73,6 +80,12 @@
                                 <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sua">
                                     <i class="icon-base ri ri-edit-2-line"></i>
                                 </a>
+                                @if (string.Equals(Model.ControllerName, "Users", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@row.Key" class="btn btn-sm btn-outline-info" title="Phan quyen">
+                                        <i class="icon-base ri ri-shield-user-line"></i>
+                                    </a>
+                                }
                                 <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoa">
                                     <i class="icon-base ri ri-delete-bin-6-line"></i>
                                 </a>

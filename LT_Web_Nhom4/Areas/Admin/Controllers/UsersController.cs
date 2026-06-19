@@ -1,3 +1,4 @@
+using LT_Web_Nhom4.Areas.Admin.Models;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -12,23 +13,23 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
     public class UsersController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public UsersController(UserManager<ApplicationUser> userManager)
+        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public async Task<IActionResult> Index()
         {
-            var users = await _userManager.Users.AsNoTracking().ToListAsync();
-            return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
+            var users = await _userManager.Users.OrderByDescending(user => user.CreatedAt).ToListAsync();
+            var rows = new List<CrudRowViewModel>();
+
+            foreach (var user in users)
             {
-                Title = "Tai khoan",
-                Description = "Quan ly tai khoan sinh vien, giang vien va trang thai truy cap.",
-                ControllerName = "Users",
-                AreaName = "Admin",
-                Fields = UserFields(),
-                Rows = users.Select(user => new CrudRowViewModel
+                var roles = await _userManager.GetRolesAsync(user);
+                rows.Add(new CrudRowViewModel
                 {
                     Key = user.Id,
                     Values = new Dictionary<string, string?>
@@ -36,11 +37,22 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                         ["Email"] = user.Email,
                         ["FullName"] = user.FullName,
                         ["StudentCode"] = user.StudentCode,
+                        ["Roles"] = roles.Count > 0 ? string.Join(", ", roles.OrderBy(role => role)) : "Chua co",
                         ["IsActive"] = user.IsActive ? "Dang hoat dong" : "Tam khoa",
                         ["EmailConfirmed"] = user.EmailConfirmed ? "Da xac thuc" : "Chua xac thuc",
                         ["CreatedAt"] = user.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                     }
-                }).ToList()
+                });
+            }
+
+            return View("/Areas/Admin/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
+            {
+                Title = "Tai khoan",
+                Description = "Quan ly tai khoan sinh vien, giang vien va trang thai truy cap.",
+                ControllerName = "Users",
+                AreaName = "Admin",
+                Fields = UserFields(),
+                Rows = rows
             });
         }
 
@@ -52,6 +64,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
+            var roles = await _userManager.GetRolesAsync(user);
+
             return View("/Areas/Admin/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
                 Title = "Tai khoan",
@@ -59,7 +73,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Key = user.Id,
-                Fields = UserFields(user, includePassword: false)
+                Fields = UserFields(user, includePassword: false, roles)
             });
         }
 
@@ -204,13 +218,86 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private static IReadOnlyList<CrudFieldViewModel> UserFields(ApplicationUser? user = null, bool includePassword = false)
+        [HttpGet]
+        public async Task<IActionResult> ManageRoles(string id)
+        {
+            var model = await BuildRoleAssignmentModelAsync(id);
+            if (model is null)
+            {
+                return NotFound();
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ManageRoles(AdminRoleAssignmentViewModel model)
+        {
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            var availableRoles = await GetAvailableRoleNamesAsync();
+            var selectedRoles = model.SelectedRoles
+                .Where(role => availableRoles.Contains(role))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+            if (currentRoles.Contains("Admin") && !selectedRoles.Contains("Admin") && !await CanRemoveAdminRoleAsync(user.Id))
+            {
+                ModelState.AddModelError(string.Empty, "He thong phai con it nhat mot tai khoan Admin.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var invalidModel = await BuildRoleAssignmentModelAsync(user.Id, selectedRoles);
+                return invalidModel is null ? NotFound() : View(invalidModel);
+            }
+
+            var rolesToRemove = currentRoles.Except(selectedRoles, StringComparer.OrdinalIgnoreCase).ToList();
+            var rolesToAdd = selectedRoles.Except(currentRoles, StringComparer.OrdinalIgnoreCase).ToList();
+
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    AddErrors(removeResult);
+                    var invalidModel = await BuildRoleAssignmentModelAsync(user.Id, selectedRoles);
+                    return invalidModel is null ? NotFound() : View(invalidModel);
+                }
+            }
+
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                {
+                    AddErrors(addResult);
+                    var invalidModel = await BuildRoleAssignmentModelAsync(user.Id, selectedRoles);
+                    return invalidModel is null ? NotFound() : View(invalidModel);
+                }
+            }
+
+            TempData["AdminMessage"] = "Da cap nhat quyen cho tai khoan.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private static IReadOnlyList<CrudFieldViewModel> UserFields(
+            ApplicationUser? user = null,
+            bool includePassword = false,
+            IEnumerable<string>? roles = null)
         {
             var fields = new List<CrudFieldViewModel>
             {
                 new() { Name = "Email", Label = "Email", Value = user?.Email, InputType = "email", Placeholder = "name@example.com" },
                 new() { Name = "FullName", Label = "Ho va ten", Value = user?.FullName, InputType = "text", Placeholder = "Nguyen Van A" },
                 new() { Name = "StudentCode", Label = "Ma sinh vien", Value = user?.StudentCode, InputType = "text", IsNullable = true, Placeholder = "Neu co" },
+                new() { Name = "Roles", Label = "Quyen", Value = roles is null ? null : string.Join(", ", roles.OrderBy(role => role)), ShowInForm = false },
                 new() { Name = "IsActive", Label = "Cho phep dang nhap", Value = user?.IsActive == false ? "false" : "true", IsBoolean = true },
                 new() { Name = "EmailConfirmed", Label = "Email da xac thuc", Value = user?.EmailConfirmed == true ? "true" : "false", IsBoolean = true }
             };
@@ -227,6 +314,43 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             }
 
             return fields;
+        }
+
+        private async Task<AdminRoleAssignmentViewModel?> BuildRoleAssignmentModelAsync(string id, IEnumerable<string>? selectedRoles = null)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user is null)
+            {
+                return null;
+            }
+
+            var currentRoles = selectedRoles?.ToList() ?? (await _userManager.GetRolesAsync(user)).ToList();
+
+            return new AdminRoleAssignmentViewModel
+            {
+                UserId = user.Id,
+                Email = user.Email ?? string.Empty,
+                FullName = user.FullName,
+                StudentCode = user.StudentCode,
+                AvailableRoles = await GetAvailableRoleNamesAsync(),
+                SelectedRoles = currentRoles
+            };
+        }
+
+        private async Task<IList<string>> GetAvailableRoleNamesAsync()
+        {
+            return await _roleManager.Roles
+                .AsNoTracking()
+                .Where(role => role.Name != null)
+                .Select(role => role.Name!)
+                .OrderBy(role => role)
+                .ToListAsync();
+        }
+
+        private async Task<bool> CanRemoveAdminRoleAsync(string userId)
+        {
+            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            return adminUsers.Any(user => user.Id != userId);
         }
 
         private void AddErrors(IdentityResult result)

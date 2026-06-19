@@ -45,6 +45,10 @@ namespace LT_Web_Nhom4.Areas.Admin.Models
 
         public string Email { get; set; } = string.Empty;
 
+        public string FullName { get; set; } = string.Empty;
+
+        public string? StudentCode { get; set; }
+
         public IList<string> AvailableRoles { get; set; } = new List<string>();
 
         public IList<string> SelectedRoles { get; set; } = new List<string>();

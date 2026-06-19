@@ -1,0 +1,96 @@
+@model AdminRoleAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Phan quyen tai khoan";
+
+    string RoleDescription(string role)
+    {
+        return role switch
+        {
+            "Admin" => "Toan quyen quan tri he thong, tai khoan, du lieu va cau hinh.",
+            "Teacher" => "Quan ly lop, cau hoi, de thi va theo doi bai lam.",
+            "Student" => "Vao lop hoc, xem de thi va thuc hien bai lam.",
+            _ => "Nhom quyen tuy chinh trong he thong."
+        };
+    }
+}
+
+<section class="admin-crud-page">
+    <div class="admin-form-shell">
+        <div class="admin-crud-header">
+            <div>
+                <span class="admin-crud-kicker">Phan quyen truy cap</span>
+                <h1>Cap quyen tai khoan</h1>
+                <p>Chon nhom quyen dung voi vai tro thuc te cua nguoi dung trong he thong.</p>
+            </div>
+        </div>
+
+        <div class="card admin-crud-card admin-form-card">
+            <div class="card-body">
+                <div class="admin-role-summary">
+                    <div>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.FullName) ? Model.Email : Model.FullName)</strong>
+                        <span>@Model.Email</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.StudentCode))
+                    {
+                        <span class="badge bg-label-primary">@Model.StudentCode</span>
+                    }
+                </div>
+
+                <form asp-area="Admin" asp-controller="Users" asp-action="ManageRoles" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mt-3"></div>
+                    <input asp-for="UserId" type="hidden" />
+                    <input asp-for="Email" type="hidden" />
+                    <input asp-for="FullName" type="hidden" />
+                    <input asp-for="StudentCode" type="hidden" />
+
+                    @if (Model.AvailableRoles.Count == 0)
+                    {
+                        <div class="admin-crud-empty">
+                            <i class="icon-base ri ri-shield-user-line"></i>
+                            <strong>Chua co vai tro</strong>
+                            <span>Tao vai tro truoc, sau do quay lai cap quyen cho tai khoan.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="admin-role-options">
+                            @foreach (var role in Model.AvailableRoles)
+                            {
+                                var checkboxId = $"role_{role}";
+                                <label class="admin-role-option" for="@checkboxId">
+                                    <input id="@checkboxId"
+                                           class="form-check-input"
+                                           type="checkbox"
+                                           name="SelectedRoles"
+                                           value="@role"
+                                           checked="@Model.SelectedRoles.Contains(role, StringComparer.OrdinalIgnoreCase)" />
+                                    <span>
+                                        <strong>@role</strong>
+                                        <span>@RoleDescription(role)</span>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                    }
+
+                    <div class="admin-form-actions">
+                        <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="icon-base ri ri-arrow-left-line me-1"></i>
+                            Huy
+                        </a>
+                        <a asp-area="Admin" asp-controller="Roles" asp-action="Index" class="btn btn-outline-primary">
+                            <i class="icon-base ri ri-lock-2-line me-1"></i>
+                            Quan ly vai tro
+                        </a>
+                        <button type="submit" class="btn btn-primary" disabled="@(Model.AvailableRoles.Count == 0)">
+                            <i class="icon-base ri ri-save-3-line me-1"></i>
+                            Luu phan quyen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

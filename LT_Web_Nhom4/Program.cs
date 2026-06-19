@@ -52,6 +52,7 @@ builder.Services.AddControllersWithViews()
     });
 
 var app = builder.Build();
+await SeedDefaultRolesAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -87,3 +88,27 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+static async Task SeedDefaultRolesAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeed");
+
+    try
+    {
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var roles = new[] { "Admin", "Teacher", "Student" };
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(role));
+            }
+        }
+    }
+    catch (Exception exception)
+    {
+        logger.LogWarning(exception, "Default identity roles were not seeded.");
+    }
+}
