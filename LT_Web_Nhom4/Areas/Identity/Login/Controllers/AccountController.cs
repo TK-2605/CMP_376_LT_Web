@@ -4,6 +4,7 @@ using LT_Web_Nhom4.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 {
@@ -107,17 +108,40 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
+            var fullName = model.FullName.Trim();
+            var studentCode = NormalizeOptional(model.StudentCode);
+
+            model.Email = email;
+            model.FullName = fullName;
+            model.StudentCode = studentCode;
+
+            if (await AddDuplicateUserErrorsAsync(email, studentCode))
+            {
+                return View(model);
+            }
+
             var user = new ApplicationUser
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
-                FullName = model.FullName,
-                StudentCode = model.StudentCode,
+                FullName = fullName,
+                StudentCode = studentCode,
                 IsActive = true
             };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
+            IdentityResult result;
+            try
+            {
+                result = await _userManager.CreateAsync(user, model.Password);
+            }
+            catch (DbUpdateException exception)
+            {
+                AddDatabaseRegistrationError(exception, email);
+                return View(model);
+            }
+
             if (result.Succeeded)
             {
                 await AddDefaultStudentRoleAsync(user);
@@ -218,6 +242,19 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return View(model);
             }
 
+            var email = model.Email.Trim();
+            var fullName = model.FullName.Trim();
+            var studentCode = NormalizeOptional(model.StudentCode);
+
+            model.Email = email;
+            model.FullName = fullName;
+            model.StudentCode = studentCode;
+
+            if (await AddDuplicateUserErrorsAsync(email, studentCode))
+            {
+                return View(model);
+            }
+
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info is null)
             {
@@ -227,15 +264,25 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             var user = new ApplicationUser
             {
-                UserName = model.Email,
-                Email = model.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
-                FullName = model.FullName,
-                StudentCode = model.StudentCode,
+                FullName = fullName,
+                StudentCode = studentCode,
                 IsActive = true
             };
 
-            var createResult = await _userManager.CreateAsync(user);
+            IdentityResult createResult;
+            try
+            {
+                createResult = await _userManager.CreateAsync(user);
+            }
+            catch (DbUpdateException exception)
+            {
+                AddDatabaseRegistrationError(exception, email);
+                return View(model);
+            }
+
             if (createResult.Succeeded)
             {
                 await _userManager.AddLoginAsync(user, info);
@@ -295,6 +342,38 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 await _userManager.AddToRoleAsync(user, "Student");
             }
+        }
+
+        private async Task<bool> AddDuplicateUserErrorsAsync(string email, string? studentCode)
+        {
+            var hasError = false;
+
+            if (await _userManager.FindByEmailAsync(email) is not null || await _userManager.FindByNameAsync(email) is not null)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email nay da duoc dang ky.");
+                hasError = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(studentCode)
+                && await _userManager.Users.AnyAsync(user => user.StudentCode == studentCode))
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.StudentCode), "Ma sinh vien nay da duoc su dung.");
+                hasError = true;
+            }
+
+            return hasError;
+        }
+
+        private void AddDatabaseRegistrationError(DbUpdateException exception, string email)
+        {
+            _logger.LogWarning(exception, "Registration failed because user data is duplicated for {Email}.", email);
+            ModelState.AddModelError(string.Empty, "Email hoac ma sinh vien da ton tai. Vui long kiem tra lai thong tin dang ky.");
+        }
+
+        private static string? NormalizeOptional(string? value)
+        {
+            var normalized = value?.Trim();
+            return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
         }
     }
 }

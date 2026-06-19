@@ -9,6 +9,17 @@
         <li class="nav-item">
             <span class="nav-link text-dark">Xin chao @User.Identity?.Name</span>
         </li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item">
+                <a class="btn btn-admin-return btn-sm"
+                   asp-area="Admin"
+                   asp-controller="Dashboard"
+                   asp-action="Index">
+                    Bang quan tri
+                </a>
+            </li>
+        }
         <li class="nav-item">
             <form asp-area="Identity"
                   asp-controller="Account"
