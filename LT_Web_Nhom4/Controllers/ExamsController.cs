@@ -95,6 +95,10 @@ namespace LT_Web_Nhom4.Controllers
             model.ClassCode = classRoom.Code;
             model.ClassName = classRoom.Name;
 
+            NormalizeBuilderQuestions(model);
+            ModelState.Clear();
+            TryValidateModel(model);
+
             if (model.EndAt <= model.StartAt)
             {
                 ModelState.AddModelError(nameof(model.EndAt), "Thời gian kết thúc phải sau thời gian bắt đầu.");
@@ -104,6 +108,7 @@ namespace LT_Web_Nhom4.Controllers
             {
                 ModelState.AddModelError(nameof(model.PassingScore), "Điểm đạt không được lớn hơn điểm tối đa.");
             }
+            ValidateBuilderQuestions(model);
 
             if (!ModelState.IsValid)
             {
@@ -129,9 +134,113 @@ namespace LT_Web_Nhom4.Controllers
             };
 
             Context.Exams.Add(exam);
+            AddQuestionsToExam(exam, classRoom.SubjectId, model);
             await Context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Manage), new { id = exam.Id });
+        }
+
+        private void NormalizeBuilderQuestions(CreateExamInClassViewModel model)
+        {
+            model.Questions = model.Questions
+                .Where(question => !string.IsNullOrWhiteSpace(question.Content)
+                    || question.Options.Any(option => !string.IsNullOrWhiteSpace(option.Content)))
+                .ToList();
+
+            if (model.Questions.Count == 0)
+            {
+                model.Questions.Add(ExamBuilderQuestionInputModel.CreateDefault());
+            }
+
+            foreach (var question in model.Questions)
+            {
+                question.Options = question.Options
+                    .Where(option => !string.IsNullOrWhiteSpace(option.Content))
+                    .ToList();
+            }
+        }
+
+        private void ValidateBuilderQuestions(CreateExamInClassViewModel model)
+        {
+            if (model.Questions.Count == 0)
+            {
+                ModelState.AddModelError(string.Empty, "Vui lòng thêm ít nhất một câu hỏi.");
+                return;
+            }
+
+            for (var questionIndex = 0; questionIndex < model.Questions.Count; questionIndex++)
+            {
+                var question = model.Questions[questionIndex];
+                if (string.IsNullOrWhiteSpace(question.Content))
+                {
+                    ModelState.AddModelError($"Questions[{questionIndex}].Content", "Vui lòng nhập nội dung câu hỏi.");
+                }
+
+                if (question.Options.Count < 2)
+                {
+                    ModelState.AddModelError($"Questions[{questionIndex}].Options", "Mỗi câu hỏi cần ít nhất 2 đáp án.");
+                }
+
+                if (!question.Options.Any(option => option.IsCorrect))
+                {
+                    ModelState.AddModelError($"Questions[{questionIndex}].Options", "Vui lòng chọn ít nhất một đáp án đúng.");
+                }
+
+                if (question.Score.HasValue && question.Score <= 0)
+                {
+                    ModelState.AddModelError($"Questions[{questionIndex}].Score", "Điểm câu hỏi phải lớn hơn 0 hoặc để trống để tự chia đều.");
+                }
+            }
+
+            var manualScore = model.Questions.Where(question => question.Score.HasValue).Sum(question => question.Score!.Value);
+            if (manualScore > model.MaxScore)
+            {
+                ModelState.AddModelError(nameof(model.MaxScore), "Tổng điểm câu hỏi không được lớn hơn điểm tối đa của bài.");
+            }
+        }
+
+        private void AddQuestionsToExam(Exam exam, int subjectId, CreateExamInClassViewModel model)
+        {
+            var emptyScoreQuestions = model.Questions.Count(question => !question.Score.HasValue);
+            var usedScore = model.Questions.Where(question => question.Score.HasValue).Sum(question => question.Score!.Value);
+            var autoScore = emptyScoreQuestions > 0
+                ? Math.Round((model.MaxScore - usedScore) / emptyScoreQuestions, 2)
+                : 0;
+
+            for (var questionIndex = 0; questionIndex < model.Questions.Count; questionIndex++)
+            {
+                var input = model.Questions[questionIndex];
+                var question = new Question
+                {
+                    SubjectId = subjectId,
+                    CreatedById = CurrentUserId ?? string.Empty,
+                    Content = input.Content.Trim(),
+                    ImageUrl = string.IsNullOrWhiteSpace(input.ImageUrl) ? null : input.ImageUrl.Trim(),
+                    VideoUrl = string.IsNullOrWhiteSpace(input.VideoUrl) ? null : input.VideoUrl.Trim(),
+                    QuestionType = input.QuestionType,
+                    Difficulty = input.Difficulty,
+                    Explanation = string.IsNullOrWhiteSpace(input.Explanation) ? null : input.Explanation.Trim(),
+                    Status = QuestionStatus.Published
+                };
+
+                for (var optionIndex = 0; optionIndex < input.Options.Count; optionIndex++)
+                {
+                    var option = input.Options[optionIndex];
+                    question.Options.Add(new QuestionOption
+                    {
+                        Content = option.Content.Trim(),
+                        IsCorrect = option.IsCorrect,
+                        DisplayOrder = optionIndex + 1
+                    });
+                }
+
+                exam.ExamQuestions.Add(new ExamQuestion
+                {
+                    Question = question,
+                    Score = input.Score ?? autoScore,
+                    DisplayOrder = questionIndex + 1
+                });
+            }
         }
 
         protected override IQueryable<Exam> ApplyReadScope(IQueryable<Exam> query)

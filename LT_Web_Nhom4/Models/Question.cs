@@ -10,6 +10,10 @@ namespace LT_Web_Nhom4.Models
 
         public string Content { get; set; } = string.Empty;
 
+        public string? ImageUrl { get; set; }
+
+        public string? VideoUrl { get; set; }
+
         public QuestionType QuestionType { get; set; } = QuestionType.SingleChoice;
 
         public QuestionDifficulty Difficulty { get; set; } = QuestionDifficulty.Medium;

@@ -79,6 +79,60 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         [Display(Name = "Trạng thái")]
         public ExamStatus Status { get; set; } = ExamStatus.Draft;
+
+        public IList<ExamBuilderQuestionInputModel> Questions { get; set; } = new List<ExamBuilderQuestionInputModel>
+        {
+            ExamBuilderQuestionInputModel.CreateDefault()
+        };
+    }
+
+    public class ExamBuilderQuestionInputModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập nội dung câu hỏi.")]
+        [Display(Name = "Nội dung câu hỏi")]
+        public string Content { get; set; } = string.Empty;
+
+        [Display(Name = "Loại câu hỏi")]
+        public QuestionType QuestionType { get; set; } = QuestionType.SingleChoice;
+
+        [Display(Name = "Điểm")]
+        public decimal? Score { get; set; }
+
+        [Display(Name = "Độ khó")]
+        public QuestionDifficulty Difficulty { get; set; } = QuestionDifficulty.Medium;
+
+        [Display(Name = "Đường dẫn ảnh")]
+        public string? ImageUrl { get; set; }
+
+        [Display(Name = "Đường dẫn video")]
+        public string? VideoUrl { get; set; }
+
+        [Display(Name = "Giải thích")]
+        public string? Explanation { get; set; }
+
+        public IList<ExamBuilderOptionInputModel> Options { get; set; } = new List<ExamBuilderOptionInputModel>();
+
+        public static ExamBuilderQuestionInputModel CreateDefault()
+        {
+            return new ExamBuilderQuestionInputModel
+            {
+                Options =
+                {
+                    new ExamBuilderOptionInputModel { Content = string.Empty, IsCorrect = true },
+                    new ExamBuilderOptionInputModel { Content = string.Empty },
+                    new ExamBuilderOptionInputModel { Content = string.Empty },
+                    new ExamBuilderOptionInputModel { Content = string.Empty }
+                }
+            };
+        }
+    }
+
+    public class ExamBuilderOptionInputModel
+    {
+        [Display(Name = "Đáp án")]
+        public string Content { get; set; } = string.Empty;
+
+        public bool IsCorrect { get; set; }
     }
 
     public class ExamRoomViewModel

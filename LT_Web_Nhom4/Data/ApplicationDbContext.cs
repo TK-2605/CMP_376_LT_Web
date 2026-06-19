@@ -116,6 +116,8 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(question => question.Content).HasMaxLength(4000);
                 entity.Property(question => question.Explanation).HasMaxLength(4000);
+                entity.Property(question => question.ImageUrl).HasMaxLength(1000);
+                entity.Property(question => question.VideoUrl).HasMaxLength(1000);
 
                 entity.HasOne(question => question.Subject)
                     .WithMany(subject => subject.Questions)
