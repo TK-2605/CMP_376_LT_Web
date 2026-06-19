@@ -32,7 +32,7 @@ namespace LT_Web_Nhom4.Controllers
         public override async Task<IActionResult> Index()
         {
             var cards = await BuildExamCardsAsync();
-            if (cards.Count == 0)
+            if (cards.Count == 0 && !await Context.Exams.AnyAsync())
             {
                 cards = BuildSampleExamCards().ToList();
             }

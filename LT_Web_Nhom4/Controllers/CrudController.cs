@@ -381,7 +381,7 @@ namespace LT_Web_Nhom4.Controllers
         private async Task<TEntity?> FindAsync(string id)
         {
             var keyValues = ParseKey(id);
-            return await Context.Set<TEntity>().FindAsync(keyValues);
+            return await Context.Set<TEntity>().FindAsync(keyValues.ToArray());
         }
 
         private IReadOnlyList<object?> ParseKey(string id)
@@ -435,8 +435,9 @@ namespace LT_Web_Nhom4.Controllers
                     var clrProperty = GetProperty(property.Name);
                     var value = entity is null ? null : clrProperty.GetValue(entity);
                     var isKey = keyNames.Contains(property.Name);
+                    var isGeneratedKey = IsGeneratedKey(property, isKey);
                     var showInList = listFields.Contains(property.Name);
-                    var showInForm = formFields.Contains(property.Name) || isKey && !readOnlyKeys;
+                    var showInForm = (formFields.Contains(property.Name) || isKey && !readOnlyKeys) && !isGeneratedKey;
                     if (!IsAdmin && IsServerAssignedField(entityName, property.Name))
                     {
                         showInForm = false;
@@ -478,12 +479,18 @@ namespace LT_Web_Nhom4.Controllers
 
             foreach (var property in _entityType.GetProperties())
             {
+                var isKey = keyNames.Contains(property.Name);
+                if (!readOnlyKeys && IsGeneratedKey(property, isKey))
+                {
+                    continue;
+                }
+
                 if (!formFields.Contains(property.Name) && !(keyNames.Contains(property.Name) && !readOnlyKeys))
                 {
                     continue;
                 }
 
-                if (readOnlyKeys && keyNames.Contains(property.Name))
+                if (readOnlyKeys && isKey)
                 {
                     continue;
                 }
@@ -800,6 +807,11 @@ namespace LT_Web_Nhom4.Controllers
             return propertyName == nameof(Class.TeacherId)
                 || propertyName == nameof(Question.CreatedById)
                 || propertyName == nameof(Exam.CreatedById);
+        }
+
+        private static bool IsGeneratedKey(IProperty property, bool isKey)
+        {
+            return isKey && property.ValueGenerated == ValueGenerated.OnAdd;
         }
 
         private static string SplitPascalCase(string value)
