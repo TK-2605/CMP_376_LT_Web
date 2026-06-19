@@ -11,6 +11,104 @@ namespace LT_Web_Nhom4.Controllers
     public abstract class CrudController<TEntity> : Controller where TEntity : class, new()
     {
         private const string Separator = "|";
+        private static readonly Dictionary<string, string> EntityTitles = new()
+        {
+            ["Subject"] = "Mon hoc",
+            ["Class"] = "Lop hoc",
+            ["ClassMember"] = "Thanh vien lop",
+            ["Question"] = "Cau hoi",
+            ["QuestionOption"] = "Lua chon dap an",
+            ["Exam"] = "De thi",
+            ["ExamQuestion"] = "Cau hoi trong de",
+            ["ExamAttempt"] = "Luot lam bai",
+            ["AttemptAnswer"] = "Dap an bai lam",
+            ["AntiCheatEvent"] = "Canh bao bai thi"
+        };
+
+        private static readonly Dictionary<string, string> EntityDescriptions = new()
+        {
+            ["Subject"] = "Quan ly cac mon hoc dung de phan loai lop, cau hoi va de thi.",
+            ["Class"] = "Quan ly lop hoc, hoc ky va giang vien phu trach.",
+            ["ClassMember"] = "Quan ly sinh vien trong tung lop hoc.",
+            ["Question"] = "Quan ly ngan hang cau hoi va trang thai su dung.",
+            ["QuestionOption"] = "Quan ly cac lua chon cua tung cau hoi.",
+            ["Exam"] = "Quan ly thong tin de thi, thoi gian va cau hinh lam bai.",
+            ["ExamQuestion"] = "Gan cau hoi vao de thi va thiet lap diem.",
+            ["ExamAttempt"] = "Theo doi cac luot lam bai cua sinh vien.",
+            ["AttemptAnswer"] = "Xem dap an da luu va diem tung cau.",
+            ["AntiCheatEvent"] = "Theo doi cac canh bao can giang vien xem lai."
+        };
+
+        private static readonly Dictionary<string, string[]> ListFields = new()
+        {
+            ["Subject"] = new[] { "Code", "Name", "Description" },
+            ["Class"] = new[] { "Code", "Name", "Semester", "AcademicYear" },
+            ["ClassMember"] = new[] { "ClassId", "UserId", "Status", "JoinedAt" },
+            ["Question"] = new[] { "Content", "QuestionType", "Difficulty", "Status" },
+            ["QuestionOption"] = new[] { "QuestionId", "Content", "IsCorrect", "DisplayOrder" },
+            ["Exam"] = new[] { "Title", "DurationMinutes", "StartAt", "EndAt", "Status" },
+            ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
+            ["ExamAttempt"] = new[] { "ExamId", "UserId", "StartedAt", "SubmittedAt", "Score", "Status" },
+            ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "IsCorrect", "AwardedScore", "LastSavedAt" },
+            ["AntiCheatEvent"] = new[] { "ExamAttemptId", "EventType", "Severity", "OccurredAt" }
+        };
+
+        private static readonly Dictionary<string, string[]> FormFields = new()
+        {
+            ["Subject"] = new[] { "Code", "Name", "Description" },
+            ["Class"] = new[] { "SubjectId", "TeacherId", "Code", "Name", "Semester", "AcademicYear" },
+            ["ClassMember"] = new[] { "ClassId", "UserId", "Status" },
+            ["Question"] = new[] { "SubjectId", "CreatedById", "Content", "QuestionType", "Difficulty", "Explanation", "Status" },
+            ["QuestionOption"] = new[] { "QuestionId", "Content", "IsCorrect", "DisplayOrder" },
+            ["Exam"] = new[] { "SubjectId", "ClassId", "CreatedById", "Title", "DurationMinutes", "StartAt", "EndAt", "PassingScore", "ShuffleQuestions", "ShuffleOptions", "RequireFullscreen", "MaxTabSwitchCount", "Status" },
+            ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
+            ["ExamAttempt"] = new[] { "ExamId", "UserId", "SubmittedAt", "Score", "Status", "IsAutoSubmitted" },
+            ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "SelectedOptionId", "IsCorrect", "AwardedScore" },
+            ["AntiCheatEvent"] = new[] { "ExamAttemptId", "EventType", "Severity", "Description", "OccurredAt" }
+        };
+
+        private static readonly Dictionary<string, string> FieldLabels = new()
+        {
+            ["AcademicYear"] = "Nam hoc",
+            ["AwardedScore"] = "Diem dat duoc",
+            ["ClassId"] = "Lop hoc",
+            ["Code"] = "Ma",
+            ["Content"] = "Noi dung",
+            ["CreatedById"] = "Nguoi tao",
+            ["Description"] = "Mo ta",
+            ["Difficulty"] = "Do kho",
+            ["DisplayOrder"] = "Thu tu hien thi",
+            ["DurationMinutes"] = "Thoi luong",
+            ["EndAt"] = "Ket thuc",
+            ["EventType"] = "Loai su kien",
+            ["ExamAttemptId"] = "Luot lam bai",
+            ["ExamId"] = "De thi",
+            ["Explanation"] = "Giai thich",
+            ["IsAutoSubmitted"] = "Tu dong nop bai",
+            ["IsCorrect"] = "Dap an dung",
+            ["MaxTabSwitchCount"] = "So lan roi man hinh toi da",
+            ["Name"] = "Ten",
+            ["OccurredAt"] = "Thoi diem",
+            ["PassingScore"] = "Diem dat",
+            ["QuestionId"] = "Cau hoi",
+            ["QuestionType"] = "Loai cau hoi",
+            ["RequireFullscreen"] = "Yeu cau toan man hinh",
+            ["Score"] = "Diem",
+            ["SelectedOptionId"] = "Dap an da chon",
+            ["Semester"] = "Hoc ky",
+            ["Severity"] = "Muc do",
+            ["ShuffleOptions"] = "Tron dap an",
+            ["ShuffleQuestions"] = "Tron cau hoi",
+            ["StartAt"] = "Bat dau",
+            ["StartedAt"] = "Bat dau lam",
+            ["Status"] = "Trang thai",
+            ["SubjectId"] = "Mon hoc",
+            ["SubmittedAt"] = "Thoi gian nop",
+            ["TeacherId"] = "Giang vien",
+            ["Title"] = "Tieu de",
+            ["UserId"] = "Nguoi dung"
+        };
+
         private readonly ApplicationDbContext _context;
         private readonly IEntityType _entityType;
 
@@ -38,6 +136,7 @@ namespace LT_Web_Nhom4.Controllers
                 Title = GetTitle(),
                 ControllerName = ControllerName,
                 AreaName = AreaName,
+                Description = GetDescription(),
                 Fields = fields,
                 Rows = rows
             });
@@ -56,6 +155,7 @@ namespace LT_Web_Nhom4.Controllers
                 Title = GetTitle(),
                 ControllerName = ControllerName,
                 AreaName = AreaName,
+                Description = GetDescription(),
                 Key = id,
                 Fields = BuildFields(entity, readOnlyKeys: true)
             });
@@ -65,7 +165,8 @@ namespace LT_Web_Nhom4.Controllers
         {
             return SharedCrudView("Create", new CrudFormViewModel
             {
-                Title = $"Create {GetTitle()}",
+                Title = $"Them {GetTitle()}",
+                Description = GetDescription(),
                 ActionName = nameof(Create),
                 ControllerName = ControllerName,
                 AreaName = AreaName,
@@ -84,7 +185,8 @@ namespace LT_Web_Nhom4.Controllers
             {
                 return SharedCrudView("Create", new CrudFormViewModel
                 {
-                    Title = $"Create {GetTitle()}",
+                    Title = $"Them {GetTitle()}",
+                    Description = GetDescription(),
                     ActionName = nameof(Create),
                     ControllerName = ControllerName,
                     AreaName = AreaName,
@@ -107,7 +209,8 @@ namespace LT_Web_Nhom4.Controllers
 
             return SharedCrudView("Edit", new CrudFormViewModel
             {
-                Title = $"Edit {GetTitle()}",
+                Title = $"Sua {GetTitle()}",
+                Description = GetDescription(),
                 ActionName = nameof(Edit),
                 ControllerName = ControllerName,
                 AreaName = AreaName,
@@ -132,7 +235,8 @@ namespace LT_Web_Nhom4.Controllers
             {
                 return SharedCrudView("Edit", new CrudFormViewModel
                 {
-                    Title = $"Edit {GetTitle()}",
+                    Title = $"Sua {GetTitle()}",
+                    Description = GetDescription(),
                     ActionName = nameof(Edit),
                     ControllerName = ControllerName,
                     AreaName = AreaName,
@@ -158,6 +262,7 @@ namespace LT_Web_Nhom4.Controllers
                 Title = GetTitle(),
                 ControllerName = ControllerName,
                 AreaName = AreaName,
+                Description = GetDescription(),
                 Key = id,
                 Fields = BuildFields(entity, readOnlyKeys: true)
             });
@@ -185,7 +290,14 @@ namespace LT_Web_Nhom4.Controllers
 
         private static string GetTitle()
         {
-            return SplitPascalCase(typeof(TEntity).Name);
+            var entityName = typeof(TEntity).Name;
+            return EntityTitles.TryGetValue(entityName, out var title) ? title : SplitPascalCase(entityName);
+        }
+
+        private static string GetDescription()
+        {
+            var entityName = typeof(TEntity).Name;
+            return EntityDescriptions.TryGetValue(entityName, out var description) ? description : string.Empty;
         }
 
         private IActionResult SharedCrudView(string viewName, object model)
@@ -233,27 +345,43 @@ namespace LT_Web_Nhom4.Controllers
         {
             var keyNames = GetPrimaryKey().Properties.Select(property => property.Name).ToHashSet();
 
+            var entityName = typeof(TEntity).Name;
+            var listFields = GetConfiguredFields(ListFields, entityName);
+            var formFields = GetConfiguredFields(FormFields, entityName);
+            var orderLookup = formFields
+                .Concat(listFields)
+                .Distinct()
+                .Select((name, index) => new { name, index })
+                .ToDictionary(item => item.name, item => item.index);
+
             return _entityType.GetProperties()
-                .OrderBy(property => keyNames.Contains(property.Name) ? 0 : 1)
-                .ThenBy(property => property.Name)
+                .OrderBy(property => orderLookup.TryGetValue(property.Name, out var index) ? index : 999)
+                .ThenBy(property => keyNames.Contains(property.Name) ? 0 : 1)
                 .Select(property =>
                 {
                     var clrProperty = GetProperty(property.Name);
                     var value = entity is null ? null : clrProperty.GetValue(entity);
                     var isKey = keyNames.Contains(property.Name);
+                    var showInList = listFields.Contains(property.Name);
+                    var showInForm = formFields.Contains(property.Name) || isKey && !readOnlyKeys;
                     return new CrudFieldViewModel
                     {
                         Name = property.Name,
-                        Label = SplitPascalCase(property.Name),
+                        Label = FieldLabels.TryGetValue(property.Name, out var label) ? label : SplitPascalCase(property.Name),
                         Value = FormatInputValue(value, property.ClrType),
                         InputType = GetInputType(property.ClrType),
                         IsKey = isKey,
                         IsReadOnly = readOnlyKeys && isKey,
                         IsNullable = property.IsNullable,
                         IsBoolean = GetUnderlyingType(property.ClrType) == typeof(bool),
+                        ShowInList = showInList,
+                        ShowInForm = showInForm,
+                        ShowInDetails = showInList || showInForm,
+                        Placeholder = BuildPlaceholder(property.Name),
                         Options = BuildOptions(property.ClrType)
                     };
                 })
+                .Where(field => field.ShowInList || field.ShowInForm || field.ShowInDetails)
                 .ToList();
         }
 
@@ -261,8 +389,16 @@ namespace LT_Web_Nhom4.Controllers
         {
             var keyNames = GetPrimaryKey().Properties.Select(property => property.Name).ToHashSet();
 
+            var entityName = typeof(TEntity).Name;
+            var formFields = GetConfiguredFields(FormFields, entityName);
+
             foreach (var property in _entityType.GetProperties())
             {
+                if (!formFields.Contains(property.Name) && !(keyNames.Contains(property.Name) && !readOnlyKeys))
+                {
+                    continue;
+                }
+
                 if (readOnlyKeys && keyNames.Contains(property.Name))
                 {
                     continue;
@@ -286,7 +422,7 @@ namespace LT_Web_Nhom4.Controllers
                 }
                 catch (Exception)
                 {
-                    ModelState.AddModelError(property.Name, $"{SplitPascalCase(property.Name)} is invalid.");
+                    ModelState.AddModelError(property.Name, $"{SplitPascalCase(property.Name)} khong hop le.");
                 }
             }
         }
@@ -340,6 +476,7 @@ namespace LT_Web_Nhom4.Controllers
             {
                 null => null,
                 DateTime dateTime => dateTime.ToString("dd/MM/yyyy HH:mm"),
+                bool boolean => boolean ? "Co" : "Khong",
                 decimal number => number.ToString("0.##", CultureInfo.InvariantCulture),
                 _ => Convert.ToString(value, CultureInfo.InvariantCulture)
             };
@@ -398,6 +535,26 @@ namespace LT_Web_Nhom4.Controllers
         private static Type GetUnderlyingType(Type type)
         {
             return Nullable.GetUnderlyingType(type) ?? type;
+        }
+
+        private static HashSet<string> GetConfiguredFields(Dictionary<string, string[]> source, string entityName)
+        {
+            if (source.TryGetValue(entityName, out var fields))
+            {
+                return fields.ToHashSet();
+            }
+
+            return new HashSet<string>();
+        }
+
+        private static string BuildPlaceholder(string propertyName)
+        {
+            if (propertyName.EndsWith("Id", StringComparison.Ordinal))
+            {
+                return "Nhap ma lien ket";
+            }
+
+            return FieldLabels.TryGetValue(propertyName, out var label) ? label : SplitPascalCase(propertyName);
         }
 
         private static string SplitPascalCase(string value)

@@ -37,7 +37,7 @@ namespace LT_Web_Nhom4.Controllers
                     new ExamCardViewModel
                     {
                         Id = 1,
-                        Title = "ASP.NET Core MVC Basics",
+                        Title = "Kiem tra Lap trinh Web co ban",
                         SubjectName = "Lap trinh Web",
                         ClassName = "D21_TH01",
                         StartAt = DateTime.Now.AddHours(1),
@@ -48,7 +48,7 @@ namespace LT_Web_Nhom4.Controllers
                     new ExamCardViewModel
                     {
                         Id = 2,
-                        Title = "Entity Framework Core",
+                        Title = "On tap Cong nghe .NET",
                         SubjectName = "Cong nghe .NET",
                         ClassName = "D21_TH02",
                         StartAt = DateTime.Now.AddDays(1),
@@ -98,7 +98,7 @@ namespace LT_Web_Nhom4.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { ok = false, message = "Du lieu autosave khong hop le." });
+                return BadRequest(new { ok = false, message = "Du lieu tu dong luu khong hop le." });
             }
 
             return Ok(new { ok = true, savedAt = DateTime.Now.ToString("HH:mm:ss") });
@@ -110,7 +110,7 @@ namespace LT_Web_Nhom4.Controllers
             {
                 ExamId = id,
                 AttemptId = 1000 + id,
-                Title = "ASP.NET Core MVC Basics",
+                Title = "Kiem tra Lap trinh Web co ban",
                 SubjectName = "Lap trinh Web",
                 DurationMinutes = 45,
                 StartedAt = DateTime.Now,

@@ -12,73 +12,61 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-xl-10">
-                <div class="card auth-card">
+                <div class="auth-card">
                     <div class="row g-0">
-                        <div class="col-lg-5 auth-panel p-5 d-flex flex-column justify-content-between">
-                            <div>
-                                <span class="badge rounded-pill bg-white text-primary mb-4">QuizHub</span>
-                                <h1 class="display-6 fw-bold">Dang nhap vao he thong thi</h1>
-                                <p class="mt-3 mb-0 text-white-50">
-                                    Ho tro tai khoan thuong va OAuth 2.0. Neu Google chua duoc cau hinh, nut OAuth se hien trang thai cho biet ro rang.
-                                </p>
+                        <div class="col-lg-5 auth-panel">
+                            <div class="auth-brand">
+                                <span>QuizHub</span>
                             </div>
-                            <div class="mt-5">
-                                <div class="d-flex gap-3">
-                                    <div>
-                                        <div class="h3 fw-bold mb-0">OTP</div>
-                                        <small class="text-white-50">Email confirm</small>
-                                    </div>
-                                    <div>
-                                        <div class="h3 fw-bold mb-0">JWT</div>
-                                        <small class="text-white-50">API ready</small>
-                                    </div>
-                                    <div>
-                                        <div class="h3 fw-bold mb-0">OAuth</div>
-                                        <small class="text-white-50">Google flow</small>
-                                    </div>
-                                </div>
+                            <div class="auth-panel-content">
+                                <h1>Chao mung tro lai</h1>
+                                <p>Dang nhap de vao lop hoc, xem de thi va tiep tuc bai lam cua ban.</p>
+                            </div>
+                            <div class="auth-panel-note">
+                                <span>Lich thi, bai lam va ket qua duoc quan ly tap trung.</span>
                             </div>
                         </div>
                         <div class="col-lg-7 auth-form-side">
-                            <h2 class="h3 fw-bold mb-2">Chao mung tro lai</h2>
-                            <p class="text-muted mb-4">Nhap email va mat khau de tiep tuc.</p>
+                            <div class="auth-form-heading">
+                                <h2>Dang nhap</h2>
+                                <p>Su dung email da dang ky voi he thong.</p>
+                            </div>
 
                             @if (TempData["AuthMessage"] is string message)
                             {
                                 <div class="alert alert-info">@message</div>
                             }
 
-                            <form asp-area="Identity" asp-controller="Account" asp-action="Login" method="post">
+                            <form asp-area="Identity" asp-controller="Account" asp-action="Login" method="post" class="auth-form">
                                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                                 <input asp-for="ReturnUrl" type="hidden" />
 
-                                <div class="mb-3">
-                                    <label asp-for="Email" class="form-label"></label>
-                                    <input asp-for="Email" class="form-control" autocomplete="username" />
+                                <div class="auth-field">
+                                    <label asp-for="Email" class="form-label">Email</label>
+                                    <input asp-for="Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
                                     <span asp-validation-for="Email" class="text-danger"></span>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label asp-for="Password" class="form-label"></label>
-                                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                                <div class="auth-field">
+                                    <label asp-for="Password" class="form-label">Mat khau</label>
+                                    <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Nhap mat khau" />
                                     <span asp-validation-for="Password" class="text-danger"></span>
                                 </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="auth-row">
                                     <div class="form-check">
                                         <input asp-for="RememberMe" class="form-check-input" />
-                                        <label asp-for="RememberMe" class="form-check-label">Ghi nho dang nhap</label>
+                                        <label asp-for="RememberMe" class="form-check-label">Ghi nho toi</label>
                                     </div>
                                     <a asp-area="Identity" asp-controller="Account" asp-action="ForgotPassword">Quen mat khau?</a>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 mb-3">Dang nhap</button>
+                                <button type="submit" class="btn btn-primary auth-submit">Dang nhap</button>
                             </form>
-
-                            <div class="text-center text-muted my-3">hoac</div>
 
                             @if (Model.ExternalLogins.Count > 0)
                             {
+                                <div class="auth-divider"><span>hoac</span></div>
                                 @foreach (var provider in Model.ExternalLogins)
                                 {
                                     <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLogin" method="post" class="mb-2">
@@ -90,14 +78,8 @@
                                     </form>
                                 }
                             }
-                            else
-                            {
-                                <button type="button" class="btn btn-outline-secondary auth-provider-button w-100" disabled>
-                                    Google OAuth 2.0 chua duoc cau hinh
-                                </button>
-                            }
 
-                            <p class="text-center mt-4 mb-0">
+                            <p class="auth-switch">
                                 Chua co tai khoan?
                                 <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Dang ky</a>
                             </p>

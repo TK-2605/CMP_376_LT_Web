@@ -2,28 +2,200 @@
   min-height: calc(100vh - 154px);
   display: flex;
   align-items: center;
-  padding: 56px 0;
+  padding: 64px 0;
   background:
-    radial-gradient(circle at top left, rgba(111, 66, 193, 0.16), transparent 32rem),
-    linear-gradient(180deg, #ffffff, #f7f5ff);
+    linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(239, 246, 255, 0.82)),
+    url("/img/student/banner-bg.jpg") center/cover fixed;
 }
 
 .auth-card {
-  border: 0;
-  border-radius: 28px;
-  box-shadow: 0 24px 80px rgba(31, 41, 55, 0.12);
   overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+}
+
+.auth-single-card {
+  max-width: 720px;
+  margin-inline: auto;
 }
 
 .auth-panel {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(2rem, 4vw, 3.5rem);
   color: #fff;
-  background: linear-gradient(145deg, #6f42c1, #3b82f6);
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.78), rgba(37, 99, 235, 0.74)),
+    url("/img/student/course-01.jpg") center/cover;
+}
+
+.auth-brand span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.auth-panel-content h1 {
+  max-width: 360px;
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.auth-panel-content p,
+.auth-panel-note {
+  max-width: 360px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.auth-panel-note {
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.95rem;
+}
+
+.auth-form-side {
+  padding: clamp(2rem, 4.5vw, 4rem);
+}
+
+.auth-form-heading {
+  margin-bottom: 28px;
+}
+
+.auth-form-heading h1,
+.auth-form-heading h2 {
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  font-weight: 800;
+}
+
+.auth-form-heading p {
+  margin: 0;
+  color: #64748b;
+}
+
+.auth-form {
+  display: grid;
+  gap: 18px;
+}
+
+.auth-field .form-label {
+  margin-bottom: 8px;
+  color: #334155;
+  font-weight: 650;
+}
+
+.auth-field .form-control,
+.auth-field .form-select {
+  min-height: 48px;
+  border-color: #dbe3ef;
+  border-radius: 8px;
+  color: #0f172a;
+}
+
+.auth-field .form-control:focus,
+.auth-field .form-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.auth-row a,
+.auth-switch a {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.auth-row a:hover,
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 8px;
+  font-weight: 700;
 }
 
 .auth-provider-button {
   min-height: 46px;
+  border-radius: 8px;
+  font-weight: 650;
 }
 
-.auth-form-side {
-  padding: clamp(2rem, 4vw, 3.5rem);
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0 18px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #e2e8f0;
+}
+
+.auth-switch {
+  margin: 26px 0 0;
+  text-align: center;
+  color: #64748b;
+}
+
+.auth-back-link {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 18px;
+  color: #475569;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.auth-back-link:hover {
+  color: #2563eb;
+}
+
+@media (max-width: 991.98px) {
+  .auth-shell {
+    align-items: flex-start;
+    padding: 32px 0;
+  }
+
+  .auth-panel {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .auth-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

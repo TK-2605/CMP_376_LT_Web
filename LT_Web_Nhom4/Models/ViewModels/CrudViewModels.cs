@@ -4,6 +4,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
     {
         public string Title { get; set; } = string.Empty;
 
+        public string Description { get; set; } = string.Empty;
+
         public string ControllerName { get; set; } = string.Empty;
 
         public string? AreaName { get; set; }
@@ -24,6 +26,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
     {
         public string Title { get; set; } = string.Empty;
 
+        public string Description { get; set; } = string.Empty;
+
         public string ActionName { get; set; } = string.Empty;
 
         public string ControllerName { get; set; } = string.Empty;
@@ -38,6 +42,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
     public class CrudDetailsViewModel
     {
         public string Title { get; set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
 
         public string ControllerName { get; set; } = string.Empty;
 
@@ -69,6 +75,16 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public bool IsNullable { get; set; }
 
         public bool IsBoolean { get; set; }
+
+        public bool ShowInList { get; set; } = true;
+
+        public bool ShowInForm { get; set; } = true;
+
+        public bool ShowInDetails { get; set; } = true;
+
+        public string? Placeholder { get; set; }
+
+        public string? HelpText { get; set; }
 
         public IReadOnlyList<CrudOptionViewModel> Options { get; set; } = new List<CrudOptionViewModel>();
     }

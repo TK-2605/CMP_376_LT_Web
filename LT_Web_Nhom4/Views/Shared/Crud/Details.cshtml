@@ -1,25 +1,34 @@
 @model CrudDetailsViewModel
 
 @{
-    ViewData["Title"] = $"Details {Model.Title}";
+    ViewData["Title"] = $"Chi tiet {Model.Title}";
 }
 
-<section class="student-section bg-light">
-    <div class="container">
-        <div class="card">
-            <div class="card-body p-4">
-                <h1 class="h3 fw-bold mb-4">Details @Model.Title</h1>
+@{
+    var visibleFields = Model.Fields.Where(field => field.ShowInDetails).ToList();
+}
 
-                <dl class="row">
-                    @foreach (var field in Model.Fields)
+<section class="crud-page">
+    <div class="container">
+        <div class="card crud-form-card">
+            <div class="card-body">
+                <span class="crud-kicker">Chi tiet</span>
+                <h1>@Model.Title</h1>
+
+                <dl class="crud-detail-list">
+                    @foreach (var field in visibleFields)
                     {
-                        <dt class="col-sm-3">@field.Label</dt>
-                        <dd class="col-sm-9">@field.Value</dd>
+                        <div>
+                            <dt>@field.Label</dt>
+                            <dd>@(field.IsBoolean ? (field.Value == "true" ? "Co" : "Khong") : field.Value ?? "-")</dd>
+                        </div>
                     }
                 </dl>
 
-                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">Edit</a>
-                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+                <div class="crud-form-actions">
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Index" class="btn btn-light">Quay lai</a>
+                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@Model.Key" class="btn btn-primary">Sua</a>
+                </div>
             </div>
         </div>
     </div>

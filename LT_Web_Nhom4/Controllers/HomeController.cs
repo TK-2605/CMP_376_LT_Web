@@ -24,7 +24,7 @@ namespace LT_Web_Nhom4.Controllers
                     {
                         Code = "WEB",
                         Name = "Lap trinh Web",
-                        Description = "On tap MVC, Razor, Identity va Entity Framework Core.",
+                        Description = "On tap ly thuyet, bai tap va cac tinh huong xay dung website.",
                         ImageUrl = "/img/student/course-01.jpg",
                         ExamCount = 6
                     },
@@ -32,7 +32,7 @@ namespace LT_Web_Nhom4.Controllers
                     {
                         Code = "NET",
                         Name = "Cong nghe .NET",
-                        Description = "Bo cau hoi ve ASP.NET Core, EF Core va SQL Server.",
+                        Description = "Cung co kien thuc nen tang ve .NET, du lieu va ung dung web.",
                         ImageUrl = "/img/student/course-02.jpg",
                         ExamCount = 4
                     }
@@ -42,7 +42,7 @@ namespace LT_Web_Nhom4.Controllers
                     new UpcomingExamViewModel
                     {
                         Id = 1,
-                        Title = "ASP.NET Core MVC Basics",
+                        Title = "Kiem tra Lap trinh Web co ban",
                         SubjectName = "Lap trinh Web",
                         StartAt = DateTime.Now.AddHours(1),
                         DurationMinutes = 60
@@ -50,7 +50,7 @@ namespace LT_Web_Nhom4.Controllers
                     new UpcomingExamViewModel
                     {
                         Id = 2,
-                        Title = "Entity Framework Core",
+                        Title = "On tap Cong nghe .NET",
                         SubjectName = "Cong nghe .NET",
                         StartAt = DateTime.Now.AddDays(1),
                         DurationMinutes = 45

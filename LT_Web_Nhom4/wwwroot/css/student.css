@@ -1,7 +1,10 @@
 :root {
-  --student-primary: #6f42c1;
-  --student-primary-dark: #4f2c91;
-  --student-soft: #f6f2ff;
+  --student-primary: #2563eb;
+  --student-primary-dark: #1e3a8a;
+  --student-accent: #0f766e;
+  --student-soft: #eff6ff;
+  --student-ink: #0f172a;
+  --student-muted: #64748b;
 }
 
 .student-navbar {
@@ -10,19 +13,18 @@
 }
 
 .student-page-shell {
-  background: #fff;
+  background: #f8fafc;
 }
 
 .student-hero {
-  min-height: 620px;
+  min-height: 610px;
   display: flex;
   align-items: center;
   color: #fff;
   background:
-    linear-gradient(120deg, rgba(111, 66, 193, 0.95), rgba(79, 44, 145, 0.86)),
+    linear-gradient(120deg, rgba(15, 23, 42, 0.88), rgba(37, 99, 235, 0.72)),
     url('/img/student/banner-bg.jpg') center/cover;
-  border-bottom-left-radius: 48px;
-  border-bottom-right-radius: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .student-hero h1 {
@@ -34,12 +36,13 @@
 .student-hero-card {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 24px;
+  border-radius: 8px;
   backdrop-filter: blur(18px);
 }
 
 .student-section {
   padding: 88px 0;
+  background: #fff;
 }
 
 .student-eyebrow {
@@ -50,16 +53,17 @@
 }
 
 .student-subject-card {
-  border: 0;
-  border-radius: 24px;
-  box-shadow: 0 18px 45px rgba(31, 41, 55, 0.08);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
 }
 
 .student-subject-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 24px 60px rgba(31, 41, 55, 0.13);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
 }
 
 .student-subject-card img {
@@ -70,7 +74,7 @@
 .student-feature-icon {
   width: 56px;
   height: 56px;
-  border-radius: 18px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -80,8 +84,9 @@
 }
 
 .student-exam-card {
-  border: 1px solid #ece7fb;
-  border-radius: 20px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
 }
 
 .student-exam-card .badge {

@@ -4,46 +4,61 @@
     ViewData["Title"] = Model.Title;
 }
 
-<section class="student-section bg-light">
+@{
+    var visibleFields = Model.Fields.Where(field => field.ShowInList).ToList();
+}
+
+<section class="crud-page">
     <div class="container">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="crud-header">
             <div>
-                <div class="student-eyebrow mb-2">CRUD</div>
-                <h1 class="h3 fw-bold mb-0">@Model.Title</h1>
+                <span class="crud-kicker">Quan ly</span>
+                <h1>@Model.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p>@Model.Description</p>
+                }
             </div>
-            <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">Create</a>
+            <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Create" class="btn btn-primary">Them moi</a>
         </div>
 
-        <div class="card">
+        <div class="card crud-card">
             <div class="table-responsive">
-                <table class="table align-middle mb-0">
+                <table class="table crud-table align-middle mb-0">
                     <thead>
                         <tr>
-                            @foreach (var field in Model.Fields.Take(6))
+                            @foreach (var field in visibleFields)
                             {
                                 <th>@field.Label</th>
                             }
-                            <th class="text-end">Actions</th>
+                            <th class="text-end">Thao tac</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model.Rows.Count == 0)
                         {
                             <tr>
-                                <td colspan="@(Model.Fields.Take(6).Count() + 1)" class="text-center text-muted py-4">No data</td>
+                                <td colspan="@(visibleFields.Count + 1)">
+                                    <div class="crud-empty">
+                                        <strong>Chua co du lieu</strong>
+                                        <span>Hay them ban ghi dau tien de bat dau quan ly.</span>
+                                    </div>
+                                </td>
                             </tr>
                         }
                         @foreach (var row in Model.Rows)
                         {
                             <tr>
-                                @foreach (var field in Model.Fields.Take(6))
+                                @foreach (var field in visibleFields)
                                 {
-                                    <td>@(row.Values.TryGetValue(field.Name, out var value) ? value : null)</td>
+                                    <td>
+                                        <span class="crud-cell-value">@(row.Values.TryGetValue(field.Name, out var value) ? value : "-")</span>
+                                    </td>
                                 }
                                 <td class="text-end text-nowrap">
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary">Details</a>
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger">Delete</a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-light">Xem</a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary">Sua</a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger">Xoa</a>
                                 </td>
                             </tr>
                         }

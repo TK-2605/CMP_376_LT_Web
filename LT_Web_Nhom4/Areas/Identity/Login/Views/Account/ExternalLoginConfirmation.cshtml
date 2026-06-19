@@ -1,7 +1,7 @@
 @model ExternalLoginConfirmationViewModel
 
 @{
-    ViewData["Title"] = "Xac nhan OAuth";
+    ViewData["Title"] = "Xac nhan tai khoan";
 }
 
 @section Styles {
@@ -12,34 +12,36 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-7">
-                <div class="card auth-card">
-                    <div class="card-body auth-form-side">
-                        <h1 class="h3 fw-bold">Hoan tat dang nhap OAuth 2.0</h1>
-                        <p class="text-muted">Xac nhan thong tin tai khoan truoc khi lien ket voi nha cung cap dang nhap ngoai.</p>
+                <div class="auth-card auth-single-card">
+                    <div class="auth-form-side">
+                        <div class="auth-form-heading text-center">
+                            <h1>Hoan tat tai khoan</h1>
+                            <p>Kiem tra thong tin ca nhan truoc khi vao he thong.</p>
+                        </div>
 
-                        <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLoginConfirmation" method="post">
+                        <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLoginConfirmation" method="post" class="auth-form">
                             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                             <input asp-for="ReturnUrl" type="hidden" />
 
-                            <div class="mb-3">
-                                <label asp-for="FullName" class="form-label"></label>
-                                <input asp-for="FullName" class="form-control" />
+                            <div class="auth-field">
+                                <label asp-for="FullName" class="form-label">Ho va ten</label>
+                                <input asp-for="FullName" class="form-control" placeholder="Nguyen Van A" />
                                 <span asp-validation-for="FullName" class="text-danger"></span>
                             </div>
 
-                            <div class="mb-3">
-                                <label asp-for="StudentCode" class="form-label"></label>
-                                <input asp-for="StudentCode" class="form-control" />
+                            <div class="auth-field">
+                                <label asp-for="StudentCode" class="form-label">Ma sinh vien</label>
+                                <input asp-for="StudentCode" class="form-control" placeholder="Neu co" />
                                 <span asp-validation-for="StudentCode" class="text-danger"></span>
                             </div>
 
-                            <div class="mb-4">
-                                <label asp-for="Email" class="form-label"></label>
+                            <div class="auth-field">
+                                <label asp-for="Email" class="form-label">Email</label>
                                 <input asp-for="Email" class="form-control" readonly />
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">Lien ket va dang nhap</button>
+                            <button type="submit" class="btn btn-primary auth-submit">Hoan tat</button>
                         </form>
                     </div>
                 </div>

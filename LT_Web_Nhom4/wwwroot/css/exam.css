@@ -9,7 +9,7 @@
 .exam-header {
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: #fff;
-  border-radius: 24px;
+  border-radius: 8px;
   padding: 28px;
   box-shadow: 0 18px 40px rgba(37, 99, 235, 0.22);
 }
@@ -18,7 +18,7 @@
 .exam-question-card,
 .exam-navigation-card {
   border: 0;
-  border-radius: 22px;
+  border-radius: 8px;
   box-shadow: 0 16px 38px rgba(31, 41, 55, 0.08);
 }
 
@@ -43,7 +43,7 @@
 
 .exam-option {
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 14px 16px;
   transition: border-color 0.2s ease, background 0.2s ease;
 }

@@ -1,7 +1,7 @@
 @model AdminDashboardViewModel
 
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Tong quan";
 }
 
 <div class="row gy-4">
@@ -10,13 +10,13 @@
             <div class="d-flex align-items-end row">
                 <div class="col-sm-7">
                     <div class="card-body admin-dashboard-heading">
-                        <h4 class="card-title text-primary mb-2">Exam management overview</h4>
+                        <h4 class="card-title text-primary mb-2">Tong quan he thong thi</h4>
                         <p class="mb-4">
-                            Track accounts, classes, exams, attempts and anti-cheat signals from one admin workspace.
+                            Theo doi tai khoan, lop hoc, de thi va tinh hinh lam bai trong mot khu vuc quan tri.
                         </p>
                         <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="btn btn-sm btn-primary">
                             <i class="icon-base ri ri-refresh-line me-1"></i>
-                            Refresh
+                            Lam moi
                         </a>
                     </div>
                 </div>
@@ -36,9 +36,9 @@
                     <div class="admin-stat-icon bg-label-primary">
                         <i class="icon-base ri ri-user-3-line icon-24px text-primary"></i>
                     </div>
-                    <span class="badge bg-label-success rounded-pill">@Model.ActiveUsers active</span>
+                    <span class="badge bg-label-success rounded-pill">@Model.ActiveUsers dang hoat dong</span>
                 </div>
-                <p class="mb-1">Users</p>
+                <p class="mb-1">Tai khoan</p>
                 <h4 class="card-title mb-0">@Model.TotalUsers</h4>
             </div>
         </div>
@@ -50,7 +50,7 @@
                 <div class="admin-stat-icon bg-label-info mb-4">
                     <i class="icon-base ri ri-book-2-line icon-24px text-info"></i>
                 </div>
-                <p class="mb-1">Subjects</p>
+                <p class="mb-1">Mon hoc</p>
                 <h4 class="card-title mb-0">@Model.TotalSubjects</h4>
             </div>
         </div>
@@ -62,7 +62,7 @@
                 <div class="admin-stat-icon bg-label-warning mb-4">
                     <i class="icon-base ri ri-group-line icon-24px text-warning"></i>
                 </div>
-                <p class="mb-1">Classes</p>
+                <p class="mb-1">Lop hoc</p>
                 <h4 class="card-title mb-0">@Model.TotalClasses</h4>
             </div>
         </div>
@@ -74,7 +74,7 @@
                 <div class="admin-stat-icon bg-label-danger mb-4">
                     <i class="icon-base ri ri-file-list-3-line icon-24px text-danger"></i>
                 </div>
-                <p class="mb-1">Exams</p>
+                <p class="mb-1">De thi</p>
                 <h4 class="card-title mb-0">@Model.TotalExams</h4>
             </div>
         </div>
@@ -83,7 +83,7 @@
     <div class="col-lg-4">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">System Counters</h5>
+                <h5 class="mb-0">Chi so quan ly</h5>
             </div>
             <div class="card-body">
                 <ul class="p-0 m-0">
@@ -95,8 +95,8 @@
                         </div>
                         <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                             <div class="me-2">
-                                <h6 class="mb-0">Questions</h6>
-                                <small class="text-muted">Question bank</small>
+                                <h6 class="mb-0">Cau hoi</h6>
+                                <small class="text-muted">Ngan hang cau hoi</small>
                             </div>
                             <h6 class="mb-0">@Model.TotalQuestions</h6>
                         </div>
@@ -109,8 +109,8 @@
                         </div>
                         <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                             <div class="me-2">
-                                <h6 class="mb-0">Attempts</h6>
-                                <small class="text-muted">Submitted and active</small>
+                                <h6 class="mb-0">Luot thi</h6>
+                                <small class="text-muted">Dang lam va da nop</small>
                             </div>
                             <h6 class="mb-0">@Model.TotalExamAttempts</h6>
                         </div>
@@ -123,8 +123,8 @@
                         </div>
                         <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                             <div class="me-2">
-                                <h6 class="mb-0">Anti-cheat events</h6>
-                                <small class="text-muted">Needs teacher review</small>
+                                <h6 class="mb-0">Canh bao can xem lai</h6>
+                                <small class="text-muted">Phuc vu giang vien kiem tra</small>
                             </div>
                             <h6 class="mb-0">@Model.TotalAntiCheatEvents</h6>
                         </div>
@@ -137,25 +137,25 @@
     <div class="col-lg-8">
         <div class="card admin-table-card h-100">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Recent Exams</h5>
-                <a href="/Admin/Exams" class="btn btn-sm btn-outline-primary">View all</a>
+                <h5 class="mb-0">De thi gan day</h5>
+                <a href="/Admin/Exams" class="btn btn-sm btn-outline-primary">Xem tat ca</a>
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Exam</th>
-                            <th>Class</th>
-                            <th>Status</th>
-                            <th>Questions</th>
-                            <th>Attempts</th>
+                            <th>De thi</th>
+                            <th>Lop</th>
+                            <th>Trang thai</th>
+                            <th>Cau hoi</th>
+                            <th>Luot thi</th>
                         </tr>
                     </thead>
                     <tbody class="table-border-bottom-0">
                         @if (Model.RecentExams.Count == 0)
                         {
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No exams yet</td>
+                                <td colspan="5" class="text-center text-muted">Chua co de thi</td>
                             </tr>
                         }
                         @foreach (var exam in Model.RecentExams)
@@ -182,24 +182,24 @@
     <div class="col-12">
         <div class="card admin-table-card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Recent Users</h5>
-                <a href="/Admin/Users" class="btn btn-sm btn-outline-primary">Manage users</a>
+                <h5 class="mb-0">Tai khoan moi</h5>
+                <a href="/Admin/Users" class="btn btn-sm btn-outline-primary">Quan ly tai khoan</a>
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>User</th>
-                            <th>Student Code</th>
-                            <th>Status</th>
-                            <th>Created</th>
+                            <th>Tai khoan</th>
+                            <th>Ma sinh vien</th>
+                            <th>Trang thai</th>
+                            <th>Ngay tao</th>
                         </tr>
                     </thead>
                     <tbody class="table-border-bottom-0">
                         @if (Model.RecentUsers.Count == 0)
                         {
                             <tr>
-                                <td colspan="4" class="text-center text-muted">No users yet</td>
+                                <td colspan="4" class="text-center text-muted">Chua co tai khoan</td>
                             </tr>
                         }
                         @foreach (var user in Model.RecentUsers)
@@ -221,7 +221,7 @@
                                 <td>@(user.StudentCode ?? "-")</td>
                                 <td>
                                     <span class="badge @(user.IsActive ? "bg-label-success" : "bg-label-secondary")">
-                                        @(user.IsActive ? "Active" : "Locked")
+                                        @(user.IsActive ? "Dang hoat dong" : "Tam khoa")
                                     </span>
                                 </td>
                                 <td>@user.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>

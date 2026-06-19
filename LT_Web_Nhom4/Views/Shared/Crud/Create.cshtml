@@ -4,13 +4,18 @@
     ViewData["Title"] = Model.Title;
 }
 
-<section class="student-section bg-light">
+<section class="crud-page">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <h1 class="h3 fw-bold mb-4">@Model.Title</h1>
+            <div class="col-xl-8 col-lg-9">
+                <div class="card crud-form-card">
+                    <div class="card-body">
+                        <span class="crud-kicker">Bieu mau</span>
+                        <h1>@Model.Title</h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p class="crud-form-description">@Model.Description</p>
+                        }
                         <partial name="/Views/Shared/Crud/_Form.cshtml" model="Model" />
                     </div>
                 </div>

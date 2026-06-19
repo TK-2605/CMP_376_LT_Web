@@ -64,17 +64,17 @@
       if (autosaveLabel) {
         if (response.ok) {
           const data = await response.json();
-          autosaveLabel.textContent = `Autosaved at ${data.savedAt}`;
+          autosaveLabel.textContent = `Da luu luc ${data.savedAt}`;
           autosaveLabel.classList.remove('text-danger');
           autosaveLabel.classList.add('text-muted');
         } else {
-          autosaveLabel.textContent = 'Autosave failed. Your answer remains on screen.';
+          autosaveLabel.textContent = 'Chua luu duoc. Lua chon cua ban van dang hien tren man hinh.';
           autosaveLabel.classList.add('text-danger');
         }
       }
     } catch {
       if (autosaveLabel) {
-        autosaveLabel.textContent = 'Network issue. Autosave will retry.';
+        autosaveLabel.textContent = 'Ket noi chua on dinh. He thong se thu luu lai.';
         autosaveLabel.classList.add('text-danger');
       }
     }
@@ -97,7 +97,7 @@
     const answeredQuestions = document.querySelectorAll('[data-question-id] input[type="radio"]:checked').length;
     const unansweredCount = totalQuestions - answeredQuestions;
 
-    if (unansweredCount > 0 && !window.confirm(`You still have ${unansweredCount} unanswered question(s). Submit anyway?`)) {
+    if (unansweredCount > 0 && !window.confirm(`Ban con ${unansweredCount} cau chua tra loi. Van nop bai?`)) {
       event.preventDefault();
       return;
     }
@@ -105,7 +105,7 @@
     isSubmitting = true;
     form.querySelectorAll('button[type="submit"]').forEach((button) => {
       button.disabled = true;
-      button.textContent = 'Submitting...';
+      button.textContent = 'Dang nop bai...';
     });
   });
 

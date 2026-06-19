@@ -23,7 +23,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var users = await _userManager.Users.AsNoTracking().ToListAsync();
             return View("/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
-                Title = "Users",
+                Title = "Tai khoan",
+                Description = "Quan ly tai khoan sinh vien, giang vien va trang thai truy cap.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Fields = UserFields(),
@@ -35,8 +36,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                         ["Email"] = user.Email,
                         ["FullName"] = user.FullName,
                         ["StudentCode"] = user.StudentCode,
-                        ["IsActive"] = user.IsActive ? "True" : "False",
-                        ["EmailConfirmed"] = user.EmailConfirmed ? "True" : "False",
+                        ["IsActive"] = user.IsActive ? "Dang hoat dong" : "Tam khoa",
+                        ["EmailConfirmed"] = user.EmailConfirmed ? "Da xac thuc" : "Chua xac thuc",
                         ["CreatedAt"] = user.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                     }
                 }).ToList()
@@ -53,7 +54,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
-                Title = "User",
+                Title = "Tai khoan",
+                Description = "Thong tin lien he va trang thai truy cap cua tai khoan.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Key = user.Id,
@@ -65,7 +67,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Create User",
+                Title = "Them tai khoan",
+                Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
                 ActionName = nameof(Create),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -96,7 +99,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Create User",
+                Title = "Them tai khoan",
+                Description = "Tao tai khoan moi va mat khau ban dau cho nguoi dung.",
                 ActionName = nameof(Create),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -114,7 +118,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Edit User",
+                Title = "Sua tai khoan",
+                Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
                 ActionName = nameof(Edit),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -149,7 +154,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Edit User",
+                Title = "Sua tai khoan",
+                Description = "Cap nhat thong tin ca nhan va trang thai truy cap.",
                 ActionName = nameof(Edit),
                 ControllerName = "Users",
                 AreaName = "Admin",
@@ -168,7 +174,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
             {
-                Title = "User",
+                Title = "Tai khoan",
+                Description = "Tai khoan se khong con dang nhap duoc sau khi bi xoa.",
                 ControllerName = "Users",
                 AreaName = "Admin",
                 Key = user.Id,
@@ -201,16 +208,22 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             var fields = new List<CrudFieldViewModel>
             {
-                new() { Name = "Email", Label = "Email", Value = user?.Email, InputType = "text" },
-                new() { Name = "FullName", Label = "Full Name", Value = user?.FullName, InputType = "text" },
-                new() { Name = "StudentCode", Label = "Student Code", Value = user?.StudentCode, InputType = "text", IsNullable = true },
-                new() { Name = "IsActive", Label = "Is Active", Value = user?.IsActive == false ? "false" : "true", IsBoolean = true },
-                new() { Name = "EmailConfirmed", Label = "Email Confirmed", Value = user?.EmailConfirmed == true ? "true" : "false", IsBoolean = true }
+                new() { Name = "Email", Label = "Email", Value = user?.Email, InputType = "email", Placeholder = "name@example.com" },
+                new() { Name = "FullName", Label = "Ho va ten", Value = user?.FullName, InputType = "text", Placeholder = "Nguyen Van A" },
+                new() { Name = "StudentCode", Label = "Ma sinh vien", Value = user?.StudentCode, InputType = "text", IsNullable = true, Placeholder = "Neu co" },
+                new() { Name = "IsActive", Label = "Cho phep dang nhap", Value = user?.IsActive == false ? "false" : "true", IsBoolean = true },
+                new() { Name = "EmailConfirmed", Label = "Email da xac thuc", Value = user?.EmailConfirmed == true ? "true" : "false", IsBoolean = true }
             };
 
             if (includePassword)
             {
-                fields.Insert(1, new CrudFieldViewModel { Name = "Password", Label = "Password", InputType = "password" });
+                fields.Insert(1, new CrudFieldViewModel
+                {
+                    Name = "Password",
+                    Label = "Mat khau",
+                    InputType = "password",
+                    Placeholder = "Nhap mat khau ban dau"
+                });
             }
 
             return fields;

@@ -22,7 +22,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var roles = await _roleManager.Roles.AsNoTracking().ToListAsync();
             return View("/Views/Shared/Crud/Index.cshtml", new CrudIndexViewModel
             {
-                Title = "Roles",
+                Title = "Vai tro",
+                Description = "Quan ly nhom quyen dung de phan cap truy cap trong he thong.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Fields = RoleFields(),
@@ -31,9 +32,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                     Key = role.Id,
                     Values = new Dictionary<string, string?>
                     {
-                        ["Id"] = role.Id,
-                        ["Name"] = role.Name,
-                        ["NormalizedName"] = role.NormalizedName
+                        ["Name"] = role.Name
                     }
                 }).ToList()
             });
@@ -49,7 +48,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Details.cshtml", new CrudDetailsViewModel
             {
-                Title = "Role",
+                Title = "Vai tro",
+                Description = "Thong tin vai tro dang duoc su dung trong phan quyen.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Key = role.Id,
@@ -61,7 +61,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Create Role",
+                Title = "Them vai tro",
+                Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
                 ActionName = nameof(Create),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -83,7 +84,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Views/Shared/Crud/Create.cshtml", new CrudFormViewModel
             {
-                Title = "Create Role",
+                Title = "Them vai tro",
+                Description = "Dat ten ngan gon, de hieu cho nhom quyen moi.",
                 ActionName = nameof(Create),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -101,7 +103,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Edit Role",
+                Title = "Sua vai tro",
+                Description = "Cap nhat ten hien thi cua nhom quyen.",
                 ActionName = nameof(Edit),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -130,7 +133,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             AddErrors(result);
             return View("/Views/Shared/Crud/Edit.cshtml", new CrudFormViewModel
             {
-                Title = "Edit Role",
+                Title = "Sua vai tro",
+                Description = "Cap nhat ten hien thi cua nhom quyen.",
                 ActionName = nameof(Edit),
                 ControllerName = "Roles",
                 AreaName = "Admin",
@@ -149,7 +153,8 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
             return View("/Views/Shared/Crud/Delete.cshtml", new CrudDeleteViewModel
             {
-                Title = "Role",
+                Title = "Vai tro",
+                Description = "Chi xoa vai tro khi chac chan khong con duoc su dung.",
                 ControllerName = "Roles",
                 AreaName = "Admin",
                 Key = role.Id,
@@ -182,9 +187,14 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             return new List<CrudFieldViewModel>
             {
-                new() { Name = "Id", Label = "Id", Value = role?.Id, IsReadOnly = true },
-                new() { Name = "Name", Label = "Name", Value = role?.Name, InputType = "text" },
-                new() { Name = "NormalizedName", Label = "Normalized Name", Value = role?.NormalizedName, IsReadOnly = true }
+                new()
+                {
+                    Name = "Name",
+                    Label = "Ten vai tro",
+                    Value = role?.Name,
+                    InputType = "text",
+                    Placeholder = "Vi du: Admin, Teacher, Student"
+                }
             };
         }
 
