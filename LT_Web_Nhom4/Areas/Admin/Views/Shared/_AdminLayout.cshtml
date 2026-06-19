@@ -9,7 +9,7 @@
 }
 
 <!DOCTYPE html>
-<html lang="en" class="layout-menu-fixed layout-compact" data-assets-path="/" data-template="vertical-menu-template-free">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" class="layout-menu-fixed layout-compact" data-assets-path="/" data-template="vertical-menu-template-free">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
@@ -54,65 +54,65 @@
                     <li class="menu-item@(IsActive("/Admin/Dashboard"))">
                         <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="menu-link">
                             <i class="menu-icon icon-base ri ri-dashboard-line"></i>
-                            <div>Tong quan</div>
+                            <div>@Localizer["Dashboard"]</div>
                         </a>
                     </li>
 
                     <li class="menu-header mt-4">
-                        <span class="menu-header-text">Quan ly</span>
+                        <span class="menu-header-text">@Localizer["Management"]</span>
                     </li>
 
                     <li class="menu-item@(IsActive("/Admin/Users"))">
                         <a href="/Admin/Users" class="menu-link">
                             <i class="menu-icon icon-base ri ri-user-settings-line"></i>
-                            <div>Tai khoan</div>
+                            <div>@Localizer["Users"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Roles"))">
                         <a href="/Admin/Roles" class="menu-link">
                             <i class="menu-icon icon-base ri ri-lock-2-line"></i>
-                            <div>Vai tro</div>
+                            <div>@Localizer["Roles"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Subjects"))">
                         <a href="/Admin/Subjects" class="menu-link">
                             <i class="menu-icon icon-base ri ri-book-2-line"></i>
-                            <div>Mon hoc</div>
+                            <div>@Localizer["Subjects"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Classes"))">
                         <a href="/Admin/Classes" class="menu-link">
                             <i class="menu-icon icon-base ri ri-group-line"></i>
-                            <div>Lop hoc</div>
+                            <div>@Localizer["Classes"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Questions"))">
                         <a href="/Admin/Questions" class="menu-link">
                             <i class="menu-icon icon-base ri ri-question-answer-line"></i>
-                            <div>Cau hoi</div>
+                            <div>@Localizer["QuestionsMenu"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/Exams"))">
                         <a href="/Admin/Exams" class="menu-link">
                             <i class="menu-icon icon-base ri ri-file-list-3-line"></i>
-                            <div>De thi</div>
+                            <div>@Localizer["Exams"]</div>
                         </a>
                     </li>
 
                     <li class="menu-header mt-4">
-                        <span class="menu-header-text">Theo doi</span>
+                        <span class="menu-header-text">@Localizer["Monitoring"]</span>
                     </li>
 
                     <li class="menu-item@(IsActive("/Admin/ExamAttempts"))">
                         <a href="/Admin/ExamAttempts" class="menu-link">
                             <i class="menu-icon icon-base ri ri-bar-chart-box-line"></i>
-                            <div>Luot thi</div>
+                            <div>@Localizer["Attempts"]</div>
                         </a>
                     </li>
                     <li class="menu-item@(IsActive("/Admin/AntiCheatEvents"))">
                         <a href="/Admin/AntiCheatEvents" class="menu-link">
                             <i class="menu-icon icon-base ri ri-shield-check-line"></i>
-                            <div>Canh bao</div>
+                            <div>@Localizer["Warnings"]</div>
                         </a>
                     </li>
                 </ul>
@@ -132,9 +132,10 @@
                             <span class="text-heading fw-semibold">/ @title</span>
                         </div>
                         <div class="d-flex align-items-center gap-3">
+                            <partial name="/Views/Shared/_LanguageSelector.cshtml" />
                             <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">
                                 <i class="icon-base ri ri-home-4-line me-1"></i>
-                                Trang chu
+                                @Localizer["Home"]
                             </a>
                             @if (User.Identity?.IsAuthenticated == true)
                             {
@@ -144,7 +145,7 @@
                                       asp-action="Logout"
                                       asp-route-returnUrl="@Url.Action("Login", "Account", new { area = "Identity" })"
                                       method="post">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Dang xuat</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">@Localizer["Logout"]</button>
                                 </form>
                                 <div class="avatar avatar-sm">
                                     <span class="avatar-initial rounded-circle bg-label-primary">
@@ -154,7 +155,7 @@
                             }
                             else
                             {
-                                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">Dang nhap</a>
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary">@Localizer["Login"]</a>
                             }
                         </div>
                     </div>
@@ -172,7 +173,7 @@
                                     &copy; @DateTime.Now.Year QuizHub
                                 </div>
                                 <div class="d-none d-lg-inline-block">
-                                    <span class="text-muted">Khu vuc quan tri he thong thi</span>
+                                    <span class="text-muted">@Localizer["AdminArea"]</span>
                                 </div>
                             </div>
                         </div>

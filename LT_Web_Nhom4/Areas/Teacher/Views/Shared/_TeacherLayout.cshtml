@@ -3,7 +3,7 @@
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,29 +18,30 @@
         <aside class="teacher-sidebar">
             <a asp-area="Teacher" asp-controller="Dashboard" asp-action="Index" class="teacher-brand">QuizHub Teacher</a>
             <nav class="teacher-menu">
-                <a asp-area="Teacher" asp-controller="Dashboard" asp-action="Index">Tong quan</a>
-                <a asp-area="" asp-controller="Classes" asp-action="Index">Lop hoc</a>
-                <a asp-area="" asp-controller="Questions" asp-action="Index">Cau hoi</a>
-                <a asp-area="" asp-controller="QuestionOptions" asp-action="Index">Dap an</a>
-                <a asp-area="" asp-controller="ExamQuestions" asp-action="Index">Cau hoi trong de</a>
-                <a asp-area="" asp-controller="AntiCheat" asp-action="Index">Canh bao</a>
+                <a asp-area="Teacher" asp-controller="Dashboard" asp-action="Index">@Localizer["Dashboard"]</a>
+                <a asp-area="" asp-controller="Classes" asp-action="Index">@Localizer["Classes"]</a>
+                <a asp-area="" asp-controller="Questions" asp-action="Index">@Localizer["QuestionsMenu"]</a>
+                <a asp-area="" asp-controller="QuestionOptions" asp-action="Index">@Localizer["Answers"]</a>
+                <a asp-area="" asp-controller="ExamQuestions" asp-action="Index">@Localizer["ExamQuestions"]</a>
+                <a asp-area="" asp-controller="AntiCheat" asp-action="Index">@Localizer["Warnings"]</a>
             </nav>
         </aside>
 
         <div class="teacher-main">
             <header class="teacher-topbar">
                 <div>
-                    <span>Khu vuc giao vien</span>
+                    <span>@Localizer["TeacherArea"]</span>
                     <strong>@title</strong>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">Trang chu</a>
+                    <partial name="/Views/Shared/_LanguageSelector.cshtml" />
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">@Localizer["Home"]</a>
                     <form asp-area="Identity"
                           asp-controller="Account"
                           asp-action="Logout"
                           asp-route-returnUrl="@Url.Action("Login", "Account", new { area = "Identity" })"
                           method="post">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Dang xuat</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">@Localizer["Logout"]</button>
                     </form>
                 </div>
             </header>

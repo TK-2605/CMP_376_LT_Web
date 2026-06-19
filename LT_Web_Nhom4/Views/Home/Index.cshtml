@@ -1,7 +1,7 @@
 @model WebHomeViewModel
 
 @{
-    ViewData["Title"] = "Trang chu";
+    ViewData["Title"] = Localizer["Home"];
 }
 
 <section class="student-hero">
@@ -9,13 +9,13 @@
         <div class="row align-items-center g-5">
             <div class="col-lg-7">
                 <span class="badge rounded-pill bg-light text-primary mb-4 px-3 py-2">QuizHub</span>
-                <h1>Lam bai thi truc tuyen ro rang va dung thoi gian.</h1>
+                <h1>@Localizer["HeroTitle"]</h1>
                 <p class="lead mt-4 mb-5">
-                    Sinh vien vao dung de thi cua lop, theo doi thoi gian con lai va nop bai trong mot giao dien gon gang, de tap trung.
+                    @Localizer["HeroDescription"]
                 </p>
                 <div class="d-flex flex-wrap gap-3">
-                    <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">Xem de thi</a>
-                    <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-4">Dang ky</a>
+                    <a asp-controller="Exams" asp-action="Index" class="btn btn-light btn-lg px-4">@Localizer["ViewExams"]</a>
+                    <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg px-4">@Localizer["Register"]</a>
                 </div>
             </div>
             <div class="col-lg-5">
@@ -23,22 +23,22 @@
                     <div class="d-flex align-items-center gap-3 mb-4">
                         <span class="student-feature-icon bg-white text-primary">01</span>
                         <div>
-                            <h2 class="h4 mb-1">De thi dung lop</h2>
-                            <p class="mb-0 text-white-50">Chi hien cac bai thi phu hop voi lop cua ban.</p>
+                            <h2 class="h4 mb-1">@Localizer["RightExam"]</h2>
+                            <p class="mb-0 text-white-50">@Localizer["RightExamDesc"]</p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-4">
                         <span class="student-feature-icon bg-white text-primary">02</span>
                         <div>
-                            <h2 class="h4 mb-1">Thoi gian ro rang</h2>
-                            <p class="mb-0 text-white-50">Dong ho dem nguoc giup ban chu dong khi lam bai.</p>
+                            <h2 class="h4 mb-1">@Localizer["ClearTime"]</h2>
+                            <p class="mb-0 text-white-50">@Localizer["ClearTimeDesc"]</p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-3">
                         <span class="student-feature-icon bg-white text-primary">03</span>
                         <div>
-                            <h2 class="h4 mb-1">Ket qua de theo doi</h2>
-                            <p class="mb-0 text-white-50">Sau khi nop bai, ket qua duoc luu de giang vien xem lai.</p>
+                            <h2 class="h4 mb-1">@Localizer["Results"]</h2>
+                            <p class="mb-0 text-white-50">@Localizer["ResultsDesc"]</p>
                         </div>
                     </div>
                 </div>
@@ -51,11 +51,11 @@
     <div class="container">
         <div class="row align-items-end mb-5">
             <div class="col-lg-7">
-                <div class="student-eyebrow mb-2">Mon hoc</div>
-                <h2 class="display-6 fw-bold">Mon hoc noi bat</h2>
+                <div class="student-eyebrow mb-2">@Localizer["Subjects"]</div>
+                <h2 class="display-6 fw-bold">@Localizer["FeaturedSubjects"]</h2>
             </div>
             <div class="col-lg-5 text-lg-end">
-                <a asp-controller="Exams" asp-action="Index" class="btn btn-primary">Tim de thi</a>
+                <a asp-controller="Exams" asp-action="Index" class="btn btn-primary">@Localizer["FindExam"]</a>
             </div>
         </div>
 
@@ -70,8 +70,8 @@
                             <h3 class="h4 fw-bold">@subject.Name</h3>
                             <p class="text-muted">@subject.Description</p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-semibold">@subject.ExamCount de thi</span>
-                                <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-primary">Xem</a>
+                                <span class="fw-semibold">@Localizer["ExamCount", subject.ExamCount]</span>
+                                <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-primary">@Localizer["View"]</a>
                             </div>
                         </div>
                     </article>
@@ -83,8 +83,8 @@
 
 <section class="student-section bg-light">
     <div class="container">
-        <div class="student-eyebrow mb-2">Sap dien ra</div>
-        <h2 class="display-6 fw-bold mb-5">De thi sap dien ra</h2>
+        <div class="student-eyebrow mb-2">@Localizer["Upcoming"]</div>
+        <h2 class="display-6 fw-bold mb-5">@Localizer["UpcomingExams"]</h2>
 
         <div class="row g-4">
             @foreach (var exam in Model.UpcomingExams)
@@ -95,9 +95,9 @@
                             <span class="badge rounded-pill mb-3">@exam.SubjectName</span>
                             <h3 class="h4 fw-bold">@exam.Title</h3>
                             <p class="text-muted mb-4">
-                                Bat dau @exam.StartAt.ToString("dd/MM/yyyy HH:mm") - @exam.DurationMinutes phut
+                                @Localizer["StartsAt", exam.StartAt.ToString("g")] - @Localizer["Minutes", exam.DurationMinutes]
                             </p>
-                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">Vao phong thi</a>
+                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">@Localizer["EnterExamRoom"]</a>
                         </div>
                     </div>
                 </div>

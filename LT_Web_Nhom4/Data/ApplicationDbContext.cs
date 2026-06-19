@@ -217,6 +217,19 @@ namespace LT_Web_Nhom4.Data
             builder.Entity<AntiCheatEvent>(entity =>
             {
                 entity.Property(antiCheatEvent => antiCheatEvent.Description).HasMaxLength(1000);
+                entity.Property(antiCheatEvent => antiCheatEvent.Note).HasMaxLength(1000);
+                entity.Property(antiCheatEvent => antiCheatEvent.UserId).HasMaxLength(450);
+                entity.HasIndex(antiCheatEvent => new { antiCheatEvent.ExamAttemptId, antiCheatEvent.CreatedAt });
+
+                entity.HasOne(antiCheatEvent => antiCheatEvent.User)
+                    .WithMany(user => user.AntiCheatEvents)
+                    .HasForeignKey(antiCheatEvent => antiCheatEvent.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(antiCheatEvent => antiCheatEvent.Exam)
+                    .WithMany()
+                    .HasForeignKey(antiCheatEvent => antiCheatEvent.ExamId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(antiCheatEvent => antiCheatEvent.ExamAttempt)
                     .WithMany(attempt => attempt.AntiCheatEvents)

@@ -10,8 +10,74 @@
   const timerLabel = document.querySelector('[data-exam-timer-label]');
   const timerBar = document.querySelector('[data-exam-timer-bar]');
   const autosaveLabel = document.querySelector('[data-exam-autosave]');
+  const antiCheatStatus = document.querySelector('[data-anti-cheat-status]');
   let isSubmitting = false;
   let autosaveTimer = null;
+  let lastViolationAt = 0;
+
+  const reportViolation = async (eventType, note) => {
+    const url = form.dataset.antiCheatUrl;
+    const now = Date.now();
+    if (!url || isSubmitting || now - lastViolationAt < 800) {
+      return;
+    }
+
+    lastViolationAt = now;
+    const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'RequestVerificationToken': token || '',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          examId: Number(form.querySelector('input[name="ExamId"]')?.value || '0'),
+          examAttemptId: Number(form.querySelector('input[name="AttemptId"]')?.value || '0'),
+          eventType,
+          note
+        })
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const result = await response.json();
+      if (antiCheatStatus) {
+        const template = result.isSuspicious
+          ? form.dataset.antiCheatSuspicious
+          : form.dataset.antiCheatWarning;
+        antiCheatStatus.textContent = (template || '').replace('{0}', result.violationCount);
+        antiCheatStatus.classList.remove('d-none', 'alert-info', 'alert-danger');
+        antiCheatStatus.classList.add(result.isSuspicious ? 'alert-danger' : 'alert-info');
+      }
+    } catch {
+      // The exam flow must continue even if a monitoring request is interrupted.
+    }
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      reportViolation(1, 'The exam page became hidden or the browser was minimized.');
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    if (!document.hidden) {
+      reportViolation(2, 'The exam window lost focus.');
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    if (antiCheatStatus && antiCheatStatus.textContent) {
+      antiCheatStatus.setAttribute('aria-live', 'polite');
+    }
+  });
 
   const updateProgressDots = () => {
     document.querySelectorAll('[data-question-id]').forEach((questionElement) => {
@@ -64,17 +130,17 @@
       if (autosaveLabel) {
         if (response.ok) {
           const data = await response.json();
-          autosaveLabel.textContent = `Da luu luc ${data.savedAt}`;
+          autosaveLabel.textContent = (form.dataset.savedAt || 'Saved at {0}').replace('{0}', data.savedAt);
           autosaveLabel.classList.remove('text-danger');
           autosaveLabel.classList.add('text-muted');
         } else {
-          autosaveLabel.textContent = 'Chua luu duoc. Lua chon cua ban van dang hien tren man hinh.';
+          autosaveLabel.textContent = form.dataset.autosaveFailed || 'Could not save yet.';
           autosaveLabel.classList.add('text-danger');
         }
       }
     } catch {
       if (autosaveLabel) {
-        autosaveLabel.textContent = 'Ket noi chua on dinh. He thong se thu luu lai.';
+        autosaveLabel.textContent = form.dataset.connectionUnstable || 'Connection is unstable.';
         autosaveLabel.classList.add('text-danger');
       }
     }
@@ -97,7 +163,9 @@
     const answeredQuestions = document.querySelectorAll('[data-question-id] input[type="radio"]:checked').length;
     const unansweredCount = totalQuestions - answeredQuestions;
 
-    if (unansweredCount > 0 && !window.confirm(`Ban con ${unansweredCount} cau chua tra loi. Van nop bai?`)) {
+    const unansweredMessage = (form.dataset.unansweredConfirm || 'You have {0} unanswered questions. Submit anyway?')
+      .replace('{0}', unansweredCount);
+    if (unansweredCount > 0 && !window.confirm(unansweredMessage)) {
       event.preventDefault();
       return;
     }
@@ -105,7 +173,7 @@
     isSubmitting = true;
     form.querySelectorAll('button[type="submit"]').forEach((button) => {
       button.disabled = true;
-      button.textContent = 'Dang nop bai...';
+      button.textContent = form.dataset.submitting || 'Submitting...';
     });
   });
 

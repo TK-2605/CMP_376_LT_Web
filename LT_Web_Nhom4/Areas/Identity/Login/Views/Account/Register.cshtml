@@ -1,7 +1,7 @@
 @model RegisterViewModel
 
 @{
-    ViewData["Title"] = "Dang ky";
+    ViewData["Title"] = Localizer["Register"];
 }
 
 <section class="auth-shell">
@@ -12,8 +12,8 @@
                     <partial name="_AuthHomeButton" />
                     <div class="auth-form-side">
                         <div class="auth-form-heading text-center">
-                            <h1>Tao tai khoan</h1>
-                            <p>Dien thong tin ca nhan de tham gia lop hoc va lam bai thi.</p>
+                            <h1>@Localizer["CreateAccount"]</h1>
+                            <p>@Localizer["CreateAccountDesc"]</p>
                         </div>
 
                         <form asp-area="Identity" asp-controller="Account" asp-action="Register" method="post" class="auth-form">
@@ -21,19 +21,19 @@
                             <input asp-for="ReturnUrl" type="hidden" />
 
                             <div class="auth-field">
-                                <label asp-for="FullName" class="form-label">Ho va ten</label>
+                                <label asp-for="FullName" class="form-label">@Localizer["FullName"]</label>
                                 <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="Nguyen Van A" />
                                 <span asp-validation-for="FullName" class="text-danger"></span>
                             </div>
 
                             <div class="auth-field">
-                                <label asp-for="StudentCode" class="form-label">Ma sinh vien</label>
+                                <label asp-for="StudentCode" class="form-label">@Localizer["StudentCode"]</label>
                                 <input asp-for="StudentCode" class="form-control" placeholder="Neu co" />
                                 <span asp-validation-for="StudentCode" class="text-danger"></span>
                             </div>
 
                             <div class="auth-field">
-                                <label asp-for="Email" class="form-label">Email</label>
+                                <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
                                 <input asp-for="Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
@@ -41,26 +41,26 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <div class="auth-field">
-                                        <label asp-for="Password" class="form-label">Mat khau</label>
+                                        <label asp-for="Password" class="form-label">@Localizer["Password"]</label>
                                         <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="Toi thieu 6 ky tu" />
                                         <span asp-validation-for="Password" class="text-danger"></span>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="auth-field">
-                                        <label asp-for="ConfirmPassword" class="form-label">Nhap lai mat khau</label>
+                                        <label asp-for="ConfirmPassword" class="form-label">@Localizer["ConfirmPassword"]</label>
                                         <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhap lai mat khau" />
                                         <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary auth-submit mt-2">Tao tai khoan</button>
+                            <button type="submit" class="btn btn-primary auth-submit mt-2">@Localizer["CreateAccount"]</button>
                         </form>
 
                         <p class="auth-switch">
-                            Da co tai khoan?
-                            <a asp-area="Identity" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl">Dang nhap</a>
+                            @Localizer["AlreadyAccount"]
+                            <a asp-area="Identity" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl">@Localizer["Login"]</a>
                         </p>
                     </div>
                 </div>

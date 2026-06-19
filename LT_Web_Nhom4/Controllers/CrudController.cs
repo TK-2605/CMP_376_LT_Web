@@ -50,7 +50,7 @@ namespace LT_Web_Nhom4.Controllers
             ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
             ["ExamAttempt"] = new[] { "ExamId", "UserId", "StartedAt", "SubmittedAt", "Score", "Status" },
             ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "IsCorrect", "AwardedScore", "LastSavedAt" },
-            ["AntiCheatEvent"] = new[] { "ExamAttemptId", "EventType", "Severity", "OccurredAt" }
+            ["AntiCheatEvent"] = new[] { "UserId", "ExamId", "ExamAttemptId", "EventType", "ViolationCount", "IsSuspicious", "CreatedAt" }
         };
 
         private static readonly Dictionary<string, string[]> FormFields = new()
@@ -64,7 +64,7 @@ namespace LT_Web_Nhom4.Controllers
             ["ExamQuestion"] = new[] { "ExamId", "QuestionId", "Score", "DisplayOrder" },
             ["ExamAttempt"] = new[] { "ExamId", "UserId", "SubmittedAt", "Score", "Status", "IsAutoSubmitted" },
             ["AttemptAnswer"] = new[] { "ExamAttemptId", "QuestionId", "SelectedOptionId", "IsCorrect", "AwardedScore" },
-            ["AntiCheatEvent"] = new[] { "ExamAttemptId", "EventType", "Severity", "Description", "OccurredAt" }
+            ["AntiCheatEvent"] = new[] { "UserId", "ExamId", "ExamAttemptId", "EventType", "Severity", "ViolationCount", "IsSuspicious", "Note", "CreatedAt" }
         };
 
         private static readonly Dictionary<string, string> FieldLabels = new()
@@ -74,6 +74,7 @@ namespace LT_Web_Nhom4.Controllers
             ["ClassId"] = "Lop hoc",
             ["Code"] = "Ma",
             ["Content"] = "Noi dung",
+            ["CreatedAt"] = "Thoi diem ghi nhan",
             ["CreatedById"] = "Nguoi tao",
             ["Description"] = "Mo ta",
             ["Difficulty"] = "Do kho",
@@ -85,9 +86,11 @@ namespace LT_Web_Nhom4.Controllers
             ["ExamId"] = "De thi",
             ["Explanation"] = "Giai thich",
             ["IsAutoSubmitted"] = "Tu dong nop bai",
+            ["IsSuspicious"] = "Nghi ngo gian lan",
             ["IsCorrect"] = "Dap an dung",
             ["MaxTabSwitchCount"] = "So lan roi man hinh toi da",
             ["Name"] = "Ten",
+            ["Note"] = "Ghi chu",
             ["OccurredAt"] = "Thoi diem",
             ["PassingScore"] = "Diem dat",
             ["QuestionId"] = "Cau hoi",
@@ -106,7 +109,8 @@ namespace LT_Web_Nhom4.Controllers
             ["SubmittedAt"] = "Thoi gian nop",
             ["TeacherId"] = "Giang vien",
             ["Title"] = "Tieu de",
-            ["UserId"] = "Nguoi dung"
+            ["UserId"] = "Nguoi dung",
+            ["ViolationCount"] = "So lan vi pham"
         };
 
         private readonly ApplicationDbContext _context;

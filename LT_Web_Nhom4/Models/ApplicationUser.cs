@@ -22,6 +22,8 @@ namespace LT_Web_Nhom4.Models
 
         public ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
 
+        public ICollection<AntiCheatEvent> AntiCheatEvents { get; set; } = new List<AntiCheatEvent>();
+
         public ICollection<EmailOtp> EmailOtps { get; set; } = new List<EmailOtp>();
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

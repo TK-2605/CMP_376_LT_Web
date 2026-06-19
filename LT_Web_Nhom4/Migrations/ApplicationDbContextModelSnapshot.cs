@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace LT_Web_Nhom4.Data.Migrations
+namespace LT_Web_Nhom4.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -30,6 +30,9 @@ namespace LT_Web_Nhom4.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -40,8 +43,18 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Property<int>("ExamAttemptId")
                         .HasColumnType("int");
 
+                    b.Property<int>("ExamId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSuspicious")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MetadataJson")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("OccurredAt")
                         .HasColumnType("datetime2");
@@ -49,9 +62,21 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Property<int>("Severity")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ViolationCount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ExamAttemptId");
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ExamAttemptId", "CreatedAt");
 
                     b.ToTable("AntiCheatEvents");
                 });
@@ -734,7 +759,23 @@ namespace LT_Web_Nhom4.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LT_Web_Nhom4.Models.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LT_Web_Nhom4.Models.ApplicationUser", "User")
+                        .WithMany("AntiCheatEvents")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
                     b.Navigation("ExamAttempt");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.AttemptAnswer", b =>
@@ -971,6 +1012,8 @@ namespace LT_Web_Nhom4.Data.Migrations
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.ApplicationUser", b =>
                 {
+                    b.Navigation("AntiCheatEvents");
+
                     b.Navigation("ClassMembers");
 
                     b.Navigation("ClassesTeaching");

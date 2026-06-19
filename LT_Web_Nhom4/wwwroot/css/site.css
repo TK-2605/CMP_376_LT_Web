@@ -46,3 +46,10 @@ a {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+.language-selector {
+  min-width: 150px;
+}
+
+.language-selector .form-select {
+  cursor: pointer;
+}

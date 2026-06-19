@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
 using LT_Web_Nhom4.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LT_Web_Nhom4.Controllers
 {
@@ -14,6 +16,7 @@ namespace LT_Web_Nhom4.Controllers
         private readonly IExamQuestionRepository _examQuestionRepository;
         private readonly IExamAttemptRepository _examAttemptRepository;
         private readonly IAttemptAnswerRepository _attemptAnswerRepository;
+        private readonly ApplicationDbContext _context;
 
         public ExamsController(
             IExamRepository examRepository,
@@ -26,6 +29,7 @@ namespace LT_Web_Nhom4.Controllers
             _examQuestionRepository = examQuestionRepository;
             _examAttemptRepository = examAttemptRepository;
             _attemptAnswerRepository = attemptAnswerRepository;
+            _context = context;
         }
 
         public override Task<IActionResult> Index()
@@ -101,7 +105,7 @@ namespace LT_Web_Nhom4.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Start(int id, bool acceptRules)
+        public async Task<IActionResult> Start(int id, bool acceptRules)
         {
             var room = BuildSampleRoom(id);
             if (!room.IsOpen)
@@ -115,13 +119,45 @@ namespace LT_Web_Nhom4.Controllers
                 return View("Confirm", room);
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var examExists = await _context.Exams.AsNoTracking().AnyAsync(exam => exam.Id == id);
+            if (!examExists || string.IsNullOrWhiteSpace(userId))
+            {
+                ModelState.AddModelError(string.Empty, "De thi nay chua duoc cau hinh trong database nen khong the bat dau luot thi co giam sat.");
+                return View("Confirm", room);
+            }
+
+            var attempt = await _context.ExamAttempts
+                .FirstOrDefaultAsync(item =>
+                    item.ExamId == id &&
+                    item.UserId == userId &&
+                    item.Status == ExamAttemptStatus.InProgress);
+
+            if (attempt is null)
+            {
+                attempt = new ExamAttempt
+                {
+                    ExamId = id,
+                    UserId = userId,
+                    StartedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = ExamAttemptStatus.InProgress,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = Request.Headers.UserAgent.ToString()
+                };
+                _context.ExamAttempts.Add(attempt);
+                await _context.SaveChangesAsync();
+            }
+
             var model = BuildSampleExam(id);
+            model.AttemptId = attempt.Id;
+            model.StartedAt = attempt.StartedAt;
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Submit(ExamSubmitViewModel model)
+        public async Task<IActionResult> Submit(ExamSubmitViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -138,6 +174,18 @@ namespace LT_Web_Nhom4.Controllers
                 ModelState.AddModelError(string.Empty, "Bai lam chua hop le. Vui long kiem tra lai dap an truoc khi nop.");
                 return View("Start", exam);
             }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var attempt = await _context.ExamAttempts.FirstOrDefaultAsync(item =>
+                item.Id == model.AttemptId && item.ExamId == model.ExamId && item.UserId == userId);
+            if (attempt is null)
+            {
+                return BadRequest("Khong tim thay luot thi dang hoat dong.");
+            }
+
+            attempt.Status = ExamAttemptStatus.Submitted;
+            attempt.SubmittedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
 
             TempData["ExamMessage"] = "Bai lam da duoc gui thanh cong.";
             return RedirectToAction(nameof(Index));

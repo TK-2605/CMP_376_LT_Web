@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/crud.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/LT_Web_Nhom4.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="@ViewData["BodyClass"]">
@@ -24,13 +24,16 @@
                 <div class="navbar-collapse collapse">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chu</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">@Localizer["Home"]</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">De thi</a>
+                            <a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">@Localizer["Exams"]</a>
                         </li>
                     </ul>
-                    <partial name="_LoginPartial" />
+                    <div class="d-flex align-items-lg-center gap-2 ms-lg-auto">
+                        <partial name="/Views/Shared/_LanguageSelector.cshtml" />
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
@@ -43,7 +46,7 @@
 
     <footer class="border-top py-4 text-muted">
         <div class="container">
-            &copy; 2026 - QuizHub - He thong thi trac nghiem truc tuyen
+            &copy; 2026 - QuizHub - @Localizer["Footer"]
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

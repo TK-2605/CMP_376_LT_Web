@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LT_Web_Nhom4.Data.Migrations
+namespace LT_Web_Nhom4.Migrations
 {
     /// <inheritdoc />
     public partial class Initial_DBContext : Migration

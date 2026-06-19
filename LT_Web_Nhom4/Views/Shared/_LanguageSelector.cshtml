@@ -1,0 +1,19 @@
+@using System.Globalization
+@inject Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> Localizer
+
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<form asp-area="" asp-controller="Localization" asp-action="SetLanguage" method="post" class="language-selector">
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+    <label for="culture-selector" class="visually-hidden">@Localizer["Language"]</label>
+    <select id="culture-selector" name="culture" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="@Localizer["Language"]">
+        <option value="vi" selected="@(currentCulture == "vi")">🇻🇳 Tiếng Việt</option>
+        <option value="en" selected="@(currentCulture == "en")">🇬🇧 English</option>
+        <option value="ja" selected="@(currentCulture == "ja")">🇯🇵 日本語</option>
+        <option value="ko" selected="@(currentCulture == "ko")">🇰🇷 한국어</option>
+        <option value="zh" selected="@(currentCulture == "zh")">🇨🇳 中文</option>
+    </select>
+</form>

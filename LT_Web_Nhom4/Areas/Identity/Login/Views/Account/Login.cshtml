@@ -1,7 +1,7 @@
 @model LoginViewModel
 
 @{
-    ViewData["Title"] = "Dang nhap";
+    ViewData["Title"] = Localizer["Login"];
 }
 
 <section class="auth-shell">
@@ -16,8 +16,8 @@
                                 <span>QuizHub</span>
                             </div>
                             <div class="auth-panel-content">
-                                <h1>Chao mung tro lai</h1>
-                                <p>Dang nhap de vao lop hoc, xem de thi va tiep tuc bai lam cua ban.</p>
+                                <h1>@Localizer["WelcomeBack"]</h1>
+                                <p>@Localizer["LoginDesc"]</p>
                             </div>
                             <div class="auth-panel-note">
                                 <span>Lich thi, bai lam va ket qua duoc quan ly tap trung.</span>
@@ -25,7 +25,7 @@
                         </div>
                         <div class="col-lg-7 auth-form-side">
                             <div class="auth-form-heading">
-                                <h2>Dang nhap</h2>
+                                <h2>@Localizer["Login"]</h2>
                                 <p>Su dung email da dang ky voi he thong.</p>
                             </div>
 
@@ -39,13 +39,13 @@
                                 <input asp-for="ReturnUrl" type="hidden" />
 
                                 <div class="auth-field">
-                                    <label asp-for="Email" class="form-label">Email</label>
+                                    <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
                                     <input asp-for="Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
                                     <span asp-validation-for="Email" class="text-danger"></span>
                                 </div>
 
                                 <div class="auth-field">
-                                    <label asp-for="Password" class="form-label">Mat khau</label>
+                                    <label asp-for="Password" class="form-label">@Localizer["Password"]</label>
                                     <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Nhap mat khau" />
                                     <span asp-validation-for="Password" class="text-danger"></span>
                                 </div>
@@ -53,12 +53,12 @@
                                 <div class="auth-row">
                                     <div class="form-check">
                                         <input asp-for="RememberMe" class="form-check-input" />
-                                        <label asp-for="RememberMe" class="form-check-label">Ghi nho toi</label>
+                                        <label asp-for="RememberMe" class="form-check-label">@Localizer["RememberMe"]</label>
                                     </div>
-                                    <a asp-area="Identity" asp-controller="Account" asp-action="ForgotPassword">Quen mat khau?</a>
+                                    <a asp-area="Identity" asp-controller="Account" asp-action="ForgotPassword">@Localizer["ForgotPassword"]</a>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary auth-submit">Dang nhap</button>
+                                <button type="submit" class="btn btn-primary auth-submit">@Localizer["Login"]</button>
                             </form>
 
                             @if (Model.ExternalLogins.Count > 0)
@@ -77,8 +77,8 @@
                             }
 
                             <p class="auth-switch">
-                                Chua co tai khoan?
-                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Dang ky</a>
+                                @Localizer["NoAccount"]
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">@Localizer["Register"]</a>
                             </p>
                         </div>
                     </div>

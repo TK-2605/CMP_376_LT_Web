@@ -1,14 +1,14 @@
 @model TeacherDashboardViewModel
 
 @{
-    ViewData["Title"] = "Tong quan";
+    ViewData["Title"] = Localizer["Dashboard"];
 }
 
 <section class="teacher-page">
     <div class="teacher-heading">
-        <span>Tong quan</span>
-        <h1>Khong gian lam viec cua giao vien</h1>
-        <p>Quan ly lop hoc, ngan hang cau hoi, cau hoi trong de va cac canh bao can xem lai.</p>
+        <span>@Localizer["Dashboard"]</span>
+        <h1>@Localizer["TeacherWorkspace"]</h1>
+        <p>@Localizer["TeacherWorkspaceDesc"]</p>
     </div>
 
     <div class="teacher-stat-grid">
