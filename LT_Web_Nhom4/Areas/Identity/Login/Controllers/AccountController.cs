@@ -281,6 +281,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
             }
 
+            if (await _userManager.IsInRoleAsync(user, "Teacher"))
+            {
+                return RedirectToAction("Index", "Dashboard", new { area = "Teacher" });
+            }
+
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 

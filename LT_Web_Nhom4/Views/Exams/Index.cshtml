@@ -22,15 +22,20 @@
         <div class="row g-4">
             @foreach (var exam in Model.Exams)
             {
+                var now = DateTime.Now;
+                var isOpen = now >= exam.StartAt && now <= exam.EndAt;
+                var isClosed = now > exam.EndAt;
                 <div class="col-lg-6">
                     <article class="card student-exam-card h-100">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                                 <span class="badge rounded-pill">@exam.SubjectName</span>
-                                <span class="text-muted">@exam.QuestionCount cau</span>
+                                <span class="badge rounded-pill @(isOpen ? "text-bg-success" : isClosed ? "text-bg-secondary" : "text-bg-warning")">
+                                    @(isOpen ? "Dang mo" : isClosed ? "Da ket thuc" : "Phong cho")
+                                </span>
                             </div>
                             <h2 class="h4 fw-bold">@exam.Title</h2>
-                            <p class="text-muted">@exam.ClassName</p>
+                            <p class="text-muted">@exam.ClassName - @exam.QuestionCount cau</p>
                             <div class="row g-3 mb-4">
                                 <div class="col-sm-6">
                                     <div class="p-3 bg-light rounded-3">
@@ -45,7 +50,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <a asp-controller="Exams" asp-action="Start" asp-route-id="@exam.Id" class="btn btn-primary">Bat dau lam bai</a>
+                            <a asp-controller="Exams" asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary">
+                                @(isOpen ? "Vao phong thi" : "Vao phong cho")
+                            </a>
                         </div>
                     </article>
                 </div>

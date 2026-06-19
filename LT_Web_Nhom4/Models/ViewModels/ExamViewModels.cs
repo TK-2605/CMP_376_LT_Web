@@ -26,6 +26,41 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public int QuestionCount { get; set; }
     }
 
+    public class ExamRoomViewModel
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+
+        public string SubjectName { get; set; } = string.Empty;
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public DateTime StartAt { get; set; }
+
+        public DateTime EndAt { get; set; }
+
+        public int DurationMinutes { get; set; }
+
+        public int QuestionCount { get; set; }
+
+        public DateTime Now { get; set; } = DateTime.Now;
+
+        public bool IsOpen => Now >= StartAt && Now <= EndAt;
+
+        public bool IsClosed => Now > EndAt;
+
+        public TimeSpan TimeUntilStart => StartAt > Now ? StartAt - Now : TimeSpan.Zero;
+
+        public IList<string> Rules { get; set; } = new List<string>
+        {
+            "Doc ky thong tin de thi truoc khi bat dau.",
+            "Moi cau hoi chi chon mot dap an.",
+            "Khong tat trinh duyet trong khi dang lam bai.",
+            "Kiem tra tien do tra loi truoc khi nop bai."
+        };
+    }
+
     public class ExamStartViewModel
     {
         public int ExamId { get; set; }

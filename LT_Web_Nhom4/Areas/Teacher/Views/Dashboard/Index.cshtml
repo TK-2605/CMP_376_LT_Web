@@ -1,0 +1,51 @@
+@model TeacherDashboardViewModel
+
+@{
+    ViewData["Title"] = "Tong quan";
+}
+
+<section class="teacher-page">
+    <div class="teacher-heading">
+        <span>Tong quan</span>
+        <h1>Khong gian lam viec cua giao vien</h1>
+        <p>Quan ly lop hoc, ngan hang cau hoi, cau hoi trong de va cac canh bao can xem lai.</p>
+    </div>
+
+    <div class="teacher-stat-grid">
+        <article>
+            <span>Lop phu trach</span>
+            <strong>@Model.TotalClasses</strong>
+        </article>
+        <article>
+            <span>Cau hoi da tao</span>
+            <strong>@Model.TotalQuestions</strong>
+        </article>
+        <article>
+            <span>De thi</span>
+            <strong>@Model.TotalExams</strong>
+        </article>
+        <article>
+            <span>Canh bao</span>
+            <strong>@Model.TotalWarnings</strong>
+        </article>
+    </div>
+
+    <div class="teacher-action-grid">
+        <a asp-area="" asp-controller="Questions" asp-action="Index">
+            <strong>Ngan hang cau hoi</strong>
+            <span>Them, sua va xem trang thai cau hoi.</span>
+        </a>
+        <a asp-area="" asp-controller="Classes" asp-action="Index">
+            <strong>Lop hoc</strong>
+            <span>Theo doi lop phu trach va thanh vien.</span>
+        </a>
+        <a asp-area="" asp-controller="ExamQuestions" asp-action="Index">
+            <strong>Cau hoi trong de</strong>
+            <span>Gan cau hoi vao de thi va cau hinh diem.</span>
+        </a>
+        <a asp-area="" asp-controller="AntiCheat" asp-action="Index">
+            <strong>Canh bao bai thi</strong>
+            <span>Xem cac canh bao can giao vien kiem tra.</span>
+        </a>
+    </div>
+</section>

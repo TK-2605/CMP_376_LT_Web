@@ -69,3 +69,180 @@
 .exam-autosave {
   min-height: 24px;
 }
+
+.exam-room-shell {
+  min-height: calc(100vh - 154px);
+  display: flex;
+  align-items: center;
+  padding: 56px 0;
+  background: #f5f7fb;
+}
+
+.exam-room-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.1);
+}
+
+.exam-room-main,
+.exam-room-side {
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.exam-room-main {
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.94), rgba(15, 23, 42, 0.86)),
+    url("/img/student/banner-bg.jpg") center/cover;
+  color: #fff;
+}
+
+.exam-room-kicker {
+  display: inline-block;
+  margin-bottom: 0.8rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exam-room-main h1 {
+  max-width: 680px;
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.exam-room-main p {
+  margin: 1rem 0 0;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.exam-room-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.exam-room-meta > div {
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.exam-room-meta span,
+.exam-wait-time span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+}
+
+.exam-room-meta strong {
+  color: #fff;
+}
+
+.exam-rule-box {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.exam-rule-box h2,
+.exam-room-side h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.exam-rule-box ul {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.exam-room-side {
+  align-self: center;
+}
+
+.exam-room-side p {
+  color: #64748b;
+}
+
+.exam-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 0.85rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.exam-status-pill.is-open {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.exam-status-pill.is-waiting {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.exam-status-pill.is-closed {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.exam-confirm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.exam-confirm-check input {
+  margin-top: 0.2rem;
+}
+
+.exam-wait-time {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.exam-wait-time span {
+  color: #64748b;
+}
+
+.exam-wait-time strong {
+  color: #1d4ed8;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+@media (max-width: 991.98px) {
+  .exam-room-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .exam-room-meta {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,62 @@
+@model ExamRoomViewModel
+
+@{
+    ViewData["Title"] = "Phong cho";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
+
+<section class="exam-room-shell">
+    <div class="container">
+        <div class="exam-room-card">
+            <div class="exam-room-main">
+                <span class="exam-room-kicker">Phong cho</span>
+                <h1>@Model.Title</h1>
+                <p>@Model.SubjectName - @Model.ClassName</p>
+
+                <div class="exam-room-meta">
+                    <div>
+                        <span>Bat dau</span>
+                        <strong>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                    </div>
+                    <div>
+                        <span>Ket thuc</span>
+                        <strong>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                    </div>
+                    <div>
+                        <span>Thoi luong</span>
+                        <strong>@Model.DurationMinutes phut</strong>
+                    </div>
+                    <div>
+                        <span>So cau</span>
+                        <strong>@Model.QuestionCount cau</strong>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="exam-room-side">
+                @if (Model.IsClosed)
+                {
+                    <div class="exam-status-pill is-closed">Da ket thuc</div>
+                    <h2>De thi da dong</h2>
+                    <p>Thoi gian lam bai da ket thuc. Vui long xem cac de thi khac trong danh sach.</p>
+                }
+                else
+                {
+                    <div class="exam-status-pill is-waiting">Chua mo</div>
+                    <h2>Chua den gio lam bai</h2>
+                    <p>Ban co the o lai phong cho va tai lai trang khi den gio bat dau.</p>
+                    <div class="exam-wait-time">
+                        <span>Con lai</span>
+                        <strong>@($"{(int)Model.TimeUntilStart.TotalHours:00}:{Model.TimeUntilStart.Minutes:00}:{Model.TimeUntilStart.Seconds:00}")</strong>
+                    </div>
+                }
+
+                <a asp-controller="Exams" asp-action="Room" asp-route-id="@Model.Id" class="btn btn-primary w-100 mt-3">Kiem tra lai</a>
+                <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Quay lai danh sach</a>
+            </aside>
+        </div>
+    </div>
+</section>

@@ -32,38 +32,40 @@ namespace LT_Web_Nhom4.Controllers
         {
             var model = new ExamListViewModel
             {
-                Exams =
-                {
-                    new ExamCardViewModel
-                    {
-                        Id = 1,
-                        Title = "Kiem tra Lap trinh Web co ban",
-                        SubjectName = "Lap trinh Web",
-                        ClassName = "D21_TH01",
-                        StartAt = DateTime.Now.AddHours(1),
-                        EndAt = DateTime.Now.AddHours(3),
-                        DurationMinutes = 60,
-                        QuestionCount = 20
-                    },
-                    new ExamCardViewModel
-                    {
-                        Id = 2,
-                        Title = "On tap Cong nghe .NET",
-                        SubjectName = "Cong nghe .NET",
-                        ClassName = "D21_TH02",
-                        StartAt = DateTime.Now.AddDays(1),
-                        EndAt = DateTime.Now.AddDays(1).AddHours(2),
-                        DurationMinutes = 45,
-                        QuestionCount = 15
-                    }
-                }
+                Exams = BuildSampleExamCards()
             };
 
             return Task.FromResult<IActionResult>(View(model));
         }
 
+        public IActionResult Room(int id)
+        {
+            var room = BuildSampleRoom(id);
+            return room.IsOpen ? View("Confirm", room) : View("Waiting", room);
+        }
+
+        [HttpGet]
         public IActionResult Start(int id)
         {
+            return RedirectToAction(nameof(Room), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Start(int id, bool acceptRules)
+        {
+            var room = BuildSampleRoom(id);
+            if (!room.IsOpen)
+            {
+                return View("Waiting", room);
+            }
+
+            if (!acceptRules)
+            {
+                ModelState.AddModelError(string.Empty, "Vui long xac nhan da doc quy dinh truoc khi bat dau.");
+                return View("Confirm", room);
+            }
+
             var model = BuildSampleExam(id);
             return View(model);
         }
@@ -104,15 +106,76 @@ namespace LT_Web_Nhom4.Controllers
             return Ok(new { ok = true, savedAt = DateTime.Now.ToString("HH:mm:ss") });
         }
 
+        private static IList<ExamCardViewModel> BuildSampleExamCards()
+        {
+            var now = DateTime.Now;
+            return new List<ExamCardViewModel>
+            {
+                new()
+                {
+                    Id = 1,
+                    Title = "Kiem tra Lap trinh Web co ban",
+                    SubjectName = "Lap trinh Web",
+                    ClassName = "D21_TH01",
+                    StartAt = now.AddHours(1),
+                    EndAt = now.AddHours(3),
+                    DurationMinutes = 60,
+                    QuestionCount = 20
+                },
+                new()
+                {
+                    Id = 2,
+                    Title = "On tap Cong nghe .NET",
+                    SubjectName = "Cong nghe .NET",
+                    ClassName = "D21_TH02",
+                    StartAt = now.AddHours(1),
+                    EndAt = now.AddHours(2),
+                    DurationMinutes = 45,
+                    QuestionCount = 15
+                },
+                new()
+                {
+                    Id = 3,
+                    Title = "Bai thi mau dang mo",
+                    SubjectName = "Lap trinh Web",
+                    ClassName = "D21_TH03",
+                    StartAt = now.AddMinutes(-10),
+                    EndAt = now.AddMinutes(50),
+                    DurationMinutes = 60,
+                    QuestionCount = 10
+                }
+            };
+        }
+
+        private static ExamRoomViewModel BuildSampleRoom(int id)
+        {
+            var card = BuildSampleExamCards().FirstOrDefault(exam => exam.Id == id)
+                ?? BuildSampleExamCards().First();
+
+            return new ExamRoomViewModel
+            {
+                Id = card.Id,
+                Title = card.Title,
+                SubjectName = card.SubjectName,
+                ClassName = card.ClassName,
+                StartAt = card.StartAt,
+                EndAt = card.EndAt,
+                DurationMinutes = card.DurationMinutes,
+                QuestionCount = card.QuestionCount,
+                Now = DateTime.Now
+            };
+        }
+
         private static ExamStartViewModel BuildSampleExam(int id)
         {
+            var room = BuildSampleRoom(id);
             return new ExamStartViewModel
             {
                 ExamId = id,
                 AttemptId = 1000 + id,
-                Title = "Kiem tra Lap trinh Web co ban",
-                SubjectName = "Lap trinh Web",
-                DurationMinutes = 45,
+                Title = room.Title,
+                SubjectName = room.SubjectName,
+                DurationMinutes = room.DurationMinutes,
                 StartedAt = DateTime.Now,
                 Questions =
                 {

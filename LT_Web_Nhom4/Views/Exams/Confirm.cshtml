@@ -1,0 +1,67 @@
+@model ExamRoomViewModel
+
+@{
+    ViewData["Title"] = "Xac nhan vao phong thi";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
+
+<section class="exam-room-shell">
+    <div class="container">
+        <div class="exam-room-card">
+            <div class="exam-room-main">
+                <span class="exam-room-kicker">Phong thi da mo</span>
+                <h1>@Model.Title</h1>
+                <p>@Model.SubjectName - @Model.ClassName</p>
+
+                <div class="exam-room-meta">
+                    <div>
+                        <span>Bat dau</span>
+                        <strong>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                    </div>
+                    <div>
+                        <span>Ket thuc</span>
+                        <strong>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                    </div>
+                    <div>
+                        <span>Thoi luong</span>
+                        <strong>@Model.DurationMinutes phut</strong>
+                    </div>
+                    <div>
+                        <span>So cau</span>
+                        <strong>@Model.QuestionCount cau</strong>
+                    </div>
+                </div>
+
+                <div class="exam-rule-box">
+                    <h2>Quy dinh truoc khi lam bai</h2>
+                    <ul>
+                        @foreach (var rule in Model.Rules)
+                        {
+                            <li>@rule</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+
+            <aside class="exam-room-side">
+                <div class="exam-status-pill is-open">San sang</div>
+                <h2>Xac nhan bat dau</h2>
+                <p>Bai thi se tinh thoi gian sau khi ban vao phong lam bai.</p>
+
+                <form asp-controller="Exams" asp-action="Start" asp-route-id="@Model.Id" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <label class="exam-confirm-check">
+                        <input type="checkbox" name="acceptRules" value="true" />
+                        <span>Toi da doc quy dinh va san sang lam bai.</span>
+                    </label>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Bat dau lam bai</button>
+                    <a asp-controller="Exams" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">Quay lai danh sach</a>
+                </form>
+            </aside>
+        </div>
+    </div>
+</section>
