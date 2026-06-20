@@ -15,6 +15,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<PendingRegistration> PendingRegistrations { get; set; }
+
         public DbSet<Subject> Subjects { get; set; }
 
         public DbSet<Class> Classes { get; set; }
@@ -71,6 +73,22 @@ namespace LT_Web_Nhom4.Data
                     .WithMany(user => user.RefreshTokens)
                     .HasForeignKey(token => token.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<PendingRegistration>(entity =>
+            {
+                entity.Property(pending => pending.Email).HasMaxLength(256);
+                entity.Property(pending => pending.NormalizedEmail).HasMaxLength(256);
+                entity.Property(pending => pending.UserName).HasMaxLength(256);
+                entity.Property(pending => pending.NormalizedUserName).HasMaxLength(256);
+                entity.Property(pending => pending.FullName).HasMaxLength(150);
+                entity.Property(pending => pending.StudentCode).HasMaxLength(50);
+                entity.Property(pending => pending.RoleName).HasMaxLength(100);
+                entity.Property(pending => pending.PasswordHash).HasMaxLength(1000);
+                entity.Property(pending => pending.ConfirmationCodeHash).HasMaxLength(256);
+                entity.Property(pending => pending.ConfirmationTokenHash).HasMaxLength(256);
+                entity.Property(pending => pending.TokenSalt).HasMaxLength(256);
+                entity.HasIndex(pending => pending.NormalizedEmail).IsUnique();
             });
 
             builder.Entity<Subject>(entity =>

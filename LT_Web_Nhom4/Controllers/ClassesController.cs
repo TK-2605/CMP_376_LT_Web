@@ -352,10 +352,9 @@ namespace LT_Web_Nhom4.Controllers
                 .Where(item => IsAdmin || item.TeacherId == CurrentUserId)
                 .OrderByDescending(item => item.CreatedAt).ToListAsync();
 
-            var participatingClasses = await _context.ClassMembers.AsNoTracking()
-                .Where(member => member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active)
-                .Select(member => member.Class)
+            var participatingClasses = await _context.Classes.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => item.Members.Any(member => member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active))
                 .OrderByDescending(item => item.CreatedAt).ToListAsync();
 
             return new ClassListViewModel

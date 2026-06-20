@@ -32,10 +32,9 @@ namespace LT_Web_Nhom4.Controllers
                 .Where(item => isAdmin || item.TeacherId == userId)
                 .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
 
-            var joinedClasses = await _context.ClassMembers.AsNoTracking()
-                .Where(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)
-                .Select(member => member.Class)
+            var joinedClasses = await _context.Classes.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => item.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active))
                 .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
 
             var upcoming = await _context.Exams.AsNoTracking()

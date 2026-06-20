@@ -1,0 +1,54 @@
+@model ConfirmEmailOtpViewModel
+
+@{
+    ViewData["Title"] = "Xác nhận email";
+}
+
+<section class="auth-shell">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="auth-card auth-single-card">
+                    <partial name="_AuthHomeButton" />
+                    <div class="auth-form-side">
+                        <div class="auth-form-heading text-center">
+                            <h1>Xác nhận email</h1>
+                            <p>Nhập mã OTP đã được gửi đến email đăng ký.</p>
+                        </div>
+
+                        @if (TempData["AuthMessage"] is string message)
+                        {
+                            <div class="alert alert-info">@message</div>
+                        }
+
+                        <form asp-area="Identity" asp-controller="Account" asp-action="ConfirmEmailOtp" method="post" class="auth-form">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                            <input asp-for="Email" type="hidden" />
+                            <input asp-for="ReturnUrl" type="hidden" />
+
+                            <div class="auth-field">
+                                <label asp-for="Code" class="form-label">Mã OTP</label>
+                                <input asp-for="Code" class="form-control" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" />
+                                <span asp-validation-for="Code" class="text-danger"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary auth-submit">Xác nhận</button>
+                        </form>
+
+                        <form asp-area="Identity" asp-controller="Account" asp-action="ResendEmailConfirmation" method="post" class="mt-3">
+                            <input type="hidden" name="email" value="@Model.Email" />
+                            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                            <button type="submit" class="btn btn-outline-secondary w-100">Gửi lại mã xác nhận</button>
+                        </form>
+
+                        <a asp-area="Identity" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl" class="auth-back-link">Quay lại đăng nhập</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
