@@ -1,0 +1,520 @@
+{
+  "tables": {
+    "AspNetRoles": {
+      "name": "AspNetRoles",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Name": {
+          "name": "Name",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedName": {
+          "name": "NormalizedName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ConcurrencyStamp": {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_AspNetRoles": {
+          "name": "PK_AspNetRoles",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "RoleNameIndex": {
+          "name": "RoleNameIndex",
+          "unique": true,
+          "columns": [
+            "NormalizedName"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetRoles": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetRoles",
+          "columnNames": [
+            "Id"
+          ]
+        }
+      }
+    },
+    "AspNetUsers": {
+      "name": "AspNetUsers",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "UserName": {
+          "name": "UserName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedUserName": {
+          "name": "NormalizedUserName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "Email": {
+          "name": "Email",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedEmail": {
+          "name": "NormalizedEmail",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "EmailConfirmed": {
+          "name": "EmailConfirmed",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "PasswordHash": {
+          "name": "PasswordHash",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "SecurityStamp": {
+          "name": "SecurityStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ConcurrencyStamp": {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "PhoneNumber": {
+          "name": "PhoneNumber",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "PhoneNumberConfirmed": {
+          "name": "PhoneNumberConfirmed",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "TwoFactorEnabled": {
+          "name": "TwoFactorEnabled",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "LockoutEnd": {
+          "name": "LockoutEnd",
+          "type": "datetimeoffset",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "LockoutEnabled": {
+          "name": "LockoutEnabled",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "AccessFailedCount": {
+          "name": "AccessFailedCount",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": "('0001-01-01T00:00:00.0000000')",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "FullName": {
+          "name": "FullName",
+          "type": "nvarchar(150)",
+          "default": "(N'')",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "IsActive": {
+          "name": "IsActive",
+          "type": "bit",
+          "default": "(CONVERT([bit],(0)))",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "StudentCode": {
+          "name": "StudentCode",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_AspNetUsers": {
+          "name": "PK_AspNetUsers",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "EmailIndex": {
+          "name": "EmailIndex",
+          "unique": false,
+          "columns": [
+            "NormalizedEmail"
+          ],
+          "type": ""
+        },
+        "UserNameIndex": {
+          "name": "UserNameIndex",
+          "unique": true,
+          "columns": [
+            "NormalizedUserName"
+          ],
+          "type": ""
+        },
+        "IX_AspNetUsers_StudentCode": {
+          "name": "IX_AspNetUsers_StudentCode",
+          "unique": true,
+          "columns": [
+            "StudentCode"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetUsers": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetUsers",
+          "columnNames": [
+            "Id"
+          ]
+        }
+      }
+    },
+    "AspNetUserRoles": {
+      "name": "AspNetUserRoles",
+      "comment": null,
+      "columns": {
+        "UserId": {
+          "name": "UserId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "RoleId": {
+          "name": "RoleId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_AspNetUserRoles": {
+          "name": "PK_AspNetUserRoles",
+          "unique": true,
+          "columns": [
+            "UserId",
+            "RoleId"
+          ],
+          "type": ""
+        },
+        "IX_AspNetUserRoles_RoleId": {
+          "name": "IX_AspNetUserRoles_RoleId",
+          "unique": false,
+          "columns": [
+            "RoleId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetUserRoles": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetUserRoles",
+          "columnNames": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        "FK_AspNetUserRoles_AspNetRoles_RoleId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AspNetUserRoles_AspNetRoles_RoleId",
+          "columnNames": [
+            "RoleId"
+          ],
+          "targetTableName": "AspNetRoles",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        },
+        "FK_AspNetUserRoles_AspNetUsers_UserId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AspNetUserRoles_AspNetUsers_UserId",
+          "columnNames": [
+            "UserId"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        }
+      }
+    },
+    "Classes": {
+      "name": "Classes",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "SubjectId": {
+          "name": "SubjectId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "TeacherId": {
+          "name": "TeacherId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Code": {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Name": {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Semester": {
+          "name": "Semester",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "AcademicYear": {
+          "name": "AcademicYear",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "CoverImagePath": {
+          "name": "CoverImagePath",
+          "type": "nvarchar(500)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": "(sysutcdatetime())",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Description": {
+          "name": "Description",
+          "type": "nvarchar(2000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "IntroVideoUrl": {
+          "name": "IntroVideoUrl",
+          "type": "nvarchar(1000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "RowVersion": {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_Classes": {
+          "name": "PK_Classes",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_Classes_Code": {
+          "name": "IX_Classes_Code",
+          "unique": true,
+          "columns": [
+            "Code"
+          ],
+          "type": ""
+        },
+        "IX_Classes_SubjectId": {
+          "name": "IX_Classes_SubjectId",
+          "unique": false,
+          "columns": [
+            "SubjectId"
+          ],
+          "type": ""
+        },
+        "IX_Classes_TeacherId": {
+          "name": "IX_Classes_TeacherId",
+          "unique": false,
+          "columns": [
+            "TeacherId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_Classes": {
+          "type": "PRIMARY KEY",
+          "name": "PK_Classes",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_Classes_AspNetUsers_TeacherId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Classes_AspNetUsers_TeacherId",
+          "columnNames": [
+            "TeacherId"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        },
+        "FK_Classes_Subjects_SubjectId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Classes_Subjects_SubjectId",
+          "columnNames": [
+            "SubjectId"
+          ],
+          "targetTableName": "Subjects",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    }
+  },
+  "enums": {},
+  "extensions": {}
+}

@@ -1,0 +1,4 @@
+dsn: "mssql://erd_reader:ErdReader_123456!@127.0.0.1:1433/WebThiTracNghiem"
+
+exclude:
+  - "__EFMigrationsHistory"

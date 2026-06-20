@@ -1,0 +1,470 @@
+{
+  "name": "WebThiTracNghiem",
+  "tables": [
+    {
+      "name": "AspNetRoles",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Name",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetRoles",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "RoleNameIndex",
+          "def": "NONCLUSTERED, unique, [ NormalizedName ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "NormalizedName"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetRoles",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AspNetUsers",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "UserName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedUserName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "Email",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedEmail",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "EmailConfirmed",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "PasswordHash",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "SecurityStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "PhoneNumber",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "PhoneNumberConfirmed",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "TwoFactorEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "LockoutEnd",
+          "type": "datetimeoffset",
+          "nullable": true
+        },
+        {
+          "name": "LockoutEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "AccessFailedCount",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false,
+          "default": "('0001-01-01T00:00:00.0000000')"
+        },
+        {
+          "name": "FullName",
+          "type": "nvarchar(150)",
+          "nullable": false,
+          "default": "(N'')"
+        },
+        {
+          "name": "IsActive",
+          "type": "bit",
+          "nullable": false,
+          "default": "(CONVERT([bit],(0)))"
+        },
+        {
+          "name": "StudentCode",
+          "type": "nvarchar(50)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetUsers",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "EmailIndex",
+          "def": "NONCLUSTERED, [ NormalizedEmail ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "NormalizedEmail"
+          ]
+        },
+        {
+          "name": "UserNameIndex",
+          "def": "NONCLUSTERED, unique, [ NormalizedUserName ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "NormalizedUserName"
+          ]
+        },
+        {
+          "name": "IX_AspNetUsers_StudentCode",
+          "def": "NONCLUSTERED, unique, [ StudentCode ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "StudentCode"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetUsers",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AspNetUserRoles",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "UserId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "RoleId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetUserRoles",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ UserId, RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        {
+          "name": "IX_AspNetUserRoles_RoleId",
+          "def": "NONCLUSTERED, [ RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "RoleId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetUserRoles",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ UserId, RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        {
+          "name": "FK_AspNetUserRoles_AspNetRoles_RoleId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(RoleId) REFERENCES AspNetRoles(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AspNetUserRoles",
+          "referenced_table": "AspNetRoles",
+          "columns": [
+            "RoleId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_AspNetUserRoles_AspNetUsers_UserId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(UserId) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AspNetUserRoles",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "UserId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Classes",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "SubjectId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "TeacherId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "nullable": false
+        },
+        {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "Semester",
+          "type": "nvarchar(50)",
+          "nullable": true
+        },
+        {
+          "name": "AcademicYear",
+          "type": "nvarchar(50)",
+          "nullable": true
+        },
+        {
+          "name": "CoverImagePath",
+          "type": "nvarchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false,
+          "default": "(sysutcdatetime())"
+        },
+        {
+          "name": "Description",
+          "type": "nvarchar(2000)",
+          "nullable": true
+        },
+        {
+          "name": "IntroVideoUrl",
+          "type": "nvarchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_Classes",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Classes",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_Classes_Code",
+          "def": "NONCLUSTERED, unique, [ Code ]",
+          "table": "Classes",
+          "columns": [
+            "Code"
+          ]
+        },
+        {
+          "name": "IX_Classes_SubjectId",
+          "def": "NONCLUSTERED, [ SubjectId ]",
+          "table": "Classes",
+          "columns": [
+            "SubjectId"
+          ]
+        },
+        {
+          "name": "IX_Classes_TeacherId",
+          "def": "NONCLUSTERED, [ TeacherId ]",
+          "table": "Classes",
+          "columns": [
+            "TeacherId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_Classes",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Classes",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Classes_AspNetUsers_TeacherId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(TeacherId) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Classes",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "TeacherId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Classes_Subjects_SubjectId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(SubjectId) REFERENCES Subjects(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Classes",
+          "referenced_table": "Subjects",
+          "columns": [
+            "SubjectId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "table": "AspNetUserRoles",
+      "columns": [
+        "RoleId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetRoles",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AspNetUserRoles",
+      "columns": [
+        "UserId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Classes",
+      "columns": [
+        "TeacherId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    }
+  ],
+  "driver": {
+    "name": "sqlserver",
+    "database_version": "Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64) \n\tOct 21 2025 12:05:57 \n\tCopyright (C) 2025 Microsoft Corporation\n\tStandard Developer Edition (64-bit) on Windows 10 Home Single Language 10.0 \u003cX64\u003e (Build 26200: ) (Hypervisor)\n",
+    "meta": {
+      "dict": {
+        "Functions": "Stored procedures and functions"
+      }
+    }
+  }
+}

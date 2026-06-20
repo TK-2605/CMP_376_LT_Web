@@ -1,0 +1,1399 @@
+{
+  "tables": {
+    "Exams": {
+      "name": "Exams",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "SubjectId": {
+          "name": "SubjectId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "ClassId": {
+          "name": "ClassId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedById": {
+          "name": "CreatedById",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Title": {
+          "name": "Title",
+          "type": "nvarchar(200)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "DurationMinutes": {
+          "name": "DurationMinutes",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "StartAt": {
+          "name": "StartAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "EndAt": {
+          "name": "EndAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "PassingScore": {
+          "name": "PassingScore",
+          "type": "decimal",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ShuffleQuestions": {
+          "name": "ShuffleQuestions",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "ShuffleOptions": {
+          "name": "ShuffleOptions",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "RequireFullscreen": {
+          "name": "RequireFullscreen",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "MaxWarningCount": {
+          "name": "MaxWarningCount",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "Status": {
+          "name": "Status",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "MaxScore": {
+          "name": "MaxScore",
+          "type": "decimal",
+          "default": "((10.0))",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Code": {
+          "name": "Code",
+          "type": "nvarchar(20)",
+          "default": "(N'')",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Instructions": {
+          "name": "Instructions",
+          "type": "nvarchar(4000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ResultReleaseMode": {
+          "name": "ResultReleaseMode",
+          "type": "int",
+          "default": "((2))",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "ResultsReleasedAt": {
+          "name": "ResultsReleasedAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "RowVersion": {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_Exams": {
+          "name": "PK_Exams",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_Exams_ClassId": {
+          "name": "IX_Exams_ClassId",
+          "unique": false,
+          "columns": [
+            "ClassId"
+          ],
+          "type": ""
+        },
+        "IX_Exams_CreatedById": {
+          "name": "IX_Exams_CreatedById",
+          "unique": false,
+          "columns": [
+            "CreatedById"
+          ],
+          "type": ""
+        },
+        "IX_Exams_SubjectId": {
+          "name": "IX_Exams_SubjectId",
+          "unique": false,
+          "columns": [
+            "SubjectId"
+          ],
+          "type": ""
+        },
+        "IX_Exams_Code": {
+          "name": "IX_Exams_Code",
+          "unique": true,
+          "columns": [
+            "Code"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_Exams": {
+          "type": "PRIMARY KEY",
+          "name": "PK_Exams",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_Exams_AspNetUsers_CreatedById": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Exams_AspNetUsers_CreatedById",
+          "columnNames": [
+            "CreatedById"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        },
+        "FK_Exams_Classes_ClassId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Exams_Classes_ClassId",
+          "columnNames": [
+            "ClassId"
+          ],
+          "targetTableName": "Classes",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        },
+        "FK_Exams_Subjects_SubjectId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Exams_Subjects_SubjectId",
+          "columnNames": [
+            "SubjectId"
+          ],
+          "targetTableName": "Subjects",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    },
+    "QuestionOptions": {
+      "name": "QuestionOptions",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "QuestionId": {
+          "name": "QuestionId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Content": {
+          "name": "Content",
+          "type": "nvarchar(2000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "IsCorrect": {
+          "name": "IsCorrect",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "DisplayOrder": {
+          "name": "DisplayOrder",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_QuestionOptions": {
+          "name": "PK_QuestionOptions",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_QuestionOptions_QuestionId": {
+          "name": "IX_QuestionOptions_QuestionId",
+          "unique": false,
+          "columns": [
+            "QuestionId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_QuestionOptions": {
+          "type": "PRIMARY KEY",
+          "name": "PK_QuestionOptions",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_QuestionOptions_Questions_QuestionId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_QuestionOptions_Questions_QuestionId",
+          "columnNames": [
+            "QuestionId"
+          ],
+          "targetTableName": "Questions",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        }
+      }
+    },
+    "ExamQuestions": {
+      "name": "ExamQuestions",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "ExamId": {
+          "name": "ExamId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "QuestionId": {
+          "name": "QuestionId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Score": {
+          "name": "Score",
+          "type": "decimal",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "DisplayOrder": {
+          "name": "DisplayOrder",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_ExamQuestions": {
+          "name": "PK_ExamQuestions",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_ExamQuestions_ExamId_QuestionId": {
+          "name": "IX_ExamQuestions_ExamId_QuestionId",
+          "unique": true,
+          "columns": [
+            "ExamId",
+            "QuestionId"
+          ],
+          "type": ""
+        },
+        "IX_ExamQuestions_QuestionId": {
+          "name": "IX_ExamQuestions_QuestionId",
+          "unique": false,
+          "columns": [
+            "QuestionId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_ExamQuestions": {
+          "type": "PRIMARY KEY",
+          "name": "PK_ExamQuestions",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_ExamQuestions_Exams_ExamId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_ExamQuestions_Exams_ExamId",
+          "columnNames": [
+            "ExamId"
+          ],
+          "targetTableName": "Exams",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        },
+        "FK_ExamQuestions_Questions_QuestionId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_ExamQuestions_Questions_QuestionId",
+          "columnNames": [
+            "QuestionId"
+          ],
+          "targetTableName": "Questions",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    },
+    "AttemptAnswers": {
+      "name": "AttemptAnswers",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "ExamAttemptId": {
+          "name": "ExamAttemptId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "QuestionId": {
+          "name": "QuestionId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "IsCorrect": {
+          "name": "IsCorrect",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "AwardedScore": {
+          "name": "AwardedScore",
+          "type": "decimal",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "LastSavedAt": {
+          "name": "LastSavedAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_AttemptAnswers": {
+          "name": "PK_AttemptAnswers",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_AttemptAnswers_ExamAttemptId_QuestionId": {
+          "name": "IX_AttemptAnswers_ExamAttemptId_QuestionId",
+          "unique": true,
+          "columns": [
+            "ExamAttemptId",
+            "QuestionId"
+          ],
+          "type": ""
+        },
+        "IX_AttemptAnswers_QuestionId": {
+          "name": "IX_AttemptAnswers_QuestionId",
+          "unique": false,
+          "columns": [
+            "QuestionId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AttemptAnswers": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AttemptAnswers",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_AttemptAnswers_ExamAttempts_ExamAttemptId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AttemptAnswers_ExamAttempts_ExamAttemptId",
+          "columnNames": [
+            "ExamAttemptId"
+          ],
+          "targetTableName": "ExamAttempts",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        },
+        "FK_AttemptAnswers_Questions_QuestionId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AttemptAnswers_Questions_QuestionId",
+          "columnNames": [
+            "QuestionId"
+          ],
+          "targetTableName": "Questions",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    },
+    "AttemptAnswerSelections": {
+      "name": "AttemptAnswerSelections",
+      "comment": null,
+      "columns": {
+        "AttemptAnswerId": {
+          "name": "AttemptAnswerId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "QuestionOptionId": {
+          "name": "QuestionOptionId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_AttemptAnswerSelections": {
+          "name": "PK_AttemptAnswerSelections",
+          "unique": true,
+          "columns": [
+            "AttemptAnswerId",
+            "QuestionOptionId"
+          ],
+          "type": ""
+        },
+        "IX_AttemptAnswerSelections_QuestionOptionId": {
+          "name": "IX_AttemptAnswerSelections_QuestionOptionId",
+          "unique": false,
+          "columns": [
+            "QuestionOptionId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AttemptAnswerSelections": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AttemptAnswerSelections",
+          "columnNames": [
+            "AttemptAnswerId",
+            "QuestionOptionId"
+          ]
+        },
+        "FK_AttemptAnswerSelections_AttemptAnswers_AttemptAnswerId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AttemptAnswerSelections_AttemptAnswers_AttemptAnswerId",
+          "columnNames": [
+            "AttemptAnswerId"
+          ],
+          "targetTableName": "AttemptAnswers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        },
+        "FK_AttemptAnswerSelections_QuestionOptions_QuestionOptionId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AttemptAnswerSelections_QuestionOptions_QuestionOptionId",
+          "columnNames": [
+            "QuestionOptionId"
+          ],
+          "targetTableName": "QuestionOptions",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    },
+    "AspNetRoles": {
+      "name": "AspNetRoles",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Name": {
+          "name": "Name",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedName": {
+          "name": "NormalizedName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ConcurrencyStamp": {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_AspNetRoles": {
+          "name": "PK_AspNetRoles",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "RoleNameIndex": {
+          "name": "RoleNameIndex",
+          "unique": true,
+          "columns": [
+            "NormalizedName"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetRoles": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetRoles",
+          "columnNames": [
+            "Id"
+          ]
+        }
+      }
+    },
+    "AspNetUsers": {
+      "name": "AspNetUsers",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "UserName": {
+          "name": "UserName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedUserName": {
+          "name": "NormalizedUserName",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "Email": {
+          "name": "Email",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "NormalizedEmail": {
+          "name": "NormalizedEmail",
+          "type": "nvarchar(256)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "EmailConfirmed": {
+          "name": "EmailConfirmed",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "PasswordHash": {
+          "name": "PasswordHash",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "SecurityStamp": {
+          "name": "SecurityStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ConcurrencyStamp": {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "PhoneNumber": {
+          "name": "PhoneNumber",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "PhoneNumberConfirmed": {
+          "name": "PhoneNumberConfirmed",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "TwoFactorEnabled": {
+          "name": "TwoFactorEnabled",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "LockoutEnd": {
+          "name": "LockoutEnd",
+          "type": "datetimeoffset",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "LockoutEnabled": {
+          "name": "LockoutEnabled",
+          "type": "bit",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "AccessFailedCount": {
+          "name": "AccessFailedCount",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": "('0001-01-01T00:00:00.0000000')",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "FullName": {
+          "name": "FullName",
+          "type": "nvarchar(150)",
+          "default": "(N'')",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "IsActive": {
+          "name": "IsActive",
+          "type": "bit",
+          "default": "(CONVERT([bit],(0)))",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "StudentCode": {
+          "name": "StudentCode",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_AspNetUsers": {
+          "name": "PK_AspNetUsers",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "EmailIndex": {
+          "name": "EmailIndex",
+          "unique": false,
+          "columns": [
+            "NormalizedEmail"
+          ],
+          "type": ""
+        },
+        "UserNameIndex": {
+          "name": "UserNameIndex",
+          "unique": true,
+          "columns": [
+            "NormalizedUserName"
+          ],
+          "type": ""
+        },
+        "IX_AspNetUsers_StudentCode": {
+          "name": "IX_AspNetUsers_StudentCode",
+          "unique": true,
+          "columns": [
+            "StudentCode"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetUsers": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetUsers",
+          "columnNames": [
+            "Id"
+          ]
+        }
+      }
+    },
+    "AspNetUserRoles": {
+      "name": "AspNetUserRoles",
+      "comment": null,
+      "columns": {
+        "UserId": {
+          "name": "UserId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "RoleId": {
+          "name": "RoleId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_AspNetUserRoles": {
+          "name": "PK_AspNetUserRoles",
+          "unique": true,
+          "columns": [
+            "UserId",
+            "RoleId"
+          ],
+          "type": ""
+        },
+        "IX_AspNetUserRoles_RoleId": {
+          "name": "IX_AspNetUserRoles_RoleId",
+          "unique": false,
+          "columns": [
+            "RoleId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_AspNetUserRoles": {
+          "type": "PRIMARY KEY",
+          "name": "PK_AspNetUserRoles",
+          "columnNames": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        "FK_AspNetUserRoles_AspNetRoles_RoleId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AspNetUserRoles_AspNetRoles_RoleId",
+          "columnNames": [
+            "RoleId"
+          ],
+          "targetTableName": "AspNetRoles",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        },
+        "FK_AspNetUserRoles_AspNetUsers_UserId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_AspNetUserRoles_AspNetUsers_UserId",
+          "columnNames": [
+            "UserId"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "CASCADE"
+        }
+      }
+    },
+    "Subjects": {
+      "name": "Subjects",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Code": {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Name": {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Description": {
+          "name": "Description",
+          "type": "nvarchar(MAX)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_Subjects": {
+          "name": "PK_Subjects",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_Subjects_Code": {
+          "name": "IX_Subjects_Code",
+          "unique": true,
+          "columns": [
+            "Code"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_Subjects": {
+          "type": "PRIMARY KEY",
+          "name": "PK_Subjects",
+          "columnNames": [
+            "Id"
+          ]
+        }
+      }
+    },
+    "Classes": {
+      "name": "Classes",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "SubjectId": {
+          "name": "SubjectId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "TeacherId": {
+          "name": "TeacherId",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Code": {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Name": {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Semester": {
+          "name": "Semester",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "AcademicYear": {
+          "name": "AcademicYear",
+          "type": "nvarchar(50)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "CoverImagePath": {
+          "name": "CoverImagePath",
+          "type": "nvarchar(500)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": "(sysutcdatetime())",
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Description": {
+          "name": "Description",
+          "type": "nvarchar(2000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "IntroVideoUrl": {
+          "name": "IntroVideoUrl",
+          "type": "nvarchar(1000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "RowVersion": {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "PK_Classes": {
+          "name": "PK_Classes",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_Classes_Code": {
+          "name": "IX_Classes_Code",
+          "unique": true,
+          "columns": [
+            "Code"
+          ],
+          "type": ""
+        },
+        "IX_Classes_SubjectId": {
+          "name": "IX_Classes_SubjectId",
+          "unique": false,
+          "columns": [
+            "SubjectId"
+          ],
+          "type": ""
+        },
+        "IX_Classes_TeacherId": {
+          "name": "IX_Classes_TeacherId",
+          "unique": false,
+          "columns": [
+            "TeacherId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_Classes": {
+          "type": "PRIMARY KEY",
+          "name": "PK_Classes",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_Classes_AspNetUsers_TeacherId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Classes_AspNetUsers_TeacherId",
+          "columnNames": [
+            "TeacherId"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        },
+        "FK_Classes_Subjects_SubjectId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Classes_Subjects_SubjectId",
+          "columnNames": [
+            "SubjectId"
+          ],
+          "targetTableName": "Subjects",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    },
+    "Questions": {
+      "name": "Questions",
+      "comment": null,
+      "columns": {
+        "Id": {
+          "name": "Id",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "SubjectId": {
+          "name": "SubjectId",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedById": {
+          "name": "CreatedById",
+          "type": "nvarchar(450)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Content": {
+          "name": "Content",
+          "type": "nvarchar(4000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "QuestionType": {
+          "name": "QuestionType",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Difficulty": {
+          "name": "Difficulty",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "Explanation": {
+          "name": "Explanation",
+          "type": "nvarchar(4000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "Status": {
+          "name": "Status",
+          "type": "int",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "CreatedAt": {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": true
+        },
+        "UpdatedAt": {
+          "name": "UpdatedAt",
+          "type": "datetime2",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "ImagePath": {
+          "name": "ImagePath",
+          "type": "nvarchar(500)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        },
+        "VideoUrl": {
+          "name": "VideoUrl",
+          "type": "nvarchar(1000)",
+          "default": null,
+          "check": null,
+          "comment": null,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "PK_Questions": {
+          "name": "PK_Questions",
+          "unique": true,
+          "columns": [
+            "Id"
+          ],
+          "type": ""
+        },
+        "IX_Questions_CreatedById": {
+          "name": "IX_Questions_CreatedById",
+          "unique": false,
+          "columns": [
+            "CreatedById"
+          ],
+          "type": ""
+        },
+        "IX_Questions_SubjectId": {
+          "name": "IX_Questions_SubjectId",
+          "unique": false,
+          "columns": [
+            "SubjectId"
+          ],
+          "type": ""
+        }
+      },
+      "constraints": {
+        "PK_Questions": {
+          "type": "PRIMARY KEY",
+          "name": "PK_Questions",
+          "columnNames": [
+            "Id"
+          ]
+        },
+        "FK_Questions_AspNetUsers_CreatedById": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Questions_AspNetUsers_CreatedById",
+          "columnNames": [
+            "CreatedById"
+          ],
+          "targetTableName": "AspNetUsers",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        },
+        "FK_Questions_Subjects_SubjectId": {
+          "type": "FOREIGN KEY",
+          "name": "FK_Questions_Subjects_SubjectId",
+          "columnNames": [
+            "SubjectId"
+          ],
+          "targetTableName": "Subjects",
+          "targetColumnNames": [
+            "Id"
+          ],
+          "updateConstraint": "NO_ACTION",
+          "deleteConstraint": "NO_ACTION"
+        }
+      }
+    }
+  },
+  "enums": {},
+  "extensions": {}
+}

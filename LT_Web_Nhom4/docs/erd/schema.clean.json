@@ -1,0 +1,1357 @@
+{
+  "name": "WebThiTracNghiem",
+  "tables": [
+    {
+      "name": "Exams",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "SubjectId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "ClassId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedById",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Title",
+          "type": "nvarchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "DurationMinutes",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "StartAt",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "EndAt",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "PassingScore",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "ShuffleQuestions",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "ShuffleOptions",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "RequireFullscreen",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "MaxWarningCount",
+          "type": "int",
+          "nullable": true
+        },
+        {
+          "name": "Status",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "MaxScore",
+          "type": "decimal",
+          "nullable": false,
+          "default": "((10.0))"
+        },
+        {
+          "name": "Code",
+          "type": "nvarchar(20)",
+          "nullable": false,
+          "default": "(N'')"
+        },
+        {
+          "name": "Instructions",
+          "type": "nvarchar(4000)",
+          "nullable": true
+        },
+        {
+          "name": "ResultReleaseMode",
+          "type": "int",
+          "nullable": false,
+          "default": "((2))"
+        },
+        {
+          "name": "ResultsReleasedAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_Exams",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Exams",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_Exams_ClassId",
+          "def": "NONCLUSTERED, [ ClassId ]",
+          "table": "Exams",
+          "columns": [
+            "ClassId"
+          ]
+        },
+        {
+          "name": "IX_Exams_CreatedById",
+          "def": "NONCLUSTERED, [ CreatedById ]",
+          "table": "Exams",
+          "columns": [
+            "CreatedById"
+          ]
+        },
+        {
+          "name": "IX_Exams_SubjectId",
+          "def": "NONCLUSTERED, [ SubjectId ]",
+          "table": "Exams",
+          "columns": [
+            "SubjectId"
+          ]
+        },
+        {
+          "name": "IX_Exams_Code",
+          "def": "NONCLUSTERED, unique, [ Code ]",
+          "table": "Exams",
+          "columns": [
+            "Code"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_Exams",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Exams",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Exams_AspNetUsers_CreatedById",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(CreatedById) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Exams",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "CreatedById"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Exams_Classes_ClassId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(ClassId) REFERENCES Classes(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Exams",
+          "referenced_table": "Classes",
+          "columns": [
+            "ClassId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Exams_Subjects_SubjectId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(SubjectId) REFERENCES Subjects(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Exams",
+          "referenced_table": "Subjects",
+          "columns": [
+            "SubjectId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "QuestionOptions",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "QuestionId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "Content",
+          "type": "nvarchar(2000)",
+          "nullable": false
+        },
+        {
+          "name": "IsCorrect",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "DisplayOrder",
+          "type": "int",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_QuestionOptions",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "QuestionOptions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_QuestionOptions_QuestionId",
+          "def": "NONCLUSTERED, [ QuestionId ]",
+          "table": "QuestionOptions",
+          "columns": [
+            "QuestionId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_QuestionOptions",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "QuestionOptions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_QuestionOptions_Questions_QuestionId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(QuestionId) REFERENCES Questions(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "QuestionOptions",
+          "referenced_table": "Questions",
+          "columns": [
+            "QuestionId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ExamQuestions",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "ExamId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "QuestionId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "Score",
+          "type": "decimal",
+          "nullable": false
+        },
+        {
+          "name": "DisplayOrder",
+          "type": "int",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_ExamQuestions",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "ExamQuestions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_ExamQuestions_ExamId_QuestionId",
+          "def": "NONCLUSTERED, unique, [ ExamId, QuestionId ]",
+          "table": "ExamQuestions",
+          "columns": [
+            "ExamId",
+            "QuestionId"
+          ]
+        },
+        {
+          "name": "IX_ExamQuestions_QuestionId",
+          "def": "NONCLUSTERED, [ QuestionId ]",
+          "table": "ExamQuestions",
+          "columns": [
+            "QuestionId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_ExamQuestions",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "ExamQuestions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_ExamQuestions_Exams_ExamId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(ExamId) REFERENCES Exams(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "ExamQuestions",
+          "referenced_table": "Exams",
+          "columns": [
+            "ExamId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_ExamQuestions_Questions_QuestionId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(QuestionId) REFERENCES Questions(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "ExamQuestions",
+          "referenced_table": "Questions",
+          "columns": [
+            "QuestionId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AttemptAnswers",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "ExamAttemptId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "QuestionId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "IsCorrect",
+          "type": "bit",
+          "nullable": true
+        },
+        {
+          "name": "AwardedScore",
+          "type": "decimal",
+          "nullable": true
+        },
+        {
+          "name": "LastSavedAt",
+          "type": "datetime2",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AttemptAnswers",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AttemptAnswers",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_AttemptAnswers_ExamAttemptId_QuestionId",
+          "def": "NONCLUSTERED, unique, [ ExamAttemptId, QuestionId ]",
+          "table": "AttemptAnswers",
+          "columns": [
+            "ExamAttemptId",
+            "QuestionId"
+          ]
+        },
+        {
+          "name": "IX_AttemptAnswers_QuestionId",
+          "def": "NONCLUSTERED, [ QuestionId ]",
+          "table": "AttemptAnswers",
+          "columns": [
+            "QuestionId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AttemptAnswers",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AttemptAnswers",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_AttemptAnswers_ExamAttempts_ExamAttemptId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(ExamAttemptId) REFERENCES ExamAttempts(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AttemptAnswers",
+          "referenced_table": "ExamAttempts",
+          "columns": [
+            "ExamAttemptId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_AttemptAnswers_Questions_QuestionId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(QuestionId) REFERENCES Questions(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "AttemptAnswers",
+          "referenced_table": "Questions",
+          "columns": [
+            "QuestionId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AttemptAnswerSelections",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "AttemptAnswerId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "QuestionOptionId",
+          "type": "int",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AttemptAnswerSelections",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ AttemptAnswerId, QuestionOptionId ]",
+          "table": "AttemptAnswerSelections",
+          "columns": [
+            "AttemptAnswerId",
+            "QuestionOptionId"
+          ]
+        },
+        {
+          "name": "IX_AttemptAnswerSelections_QuestionOptionId",
+          "def": "NONCLUSTERED, [ QuestionOptionId ]",
+          "table": "AttemptAnswerSelections",
+          "columns": [
+            "QuestionOptionId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AttemptAnswerSelections",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ AttemptAnswerId, QuestionOptionId ]",
+          "table": "AttemptAnswerSelections",
+          "columns": [
+            "AttemptAnswerId",
+            "QuestionOptionId"
+          ]
+        },
+        {
+          "name": "FK_AttemptAnswerSelections_AttemptAnswers_AttemptAnswerId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(AttemptAnswerId) REFERENCES AttemptAnswers(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AttemptAnswerSelections",
+          "referenced_table": "AttemptAnswers",
+          "columns": [
+            "AttemptAnswerId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_AttemptAnswerSelections_QuestionOptions_QuestionOptionId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(QuestionOptionId) REFERENCES QuestionOptions(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "AttemptAnswerSelections",
+          "referenced_table": "QuestionOptions",
+          "columns": [
+            "QuestionOptionId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AspNetRoles",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Name",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetRoles",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "RoleNameIndex",
+          "def": "NONCLUSTERED, unique, [ NormalizedName ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "NormalizedName"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetRoles",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetRoles",
+          "columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AspNetUsers",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "UserName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedUserName",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "Email",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "NormalizedEmail",
+          "type": "nvarchar(256)",
+          "nullable": true
+        },
+        {
+          "name": "EmailConfirmed",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "PasswordHash",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "SecurityStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "ConcurrencyStamp",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "PhoneNumber",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        },
+        {
+          "name": "PhoneNumberConfirmed",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "TwoFactorEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "LockoutEnd",
+          "type": "datetimeoffset",
+          "nullable": true
+        },
+        {
+          "name": "LockoutEnabled",
+          "type": "bit",
+          "nullable": false
+        },
+        {
+          "name": "AccessFailedCount",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false,
+          "default": "('0001-01-01T00:00:00.0000000')"
+        },
+        {
+          "name": "FullName",
+          "type": "nvarchar(150)",
+          "nullable": false,
+          "default": "(N'')"
+        },
+        {
+          "name": "IsActive",
+          "type": "bit",
+          "nullable": false,
+          "default": "(CONVERT([bit],(0)))"
+        },
+        {
+          "name": "StudentCode",
+          "type": "nvarchar(50)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetUsers",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "EmailIndex",
+          "def": "NONCLUSTERED, [ NormalizedEmail ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "NormalizedEmail"
+          ]
+        },
+        {
+          "name": "UserNameIndex",
+          "def": "NONCLUSTERED, unique, [ NormalizedUserName ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "NormalizedUserName"
+          ]
+        },
+        {
+          "name": "IX_AspNetUsers_StudentCode",
+          "def": "NONCLUSTERED, unique, [ StudentCode ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "StudentCode"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetUsers",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "AspNetUsers",
+          "columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AspNetUserRoles",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "UserId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "RoleId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_AspNetUserRoles",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ UserId, RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        {
+          "name": "IX_AspNetUserRoles_RoleId",
+          "def": "NONCLUSTERED, [ RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "RoleId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_AspNetUserRoles",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ UserId, RoleId ]",
+          "table": "AspNetUserRoles",
+          "columns": [
+            "UserId",
+            "RoleId"
+          ]
+        },
+        {
+          "name": "FK_AspNetUserRoles_AspNetRoles_RoleId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(RoleId) REFERENCES AspNetRoles(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AspNetUserRoles",
+          "referenced_table": "AspNetRoles",
+          "columns": [
+            "RoleId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_AspNetUserRoles_AspNetUsers_UserId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(UserId) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE CASCADE",
+          "table": "AspNetUserRoles",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "UserId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subjects",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "nullable": false
+        },
+        {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "Description",
+          "type": "nvarchar(MAX)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_Subjects",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Subjects",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_Subjects_Code",
+          "def": "NONCLUSTERED, unique, [ Code ]",
+          "table": "Subjects",
+          "columns": [
+            "Code"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_Subjects",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Subjects",
+          "columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Classes",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "SubjectId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "TeacherId",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Code",
+          "type": "nvarchar(50)",
+          "nullable": false
+        },
+        {
+          "name": "Name",
+          "type": "nvarchar(200)",
+          "nullable": false
+        },
+        {
+          "name": "Semester",
+          "type": "nvarchar(50)",
+          "nullable": true
+        },
+        {
+          "name": "AcademicYear",
+          "type": "nvarchar(50)",
+          "nullable": true
+        },
+        {
+          "name": "CoverImagePath",
+          "type": "nvarchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false,
+          "default": "(sysutcdatetime())"
+        },
+        {
+          "name": "Description",
+          "type": "nvarchar(2000)",
+          "nullable": true
+        },
+        {
+          "name": "IntroVideoUrl",
+          "type": "nvarchar(1000)",
+          "nullable": true
+        },
+        {
+          "name": "RowVersion",
+          "type": "timestamp",
+          "nullable": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_Classes",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Classes",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_Classes_Code",
+          "def": "NONCLUSTERED, unique, [ Code ]",
+          "table": "Classes",
+          "columns": [
+            "Code"
+          ]
+        },
+        {
+          "name": "IX_Classes_SubjectId",
+          "def": "NONCLUSTERED, [ SubjectId ]",
+          "table": "Classes",
+          "columns": [
+            "SubjectId"
+          ]
+        },
+        {
+          "name": "IX_Classes_TeacherId",
+          "def": "NONCLUSTERED, [ TeacherId ]",
+          "table": "Classes",
+          "columns": [
+            "TeacherId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_Classes",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Classes",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Classes_AspNetUsers_TeacherId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(TeacherId) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Classes",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "TeacherId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Classes_Subjects_SubjectId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(SubjectId) REFERENCES Subjects(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Classes",
+          "referenced_table": "Subjects",
+          "columns": [
+            "SubjectId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Questions",
+      "type": "BASIC TABLE",
+      "columns": [
+        {
+          "name": "Id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "SubjectId",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedById",
+          "type": "nvarchar(450)",
+          "nullable": false
+        },
+        {
+          "name": "Content",
+          "type": "nvarchar(4000)",
+          "nullable": false
+        },
+        {
+          "name": "QuestionType",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "Difficulty",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "Explanation",
+          "type": "nvarchar(4000)",
+          "nullable": true
+        },
+        {
+          "name": "Status",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "CreatedAt",
+          "type": "datetime2",
+          "nullable": false
+        },
+        {
+          "name": "UpdatedAt",
+          "type": "datetime2",
+          "nullable": true
+        },
+        {
+          "name": "ImagePath",
+          "type": "nvarchar(500)",
+          "nullable": true
+        },
+        {
+          "name": "VideoUrl",
+          "type": "nvarchar(1000)",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PK_Questions",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Questions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "IX_Questions_CreatedById",
+          "def": "NONCLUSTERED, [ CreatedById ]",
+          "table": "Questions",
+          "columns": [
+            "CreatedById"
+          ]
+        },
+        {
+          "name": "IX_Questions_SubjectId",
+          "def": "NONCLUSTERED, [ SubjectId ]",
+          "table": "Questions",
+          "columns": [
+            "SubjectId"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "PK_Questions",
+          "type": "PRIMARY KEY",
+          "def": "CLUSTERED, unique, part of a PRIMARY KEY constraint, [ Id ]",
+          "table": "Questions",
+          "columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Questions_AspNetUsers_CreatedById",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(CreatedById) REFERENCES AspNetUsers(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Questions",
+          "referenced_table": "AspNetUsers",
+          "columns": [
+            "CreatedById"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        },
+        {
+          "name": "FK_Questions_Subjects_SubjectId",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY(SubjectId) REFERENCES Subjects(Id) ON UPDATE NO_ACTION ON DELETE NO_ACTION",
+          "table": "Questions",
+          "referenced_table": "Subjects",
+          "columns": [
+            "SubjectId"
+          ],
+          "referenced_columns": [
+            "Id"
+          ]
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "table": "Exams",
+      "columns": [
+        "CreatedById"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Exams",
+      "columns": [
+        "ClassId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Classes",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Exams",
+      "columns": [
+        "SubjectId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Subjects",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "QuestionOptions",
+      "columns": [
+        "QuestionId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Questions",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "ExamQuestions",
+      "columns": [
+        "ExamId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Exams",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "ExamQuestions",
+      "columns": [
+        "QuestionId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Questions",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AttemptAnswers",
+      "columns": [
+        "QuestionId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Questions",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AttemptAnswerSelections",
+      "columns": [
+        "AttemptAnswerId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AttemptAnswers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AttemptAnswerSelections",
+      "columns": [
+        "QuestionOptionId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "QuestionOptions",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AspNetUserRoles",
+      "columns": [
+        "RoleId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetRoles",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "AspNetUserRoles",
+      "columns": [
+        "UserId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Classes",
+      "columns": [
+        "TeacherId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Classes",
+      "columns": [
+        "SubjectId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Subjects",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Questions",
+      "columns": [
+        "CreatedById"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "AspNetUsers",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    },
+    {
+      "table": "Questions",
+      "columns": [
+        "SubjectId"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "Subjects",
+      "parent_columns": [
+        "Id"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": ""
+    }
+  ],
+  "driver": {
+    "name": "sqlserver",
+    "database_version": "Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64) \n\tOct 21 2025 12:05:57 \n\tCopyright (C) 2025 Microsoft Corporation\n\tStandard Developer Edition (64-bit) on Windows 10 Home Single Language 10.0 \u003cX64\u003e (Build 26200: ) (Hypervisor)\n",
+    "meta": {
+      "dict": {
+        "Functions": "Stored procedures and functions"
+      }
+    }
+  }
+}
