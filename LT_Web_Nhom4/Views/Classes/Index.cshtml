@@ -11,7 +11,7 @@
             <div class="alert alert-success workspace-alert">@message</div>
         }
 
-        <header class="workspace-header">
+        <header class="workspace-header" data-reveal>
             <div>
                 <span class="workspace-kicker">Không gian học tập riêng tư</span>
                 <h1>Lớp học của tôi</h1>
@@ -20,7 +20,7 @@
             <a asp-action="Create" class="btn btn-primary"><i class="ri-add-line" aria-hidden="true"></i> Tạo lớp</a>
         </header>
 
-        <div class="workspace-tools">
+        <div class="workspace-tools" data-reveal>
             <form asp-action="Join" method="post" class="join-code-form">
                 <div>
                     <label asp-for="JoinClass.Code" class="form-label">Tham gia bằng mã lớp</label>
@@ -47,10 +47,10 @@
                 }
                 @foreach (var classRoom in Model.OwnedClasses)
                 {
-                    <article class="class-tile" data-class-card data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
+                    <article class="class-tile" data-class-card data-reveal data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
                         <div class="class-tile-cover">
                             @if (!string.IsNullOrWhiteSpace(classRoom.CoverImageUrl)) { <img src="@classRoom.CoverImageUrl" alt="Ảnh bìa lớp @classRoom.Name" /> }
-                            else { <span><i class="ri-graduation-cap-line" aria-hidden="true"></i></span> }
+                            else { <img src="~/img/student/course-02.jpg" alt="Ảnh minh hoạ lớp @classRoom.Name" /> }
                         </div>
                         <div class="class-tile-body">
                             <div class="class-tile-topline"><span class="status-chip owner">Chủ lớp</span><code>@classRoom.Code</code></div>
@@ -72,10 +72,10 @@
                 }
                 @foreach (var classRoom in Model.ParticipatingClasses)
                 {
-                    <article class="class-tile" data-class-card data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
+                    <article class="class-tile" data-class-card data-reveal data-search-text="@($"{classRoom.Name} {classRoom.SubjectName} {classRoom.Code}".ToLowerInvariant())">
                         <div class="class-tile-cover">
                             @if (!string.IsNullOrWhiteSpace(classRoom.CoverImageUrl)) { <img src="@classRoom.CoverImageUrl" alt="Ảnh bìa lớp @classRoom.Name" /> }
-                            else { <span><i class="ri-book-open-line" aria-hidden="true"></i></span> }
+                            else { <img src="~/img/student/course-03.jpg" alt="Ảnh minh hoạ lớp @classRoom.Name" /> }
                         </div>
                         <div class="class-tile-body">
                             <div class="class-tile-topline"><span class="status-chip member">Thành viên</span><code>@classRoom.Code</code></div>

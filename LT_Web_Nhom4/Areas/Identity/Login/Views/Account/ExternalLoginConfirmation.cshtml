@@ -1,7 +1,7 @@
 @model ExternalLoginConfirmationViewModel
 
 @{
-    ViewData["Title"] = "Xác nhận tài khoản";
+    ViewData["Title"] = Localizer["ExternalAccountTitle"];
 }
 
 <section class="auth-shell">
@@ -12,8 +12,9 @@
                     <partial name="_AuthHomeButton" />
                     <div class="auth-form-side">
                         <div class="auth-form-heading text-center">
-                            <h1>Hoàn tất tài khoản</h1>
-                            <p>Kiểm tra thông tin cá nhân trước khi vào hệ thống.</p>
+                            <span class="auth-kicker"><i class="ri-google-fill"></i> OAuth 2.0</span>
+                            <h1>@Localizer["ExternalAccountTitle"]</h1>
+                            <p>@Localizer["ExternalAccountDesc"]</p>
                         </div>
 
                         <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLoginConfirmation" method="post" class="auth-form">
@@ -21,24 +22,24 @@
                             <input asp-for="ReturnUrl" type="hidden" />
 
                             <div class="auth-field">
-                                <label asp-for="FullName" class="form-label">Họ và tên</label>
-                                <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                                <label asp-for="FullName" class="form-label">@Localizer["FullName"]</label>
+                                <input asp-for="FullName" class="form-control" placeholder="@Localizer["FullNamePlaceholder"]" />
                                 <span asp-validation-for="FullName" class="text-danger"></span>
                             </div>
 
                             <div class="auth-field">
-                                <label asp-for="StudentCode" class="form-label">Mã sinh viên</label>
-                                <input asp-for="StudentCode" class="form-control" placeholder="Nếu có" />
+                                <label asp-for="StudentCode" class="form-label">@Localizer["StudentCode"]</label>
+                                <input asp-for="StudentCode" class="form-control" placeholder="@Localizer["Optional"]" />
                                 <span asp-validation-for="StudentCode" class="text-danger"></span>
                             </div>
 
                             <div class="auth-field">
-                                <label asp-for="Email" class="form-label">Email</label>
+                                <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
                                 <input asp-for="Email" class="form-control" readonly />
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
 
-                            <button type="submit" class="btn btn-primary auth-submit">Hoàn tất</button>
+                            <button type="submit" class="btn btn-primary auth-submit">@Localizer["Complete"]</button>
                         </form>
                     </div>
                 </div>

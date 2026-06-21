@@ -1,52 +1,95 @@
 @model WebHomeViewModel
 
-@{ ViewData["Title"] = Model.IsAuthenticated ? "Bảng điều khiển" : "Trang chủ"; }
+@{
+    ViewData["Title"] = Model.IsAuthenticated ? "Bảng điều khiển" : "Trang chủ";
+    ViewData["BodyClass"] = Model.IsAuthenticated ? "dashboard-view" : "scholar-landing-view";
+}
 
 @if (!Model.IsAuthenticated)
 {
-    <section class="student-hero">
-        <div class="container student-hero-inner">
-            <div class="student-hero-copy">
-                <span class="hero-brand">QuizHub</span>
-                <h1>Thi trực tuyến rõ ràng, riêng tư và đúng thời gian.</h1>
-                <p>Lớp học chỉ mở bằng mã mời. Mỗi bài thi có phòng chờ, tự lưu đáp án và kết quả được quản lý tập trung.</p>
-                <div class="hero-actions"><a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-light btn-lg">Đăng nhập</a><a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-outline-light btn-lg">Tạo tài khoản</a></div>
+    <section class="scholar-hero" data-hero-slider aria-label="Giới thiệu QuizHub">
+        <div class="scholar-hero-decoration" aria-hidden="true"></div>
+        <div class="container scholar-hero-container">
+            <div class="scholar-slides">
+                <article class="scholar-slide is-active" data-hero-slide style="--slide-image: url('/img/student/banner-item-01.jpg')">
+                    <div class="scholar-slide-content">
+                        <span class="scholar-category">LỚP HỌC RIÊNG TƯ</span>
+                        <h1>Tổ chức lớp học và bài thi trong một không gian rõ ràng.</h1>
+                        <p>Chỉ người có mã mời mới tham gia lớp. Mọi đề thi, bài làm và kết quả đều nằm đúng trong phạm vi lớp học.</p>
+                        <div class="scholar-hero-actions"><a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-light">Tạo tài khoản</a><a asp-area="Identity" asp-controller="Account" asp-action="Login" class="hero-text-link"><span><i class="ri-play-fill"></i></span>Đăng nhập để bắt đầu</a></div>
+                    </div>
+                </article>
+                <article class="scholar-slide" data-hero-slide style="--slide-image: url('/img/student/banner-item-02.jpg')">
+                    <div class="scholar-slide-content">
+                        <span class="scholar-category">SOẠN ĐỀ TRỰC QUAN</span>
+                        <h2>Tạo câu hỏi và đáp án ngay trên màn hình giống lúc làm bài.</h2>
+                        <p>Thiết lập thời gian, điểm số, ảnh, video và quy tắc phòng thi mà không phải đi qua nhiều bảng CRUD rời rạc.</p>
+                        <div class="scholar-hero-actions"><a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn btn-light">Dùng QuizHub</a><a href="#tinh-nang" class="hero-text-link"><span><i class="ri-arrow-down-line"></i></span>Xem tính năng</a></div>
+                    </div>
+                </article>
+                <article class="scholar-slide" data-hero-slide style="--slide-image: url('/img/student/banner-item-03.jpg')">
+                    <div class="scholar-slide-content">
+                        <span class="scholar-category">LÀM BÀI TẬP TRUNG</span>
+                        <h2>Tự lưu đáp án, theo dõi thời gian và nộp bài an toàn.</h2>
+                        <p>Học viên luôn biết mình đang ở câu nào, còn bao nhiêu thời gian và đáp án đã được lưu hay chưa.</p>
+                        <div class="scholar-hero-actions"><a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn btn-light">Vào phòng thi</a><a href="#quy-trinh" class="hero-text-link"><span><i class="ri-information-line"></i></span>Cách hoạt động</a></div>
+                    </div>
+                </article>
             </div>
-            <div class="hero-feature-list">
-                <article><span>01</span><div><h2>Lớp học riêng tư</h2><p>Chỉ thành viên có mã mời mới thấy nội dung lớp.</p></div></article>
-                <article><span>02</span><div><h2>Phòng thi tập trung</h2><p>Thời gian, tiến độ và đáp án hiển thị nhất quán.</p></div></article>
-                <article><span>03</span><div><h2>Kết quả minh bạch</h2><p>Bài làm được chấm và lưu theo từng lượt thi.</p></div></article>
+            <div class="scholar-slider-controls"><button type="button" data-hero-previous aria-label="Nội dung trước"><i class="ri-arrow-left-s-line"></i></button><button type="button" data-hero-next aria-label="Nội dung tiếp theo"><i class="ri-arrow-right-s-line"></i></button></div>
+            <div class="scholar-slider-dots" role="tablist" aria-label="Chọn nội dung"><button type="button" class="is-active" data-hero-dot="0" aria-label="Nội dung 1"></button><button type="button" data-hero-dot="1" aria-label="Nội dung 2"></button><button type="button" data-hero-dot="2" aria-label="Nội dung 3"></button></div>
+        </div>
+    </section>
+
+    <section class="scholar-services section-space" id="tinh-nang">
+        <div class="container">
+            <div class="scholar-section-heading text-center" data-reveal><span>TÍNH NĂNG CỐT LÕI</span><h2>Mọi thứ cần thiết cho một phòng thi trực tuyến</h2><p>Tập trung vào đúng công việc của chủ lớp và học viên, không đưa thông tin kỹ thuật thừa lên giao diện.</p></div>
+            <div class="scholar-service-grid">
+                <article data-reveal><div class="service-icon"><img src="~/img/student/service-01.png" alt="" /></div><div><h3>Lớp học riêng tư</h3><p>Tham gia bằng mã lớp duy nhất. Người ngoài không thể tìm thấy hoặc mở nội dung lớp.</p></div></article>
+                <article data-reveal><div class="service-icon"><img src="~/img/student/service-02.png" alt="" /></div><div><h3>Phòng thi nhất quán</h3><p>Phòng chờ, xác nhận, làm bài và kết quả nối tiếp trong một luồng rõ ràng.</p></div></article>
+                <article data-reveal><div class="service-icon"><img src="~/img/student/service-03.png" alt="" /></div><div><h3>Kết quả có kiểm soát</h3><p>Chủ lớp theo dõi lượt thi, điểm và cảnh báo; học viên chỉ xem kết quả khi được công bố.</p></div></article>
             </div>
         </div>
     </section>
-    <section class="home-next-section"><div class="container"><span class="workspace-kicker">Bắt đầu</span><h2>Đăng nhập để mở lớp học của bạn</h2></div></section>
+
+    <section class="scholar-process section-space" id="quy-trinh">
+        <div class="container scholar-process-layout">
+            <div class="scholar-process-image" data-reveal><img src="~/img/student/course-01.jpg" alt="Không gian học tập trực tuyến" /></div>
+            <div class="scholar-process-content" data-reveal><div class="scholar-section-heading"><span>QUY TRÌNH</span><h2>Từ mã lớp đến kết quả chỉ trong ba bước</h2></div><ol><li><strong>01</strong><span><b>Tạo hoặc tham gia lớp</b><small>Chủ lớp tạo không gian riêng; học viên nhập đúng mã mời.</small></span></li><li><strong>02</strong><span><b>Chuẩn bị và công bố đề</b><small>Câu hỏi, đáp án, thời gian và quy tắc được cấu hình trong cùng editor.</small></span></li><li><strong>03</strong><span><b>Làm bài và theo dõi kết quả</b><small>Đáp án tự lưu, bài được chấm và công bố theo cài đặt của đề.</small></span></li></ol></div>
+        </div>
+    </section>
 }
 else
 {
-    <section class="workspace-page dashboard-page">
-        <div class="container">
-            @if (TempData["ClassMessage"] is string message) { <div class="alert alert-success workspace-alert">@message</div> }
-            <header class="dashboard-greeting"><div><span class="workspace-kicker">Không gian cá nhân</span><h1>Chào mừng trở lại</h1><p>Tiếp tục quản lý lớp hoặc chuẩn bị cho bài thi sắp tới.</p></div><a asp-controller="Classes" asp-action="Create" class="btn btn-primary"><i class="ri-add-line"></i> Tạo lớp</a></header>
+    <section class="dashboard-scholar">
+        <div class="dashboard-banner">
+            <div class="container dashboard-banner-inner">
+                <div data-reveal><span class="scholar-category">KHÔNG GIAN CÁ NHÂN</span><h1>Chào mừng trở lại</h1><p>Tiếp tục quản lý lớp học, chuẩn bị đề hoặc vào phòng thi sắp mở.</p></div>
+                <a asp-controller="Classes" asp-action="Create" class="btn btn-light"><i class="ri-add-line"></i>Tạo lớp học</a>
+            </div>
+        </div>
+        <div class="container dashboard-content">
+            @if (TempData["ClassMessage"] is string message) { <div class="alert alert-success scholar-alert">@message</div> }
 
-            <form asp-controller="Classes" asp-action="Join" method="post" class="dashboard-join">
-                <div><i class="ri-key-2-line"></i><span><strong>Tham gia lớp học</strong><small>Nhập mã gồm ba nhóm ký tự.</small></span></div>
-                <div class="input-group"><input asp-for="JoinClass.Code" name="Code" class="form-control" placeholder="ABC-DEF-GHJ" data-class-code /><button class="btn btn-primary" type="submit">Tham gia</button></div>
+            <form asp-controller="Classes" asp-action="Join" method="post" class="dashboard-join scholar-surface" data-reveal>
+                <div class="join-intro"><span><i class="ri-key-2-line"></i></span><div><h2>Tham gia lớp học</h2><p>Nhập chính xác mã gồm ba nhóm ký tự do chủ lớp cung cấp.</p></div></div>
+                <div class="join-control"><label for="dashboardClassCode" class="visually-hidden">Mã lớp</label><input id="dashboardClassCode" asp-for="JoinClass.Code" name="Code" class="form-control" placeholder="ABC-DEF-GHJ" autocomplete="off" data-class-code /><button class="btn btn-primary" type="submit">Tham gia</button></div>
             </form>
 
-            <section class="dashboard-section">
-                <div class="workspace-section-heading"><h2>Đề thi sắp tới</h2><a asp-controller="Exams" asp-action="Index">Xem tất cả <i class="ri-arrow-right-line"></i></a></div>
-                <div class="upcoming-strip">
-                    @if (Model.UpcomingExams.Count == 0) { <div class="empty-state compact"><i class="ri-calendar-line"></i><strong>Chưa có lịch thi sắp tới</strong><span>Các đề đã công bố sẽ xuất hiện tại đây.</span></div> }
+            <section class="dashboard-section" data-reveal>
+                <div class="scholar-section-row"><div><span>LỊCH THI</span><h2>Đề thi sắp tới</h2></div><a asp-controller="Exams" asp-action="Index">Xem tất cả <i class="ri-arrow-right-line"></i></a></div>
+                <div class="upcoming-events">
+                    @if (Model.UpcomingExams.Count == 0) { <div class="scholar-empty"><i class="ri-calendar-line"></i><div><strong>Chưa có lịch thi sắp tới</strong><span>Các đề đã công bố trong lớp của bạn sẽ xuất hiện tại đây.</span></div></div> }
                     @foreach (var exam in Model.UpcomingExams)
                     {
-                        <article><time><strong>@exam.StartAt.ToString("dd")</strong><span>Tháng @exam.StartAt.ToString("MM")</span></time><div><span>@exam.ClassName</span><h3>@exam.Title</h3><p>@exam.StartAt.ToString("HH:mm") · @exam.DurationMinutes phút · @exam.QuestionCount câu</p></div><a asp-controller="Exams" asp-action="@(exam.IsOwnedByCurrentUser ? "Manage" : "Room")" asp-route-id="@exam.Id" class="btn btn-outline-primary">Mở</a></article>
+                        <article><time><strong>@exam.StartAt.ToString("dd")</strong><span>Tháng @exam.StartAt.ToString("MM")</span></time><div class="event-main"><span>@exam.ClassName</span><h3>@exam.Title</h3><p><i class="ri-time-line"></i>@exam.StartAt.ToString("HH:mm") · @exam.DurationMinutes phút <i class="ri-question-line ms-2"></i>@exam.QuestionCount câu</p></div><a asp-controller="Exams" asp-action="@(exam.IsOwnedByCurrentUser ? "Manage" : "Room")" asp-route-id="@exam.Id" class="event-open" aria-label="Mở @exam.Title"><i class="ri-arrow-right-line"></i></a></article>
                     }
                 </div>
             </section>
 
             <div class="dashboard-class-columns">
-                <section class="dashboard-section"><div class="workspace-section-heading"><h2>Lớp tôi tạo</h2><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.OwnedClasses.Count == 0) { <p class="muted-copy">Bạn chưa tạo lớp học.</p> } @foreach (var item in Model.OwnedClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-icon"><i class="ri-graduation-cap-line"></i></span><span><strong>@item.Name</strong><small>@item.SubjectName · @item.MemberCount học viên</small></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
-                <section class="dashboard-section"><div class="workspace-section-heading"><h2>Lớp tôi tham gia</h2><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.ParticipatingClasses.Count == 0) { <p class="muted-copy">Bạn chưa tham gia lớp học.</p> } @foreach (var item in Model.ParticipatingClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-icon teal"><i class="ri-book-open-line"></i></span><span><strong>@item.Name</strong><small>@item.SubjectName · @item.ExamCount đề thi</small></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
+                <section class="dashboard-section" data-reveal><div class="scholar-section-row"><div><span>QUẢN LÝ</span><h2>Lớp tôi tạo</h2></div><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.OwnedClasses.Count == 0) { <div class="scholar-empty compact"><i class="ri-graduation-cap-line"></i><div><strong>Chưa có lớp học</strong><span>Tạo lớp đầu tiên để bắt đầu.</span></div></div> } @foreach (var item in Model.OwnedClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-image">@if (item.CoverImageUrl is not null) { <img src="@item.CoverImageUrl" alt="" /> } else { <img src="~/img/student/course-02.jpg" alt="" /> }</span><span><small>@item.SubjectName</small><strong>@item.Name</strong><b>@item.MemberCount học viên · @item.ExamCount đề thi</b></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
+                <section class="dashboard-section" data-reveal><div class="scholar-section-row"><div><span>HỌC TẬP</span><h2>Lớp tôi tham gia</h2></div><a asp-controller="Classes" asp-action="Index">Tất cả</a></div><div class="dashboard-class-list">@if (Model.ParticipatingClasses.Count == 0) { <div class="scholar-empty compact"><i class="ri-book-open-line"></i><div><strong>Chưa tham gia lớp</strong><span>Dùng mã mời để kết nối với lớp học.</span></div></div> } @foreach (var item in Model.ParticipatingClasses) { <a asp-controller="Classes" asp-action="Details" asp-route-id="@item.Id"><span class="dashboard-class-image">@if (item.CoverImageUrl is not null) { <img src="@item.CoverImageUrl" alt="" /> } else { <img src="~/img/student/course-03.jpg" alt="" /> }</span><span><small>@item.SubjectName</small><strong>@item.Name</strong><b>@item.ExamCount đề thi</b></span><i class="ri-arrow-right-s-line"></i></a> }</div></section>
             </div>
         </div>
     </section>

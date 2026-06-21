@@ -1,0 +1,153 @@
+name: quizhub
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: quizhub-app:latest
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=${SQL_DATABASE:-QuizHub};User Id=sa;Password=${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env.production};Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
+      Authentication__Google__ClientId: "${GOOGLE_CLIENT_ID:-}"
+      Authentication__Google__ClientSecret: "${GOOGLE_CLIENT_SECRET:-}"
+      Jwt__Issuer: "${JWT_ISSUER:-QuizHub}"
+      Jwt__Audience: "${JWT_AUDIENCE:-QuizHub.Api}"
+      Jwt__Key: "${JWT_KEY:?Set JWT_KEY in .env.production}"
+      Jwt__ExpireMinutes: "${JWT_EXPIRE_MINUTES:-120}"
+      Jwt__RefreshTokenDays: "${JWT_REFRESH_TOKEN_DAYS:-7}"
+      Meilisearch__Url: http://meilisearch:7700
+      Meilisearch__ApiKey: "${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY in .env.production}"
+      Meilisearch__IndexName: "${MEILI_INDEX_NAME:-quizhub-private-search}"
+      Smtp__Host: "${SMTP_HOST:-smtp.gmail.com}"
+      Smtp__Port: "${SMTP_PORT:-587}"
+      Smtp__UserName: "${SMTP_USERNAME:-}"
+      Smtp__Password: "${SMTP_PASSWORD:-}"
+      Smtp__FromEmail: "${SMTP_FROM_EMAIL:-}"
+      Smtp__FromName: "${SMTP_FROM_NAME:-QuizHub}"
+      PrivateMediaRoot: /app/App_Data/Uploads
+      Database__ApplyMigrationsOnStartup: "true"
+      ForwardedHeaders__Enabled: "true"
+      Swagger__Enabled: "${SWAGGER_ENABLED:-false}"
+      AllowedHosts: "${DOMAIN:?Set DOMAIN in .env.production}"
+    volumes:
+      - quizhub_uploads:/app/App_Data/Uploads
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - backend
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: "${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env.production}"
+    volumes:
+      - quizhub_sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - backend
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: "${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY in .env.production}"
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - quizhub_meili_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    networks:
+      - backend
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: "${DOMAIN:?Set DOMAIN in .env.production}"
+      ACME_EMAIL: "${ACME_EMAIL:?Set ACME_EMAIL in .env.production}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - quizhub_caddy_data:/data
+      - quizhub_caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - backend
+
+  sqlpackage:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    profiles: ["tools"]
+    environment:
+      SQL_DATABASE: "${SQL_DATABASE:-QuizHub}"
+      SQL_SA_PASSWORD: "${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env.production}"
+    volumes:
+      - ./deploy/artifacts:/artifacts:ro
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - >-
+        set -euo pipefail;
+        dotnet tool install microsoft.sqlpackage --tool-path /tmp/sqlpackage;
+        exec /tmp/sqlpackage/sqlpackage
+        /Action:Import
+        /SourceFile:/artifacts/quizhub.bacpac
+        "/TargetConnectionString:Server=sqlserver,1433;Database=$$SQL_DATABASE;User ID=sa;Password=$$SQL_SA_PASSWORD;Encrypt=True;TrustServerCertificate=True"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - backend
+
+  upload-import:
+    image: busybox:1.36
+    profiles: ["tools"]
+    volumes:
+      - quizhub_uploads:/uploads
+      - ./deploy/artifacts:/artifacts:ro
+    command: ["sh", "-c", "mkdir -p /uploads && tar -xzf /artifacts/uploads.tar.gz -C /uploads"]
+
+volumes:
+  quizhub_sql_data:
+    name: quizhub_sql_data
+  quizhub_meili_data:
+    name: quizhub_meili_data
+  quizhub_uploads:
+    name: quizhub_uploads
+  quizhub_caddy_data:
+    name: quizhub_caddy_data
+  quizhub_caddy_config:
+    name: quizhub_caddy_config
+
+networks:
+  backend:
+    name: quizhub_backend

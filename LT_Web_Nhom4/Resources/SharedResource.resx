@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Language" xml:space="preserve"><value>Ngôn ngữ</value></data>
+  <data name="Home" xml:space="preserve"><value>Trang chủ</value></data>
+  <data name="Classes" xml:space="preserve"><value>Lớp học</value></data>
+  <data name="Exams" xml:space="preserve"><value>Đề thi</value></data>
+  <data name="Features" xml:space="preserve"><value>Tính năng</value></data>
+  <data name="HowItWorks" xml:space="preserve"><value>Cách hoạt động</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Tìm lớp học hoặc đề thi</value></data>
+  <data name="Admin" xml:space="preserve"><value>Quản trị</value></data>
+  <data name="Register" xml:space="preserve"><value>Đăng ký</value></data>
+  <data name="Login" xml:space="preserve"><value>Đăng nhập</value></data>
+  <data name="Logout" xml:space="preserve"><value>Đăng xuất</value></data>
+  <data name="Footer" xml:space="preserve"><value>Hệ thống thi trắc nghiệm trực tuyến riêng tư cho từng lớp học.</value></data>
+  <data name="WelcomeBack" xml:space="preserve"><value>Chào mừng trở lại</value></data>
+  <data name="LoginDescription" xml:space="preserve"><value>Đăng nhập để vào lớp học, xem đề thi và tiếp tục bài làm của bạn.</value></data>
+  <data name="LoginDesc" xml:space="preserve"><value>Đăng nhập để vào lớp học, xem đề thi và tiếp tục bài làm của bạn.</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Password" xml:space="preserve"><value>Mật khẩu</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>Ghi nhớ tôi</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>Quên mật khẩu?</value></data>
+  <data name="NoAccount" xml:space="preserve"><value>Chưa có tài khoản?</value></data>
+  <data name="CreateAccount" xml:space="preserve"><value>Tạo tài khoản</value></data>
+  <data name="CreateAccountDesc" xml:space="preserve"><value>Điền thông tin cá nhân để tham gia lớp học và làm bài thi.</value></data>
+  <data name="FullName" xml:space="preserve"><value>Họ và tên</value></data>
+  <data name="StudentCode" xml:space="preserve"><value>Mã sinh viên</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>Nhập lại mật khẩu</value></data>
+  <data name="AlreadyAccount" xml:space="preserve"><value>Đã có tài khoản?</value></data>
+  <data name="LoginNote" xml:space="preserve"><value>Lịch thi, bài làm và kết quả được quản lý tập trung.</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>Nhập mật khẩu</value></data>
+  <data name="Or" xml:space="preserve"><value>hoặc</value></data>
+  <data name="ExternalLoginWith" xml:space="preserve"><value>Đăng nhập bằng {0}</value></data>
+  <data name="FullNamePlaceholder" xml:space="preserve"><value>Nguyễn Văn A</value></data>
+  <data name="Optional" xml:space="preserve"><value>Nếu có</value></data>
+  <data name="PasswordRequirement" xml:space="preserve"><value>Tối thiểu 6 ký tự</value></data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve"><value>Nhập lại mật khẩu</value></data>
+  <data name="ForgotPasswordTitle" xml:space="preserve"><value>Quên mật khẩu</value></data>
+  <data name="ForgotPasswordDesc" xml:space="preserve"><value>Nhập email tài khoản để nhận mã OTP và liên kết đặt lại mật khẩu qua Gmail.</value></data>
+  <data name="ForgotPasswordHint" xml:space="preserve"><value>Mã OTP có hiệu lực trong 5 phút. Nếu SMTP chưa cấu hình, hệ thống vẫn giữ luồng xử lý nhưng email sẽ không gửi ra ngoài.</value></data>
+  <data name="SendOtp" xml:space="preserve"><value>Gửi mã OTP</value></data>
+  <data name="BackToLogin" xml:space="preserve"><value>Quay lại đăng nhập</value></data>
+  <data name="ConfirmRegistrationTitle" xml:space="preserve"><value>Xác nhận đăng ký</value></data>
+  <data name="ConfirmRegistrationDesc" xml:space="preserve"><value>Nhập mã 6 số hoặc mở liên kết đã gửi đến email để hoàn tất tài khoản.</value></data>
+  <data name="ConfirmCode" xml:space="preserve"><value>Mã xác nhận</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Xác nhận</value></data>
+  <data name="ResendConfirmCode" xml:space="preserve"><value>Gửi lại mã xác nhận</value></data>
+  <data name="ResetPasswordTitle" xml:space="preserve"><value>Đặt lại mật khẩu</value></data>
+  <data name="ResetPasswordOtpDesc" xml:space="preserve"><value>Nhập mã OTP trong email và mật khẩu mới của bạn.</value></data>
+  <data name="ResetPasswordLinkDesc" xml:space="preserve"><value>Liên kết trong email đã được xác thực. Hãy nhập mật khẩu mới cho tài khoản.</value></data>
+  <data name="OtpCode" xml:space="preserve"><value>Mã OTP</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>Mật khẩu mới</value></data>
+  <data name="ConfirmNewPassword" xml:space="preserve"><value>Nhập lại mật khẩu mới</value></data>
+  <data name="ConfirmNewPasswordPlaceholder" xml:space="preserve"><value>Nhập lại mật khẩu mới</value></data>
+  <data name="ChangePassword" xml:space="preserve"><value>Đổi mật khẩu</value></data>
+  <data name="ResendOtp" xml:space="preserve"><value>Gửi lại mã OTP</value></data>
+  <data name="ResetPassword" xml:space="preserve"><value>Đặt lại mật khẩu</value></data>
+  <data name="ExternalAccountTitle" xml:space="preserve"><value>Hoàn tất tài khoản</value></data>
+  <data name="ExternalAccountDesc" xml:space="preserve"><value>Kiểm tra thông tin từ Google trước khi vào hệ thống.</value></data>
+  <data name="Complete" xml:space="preserve"><value>Hoàn tất</value></data>
+</root>

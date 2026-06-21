@@ -41,6 +41,21 @@ namespace LT_Web_Nhom4.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> ClassMedia(int id, int mediaId, CancellationToken cancellationToken)
+        {
+            if (!await _accessPolicy.CanAccessClassAsync(id, CurrentUserId, IsAdmin))
+            {
+                return Forbid();
+            }
+
+            var path = await _context.ClassMedia.AsNoTracking()
+                .Where(item => item.ClassId == id && item.Id == mediaId)
+                .Select(item => item.Path)
+                .FirstOrDefaultAsync(cancellationToken);
+            return await BuildFileResultAsync(path, cancellationToken);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> QuestionImage(int id, CancellationToken cancellationToken)
         {
             var question = await _context.Questions.AsNoTracking()
@@ -67,6 +82,35 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             return await BuildFileResultAsync(question.ImagePath, cancellationToken);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> QuestionMedia(int id, int mediaId, CancellationToken cancellationToken)
+        {
+            var media = await _context.QuestionMedia.AsNoTracking()
+                .Where(item => item.QuestionId == id && item.Id == mediaId)
+                .Select(item => new
+                {
+                    item.Path,
+                    item.Question.CreatedById,
+                    CanView = item.Question.ExamQuestions.Any(link =>
+                        (link.Exam.Status != ExamStatus.Draft && link.Exam.Status != ExamStatus.Cancelled)
+                        && link.Exam.Class.Members.Any(member =>
+                            member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active))
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (media is null)
+            {
+                return NotFound();
+            }
+
+            if (!IsAdmin && media.CreatedById != CurrentUserId && !media.CanView)
+            {
+                return Forbid();
+            }
+
+            return await BuildFileResultAsync(media.Path, cancellationToken);
         }
 
         private async Task<IActionResult> BuildFileResultAsync(string? path, CancellationToken cancellationToken)

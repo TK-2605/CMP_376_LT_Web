@@ -6,9 +6,9 @@
 <section class="waiting-page">
     <div class="container waiting-container">
         <a asp-controller="Classes" asp-action="Index" class="back-link"><i class="ri-arrow-left-line"></i> Lớp học của tôi</a>
-        <div class="waiting-layout confirm-layout">
+        <div class="waiting-layout confirm-layout" data-reveal>
             <main class="waiting-main">
-                @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl)) { <img src="@Model.CoverImageUrl" class="waiting-cover" alt="Ảnh lớp @Model.ClassName" /> }
+                <img src="@(string.IsNullOrWhiteSpace(Model.CoverImageUrl) ? Url.Content("~/img/student/event-02.jpg") : Model.CoverImageUrl)" class="waiting-cover" alt="Ảnh lớp @Model.ClassName" />
                 <div class="waiting-copy">
                     <div class="manage-labels"><span class="status-chip open">Đang mở</span><code>@Model.Code</code></div>
                     <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
@@ -21,7 +21,7 @@
                 <form asp-action="Start" asp-route-id="@Model.Id" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <label class="confirm-check"><input type="checkbox" name="acceptRules" value="true" /><span>Tôi đã đọc hướng dẫn và sẵn sàng làm bài.</span></label>
-                    <button type="submit" class="btn btn-primary w-100 mt-3">Bắt đầu làm bài</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-3" data-confirm="Bắt đầu lượt thi ngay bây giờ? Đồng hồ sẽ bắt đầu tính sau khi xác nhận.">Bắt đầu làm bài</button>
                 </form>
             </aside>
         </div>

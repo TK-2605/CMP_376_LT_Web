@@ -129,15 +129,18 @@
 
   submitForm.addEventListener('submit', (event) => {
     if (isFinishing) return;
+    const submitButton = event.submitter || submitForm.querySelector('button[type="submit"]');
     const missing = questions.length - answeredCount();
     const message = missing > 0 ? 'Bạn còn ' + missing + ' câu chưa trả lời. Vẫn nộp bài?' : 'Nộp bài và kết thúc lượt thi?';
-    if (!window.confirm(message)) {
+    if (submitButton.dataset.confirmBypass !== 'true') {
       event.preventDefault();
+      submitButton.dataset.confirm = message;
+      submitButton.click();
       return;
     }
     isFinishing = true;
-    submitForm.querySelector('button').disabled = true;
-    submitForm.querySelector('button').textContent = 'Đang nộp bài...';
+    submitButton.disabled = true;
+    submitButton.textContent = 'Đang nộp bài...';
   });
 
   document.addEventListener('visibilitychange', () => { if (document.hidden) recordWarning('TabHidden'); });

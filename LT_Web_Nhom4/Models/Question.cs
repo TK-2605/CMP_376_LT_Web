@@ -35,5 +35,7 @@ namespace LT_Web_Nhom4.Models
         public ICollection<ExamQuestion> ExamQuestions { get; set; } = new List<ExamQuestion>();
 
         public ICollection<AttemptAnswer> AttemptAnswers { get; set; } = new List<AttemptAnswer>();
+
+        public ICollection<QuestionMedia> MediaAssets { get; set; } = new List<QuestionMedia>();
     }
 }

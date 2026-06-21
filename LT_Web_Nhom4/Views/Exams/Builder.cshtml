@@ -1,5 +1,4 @@
 @model ExamBuilderViewModel
-@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     var isEditing = Model.ExamId.HasValue;
@@ -7,7 +6,9 @@
     ViewData["Title"] = isEditing ? "Chỉnh sửa đề thi" : "Tạo đề thi";
 }
 
-@section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
 
 <section class="builder-page" data-exam-builder data-active-panel="@Model.ActivePanel">
     <form asp-controller="Exams" asp-action="@actionName" method="post" enctype="multipart/form-data" id="examBuilderForm">
@@ -18,15 +19,24 @@
 
         <header class="builder-command-bar">
             <div class="container builder-command-inner">
-                <a asp-controller="@(isEditing ? "Exams" : "Classes")" asp-action="@(isEditing ? "Manage" : "Details")" asp-route-id="@(isEditing ? Model.ExamId : Model.ClassId)" class="icon-button" title="Quay lại"><i class="ri-arrow-left-line"></i></a>
+                <a asp-controller="@(isEditing ? "Exams" : "Classes")" asp-action="@(isEditing ? "Manage" : "Details")" asp-route-id="@(isEditing ? Model.ExamId : Model.ClassId)" class="icon-button" title="Quay lại">
+                    <i class="ri-arrow-left-line"></i>
+                </a>
                 <div class="builder-title-summary">
                     <span>@Model.ClassName</span>
                     <strong data-builder-title>@(string.IsNullOrWhiteSpace(Model.Title) ? "Đề thi chưa đặt tên" : Model.Title)</strong>
                 </div>
-                <div class="builder-live-summary"><span><b data-question-count>@Model.Questions.Count</b> câu</span><span><b data-score-total>0</b>/@Model.MaxScore.ToString("0.##") điểm</span></div>
+                <div class="builder-live-summary">
+                    <span><b data-question-count>@Model.Questions.Count</b> câu</span>
+                    <span><b data-score-total>0</b>/@Model.MaxScore.ToString("0.##") điểm</span>
+                </div>
                 <div class="builder-command-actions">
-                    <button type="submit" name="intent" value="draft" class="btn btn-light" @(Model.IsLocked ? "disabled" : null)><i class="ri-save-line"></i> Lưu nháp</button>
-                    <button type="submit" name="intent" value="publish" class="btn btn-primary" @(Model.IsLocked ? "disabled" : null)><i class="ri-send-plane-line"></i> Đăng đề</button>
+                    <button type="submit" name="intent" value="draft" class="btn btn-light" @(Model.IsLocked ? "disabled" : null)>
+                        <i class="ri-save-line"></i> Lưu nháp
+                    </button>
+                    <button type="submit" name="intent" value="publish" class="btn btn-primary" @(Model.IsLocked ? "disabled" : null)>
+                        <i class="ri-send-plane-line"></i> Đăng đề
+                    </button>
                 </div>
             </div>
         </header>
@@ -35,6 +45,10 @@
             @if (Model.IsLocked)
             {
                 <div class="alert alert-warning"><i class="ri-lock-line"></i> Đề đã có lượt thi. Nội dung, đáp án và điểm đã được khóa để bảo vệ kết quả.</div>
+            }
+            @if (TempData["ExamMessage"] is string message)
+            {
+                <div class="alert alert-success scholar-alert" data-builder-status>@message</div>
             }
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -46,22 +60,94 @@
             <section class="builder-panel" data-builder-panel="settings">
                 <div class="settings-layout">
                     <div class="settings-main">
-                        <header class="panel-heading"><span class="workspace-kicker">Thông tin chung</span><h1>Cài đặt bài thi</h1><p>Lớp và mã đề được hệ thống gắn tự động.</p></header>
-                        <div class="readonly-context"><span>Lớp hiện tại</span><strong>@Model.ClassCode · @Model.ClassName</strong>@if (!string.IsNullOrWhiteSpace(Model.ExamCode)) { <code>@Model.ExamCode</code> }</div>
+                        <header class="panel-heading">
+                            <span class="workspace-kicker">Thông tin chung</span>
+                            <h1>Cài đặt bài thi</h1>
+                            <p>Lớp và mã đề được hệ thống gắn tự động.</p>
+                        </header>
+
+                        <div class="readonly-context">
+                            <span>Lớp hiện tại</span>
+                            <strong>@Model.ClassCode · @Model.ClassName</strong>
+                            @if (!string.IsNullOrWhiteSpace(Model.ExamCode))
+                            {
+                                <code>@Model.ExamCode</code>
+                            }
+                        </div>
+
                         <div class="form-grid">
-                            <div class="form-field span-2"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control form-control-lg" placeholder="Ví dụ: Kiểm tra giữa kỳ" data-title-input /><span asp-validation-for="Title" class="text-danger"></span></div>
-                            <div class="form-field span-2"><label asp-for="Instructions" class="form-label"></label><textarea asp-for="Instructions" class="form-control" rows="4" placeholder="Những điều học viên cần biết trước khi bắt đầu"></textarea><span asp-validation-for="Instructions" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="StartAt" class="form-label"></label><input asp-for="StartAt" type="datetime-local" class="form-control" /><span asp-validation-for="StartAt" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="EndAt" class="form-label"></label><input asp-for="EndAt" type="datetime-local" class="form-control" /><span asp-validation-for="EndAt" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="DurationMinutes" class="form-label">Thời lượng (phút)</label><input asp-for="DurationMinutes" class="form-control" min="1" max="600" /><span asp-validation-for="DurationMinutes" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="MaxScore" class="form-label"></label><input asp-for="MaxScore" class="form-control" min="0.01" step="0.01" data-max-score /><span asp-validation-for="MaxScore" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="PassingScore" class="form-label"></label><input asp-for="PassingScore" class="form-control" min="0" step="0.01" /><span asp-validation-for="PassingScore" class="text-danger"></span></div>
-                            <div class="form-field"><label asp-for="ResultReleaseMode" class="form-label"></label><select asp-for="ResultReleaseMode" class="form-select"><option value="@ResultReleaseMode.Immediately">Ngay sau khi nộp</option><option value="@ResultReleaseMode.AfterExamClosed">Sau khi đề đóng</option><option value="@ResultReleaseMode.Manual">Khi giáo viên công bố</option></select></div>
+                            <div class="form-field span-2">
+                                <label asp-for="Title" class="form-label"></label>
+                                <input asp-for="Title" class="form-control form-control-lg" placeholder="Ví dụ: Kiểm tra giữa kỳ" data-title-input />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+                            <div class="form-field span-2">
+                                <label asp-for="Instructions" class="form-label"></label>
+                                <textarea asp-for="Instructions" class="form-control" rows="4" placeholder="Những điều học viên cần biết trước khi bắt đầu"></textarea>
+                                <span asp-validation-for="Instructions" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="StartAt" class="form-label"></label>
+                                <input asp-for="StartAt" type="datetime-local" class="form-control" />
+                                <span asp-validation-for="StartAt" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="EndAt" class="form-label"></label>
+                                <input asp-for="EndAt" type="datetime-local" class="form-control" />
+                                <span asp-validation-for="EndAt" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="DurationMinutes" class="form-label">Thời lượng (phút)</label>
+                                <input asp-for="DurationMinutes" class="form-control" min="1" max="600" />
+                                <span asp-validation-for="DurationMinutes" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="MaxScore" class="form-label"></label>
+                                <input asp-for="MaxScore" class="form-control" min="0.01" step="0.01" data-max-score />
+                                <span asp-validation-for="MaxScore" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="PassingScore" class="form-label"></label>
+                                <input asp-for="PassingScore" class="form-control" min="0" step="0.01" />
+                                <span asp-validation-for="PassingScore" class="text-danger"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="ResultReleaseMode" class="form-label"></label>
+                                <select asp-for="ResultReleaseMode" class="form-select">
+                                    <option value="@ResultReleaseMode.Immediately">Ngay sau khi nộp</option>
+                                    <option value="@ResultReleaseMode.AfterExamClosed">Sau khi đề đóng</option>
+                                    <option value="@ResultReleaseMode.Manual">Khi giáo viên công bố</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+
                     <aside class="settings-side">
-                        <section class="settings-group"><h2>Trộn nội dung</h2><label class="switch-row"><span><strong>Trộn câu hỏi</strong><small>Mỗi lượt thi có thứ tự ổn định riêng.</small></span><input asp-for="ShuffleQuestions" class="form-check-input" type="checkbox" role="switch" /></label><label class="switch-row"><span><strong>Trộn đáp án</strong><small>Đáp án không đổi vị trí khi tải lại.</small></span><input asp-for="ShuffleOptions" class="form-check-input" type="checkbox" role="switch" /></label></section>
-                        <section class="settings-group"><h2>Bảo vệ bài thi</h2><label class="switch-row"><span><strong>Toàn màn hình</strong><small>Ghi nhận khi học viên thoát toàn màn hình.</small></span><input asp-for="RequireFullscreen" class="form-check-input" type="checkbox" role="switch" /></label><div class="form-field mt-3"><label asp-for="MaxWarningCount" class="form-label"></label><input asp-for="MaxWarningCount" class="form-control" min="1" max="20" /><small class="form-text">Đạt giới hạn sẽ tự động nộp và khóa bài.</small><span asp-validation-for="MaxWarningCount" class="text-danger"></span></div></section>
+                        <section class="settings-group">
+                            <h2>Trộn nội dung</h2>
+                            <label class="switch-row">
+                                <span><strong>Trộn câu hỏi</strong><small>Mỗi lượt thi có thứ tự ổn định riêng.</small></span>
+                                <input asp-for="ShuffleQuestions" class="form-check-input" type="checkbox" role="switch" />
+                            </label>
+                            <label class="switch-row">
+                                <span><strong>Trộn đáp án</strong><small>Đáp án không đổi vị trí khi tải lại.</small></span>
+                                <input asp-for="ShuffleOptions" class="form-check-input" type="checkbox" role="switch" />
+                            </label>
+                        </section>
+
+                        <section class="settings-group">
+                            <h2>Bảo vệ bài thi</h2>
+                            <label class="switch-row">
+                                <span><strong>Toàn màn hình</strong><small>Ghi nhận khi học viên thoát toàn màn hình.</small></span>
+                                <input asp-for="RequireFullscreen" class="form-check-input" type="checkbox" role="switch" />
+                            </label>
+                            <div class="form-field mt-3">
+                                <label asp-for="MaxWarningCount" class="form-label"></label>
+                                <input asp-for="MaxWarningCount" class="form-control" min="1" max="20" />
+                                <small class="form-text">Đạt giới hạn sẽ tự động nộp và khóa bài.</small>
+                                <span asp-validation-for="MaxWarningCount" class="text-danger"></span>
+                            </div>
+                        </section>
                     </aside>
                 </div>
             </section>
@@ -70,8 +156,16 @@
                 <div class="question-editor-layout">
                     <main class="question-stage">
                         <header class="question-stage-header">
-                            <div><span class="workspace-kicker">Nội dung đề thi</span><h1>Câu hỏi <span data-current-question-number>1</span>/<span data-question-count>@Model.Questions.Count</span></h1></div>
-                            <div class="question-stage-tools"><button type="button" class="icon-button" data-move-question="-1" title="Đưa câu lên"><i class="ri-arrow-up-line"></i></button><button type="button" class="icon-button" data-move-question="1" title="Đưa câu xuống"><i class="ri-arrow-down-line"></i></button><button type="button" class="icon-button" data-duplicate-question title="Nhân bản câu"><i class="ri-file-copy-line"></i></button><button type="button" class="icon-button danger" data-remove-question title="Xoá câu"><i class="ri-delete-bin-line"></i></button></div>
+                            <div>
+                                <span class="workspace-kicker">Nội dung đề thi</span>
+                                <h1>Câu hỏi <span data-current-question-number>1</span>/<span data-question-count>@Model.Questions.Count</span></h1>
+                            </div>
+                            <div class="question-stage-tools">
+                                <button type="button" class="icon-button" data-move-question="-1" title="Đưa câu lên"><i class="ri-arrow-up-line"></i></button>
+                                <button type="button" class="icon-button" data-move-question="1" title="Đưa câu xuống"><i class="ri-arrow-down-line"></i></button>
+                                <button type="button" class="icon-button" data-duplicate-question title="Nhân bản câu"><i class="ri-file-copy-line"></i></button>
+                                <button type="button" class="icon-button danger" data-remove-question title="Xóa câu"><i class="ri-delete-bin-line"></i></button>
+                            </div>
                         </header>
 
                         <div id="questionList">
@@ -80,13 +174,56 @@
                                 var question = Model.Questions[questionIndex];
                                 <article class="question-editor-card" data-question-card data-question-index="@questionIndex">
                                     <input type="hidden" name="Questions[@questionIndex].QuestionId" value="@question.QuestionId" />
+                                    <input type="hidden" name="Questions[@questionIndex].QuestionType" value="@QuestionType.SingleChoice" />
+                                    <input type="hidden" name="Questions[@questionIndex].VideoUrl" value="@question.VideoUrl" />
+
                                     <div class="question-editor-top">
-                                        <div class="question-content-field"><label for="Questions_@(questionIndex)__Content">Nội dung câu hỏi</label><textarea id="Questions_@(questionIndex)__Content" name="Questions[@questionIndex].Content" class="form-control" rows="3" placeholder="Nhập câu hỏi">@question.Content</textarea><span class="text-danger" data-valmsg-for="Questions[@questionIndex].Content" data-valmsg-replace="true"></span></div>
-                                        <div class="question-type-field"><label>Loại câu hỏi</label><select name="Questions[@questionIndex].QuestionType" class="form-select" data-question-type><option value="@QuestionType.SingleChoice" selected="@(question.QuestionType == QuestionType.SingleChoice)">Một đáp án</option><option value="@QuestionType.MultipleChoice" selected="@(question.QuestionType == QuestionType.MultipleChoice)">Nhiều đáp án</option></select></div>
+                                        <div class="question-content-field">
+                                            <label for="Questions_@(questionIndex)__Content">Nội dung câu hỏi</label>
+                                            <textarea id="Questions_@(questionIndex)__Content" name="Questions[@questionIndex].Content" class="form-control" rows="3" placeholder="Nhập câu hỏi">@question.Content</textarea>
+                                            <span class="text-danger" data-valmsg-for="Questions[@questionIndex].Content" data-valmsg-replace="true"></span>
+                                        </div>
                                     </div>
 
-                                    @if (!string.IsNullOrWhiteSpace(question.ExistingImageUrl)) { <div class="question-image-preview"><img src="@question.ExistingImageUrl" alt="Ảnh câu hỏi" /><label><input type="checkbox" name="Questions[@questionIndex].RemoveImage" value="true" /> Xoá ảnh</label></div> }
-                                    <div class="question-media-tools"><label class="media-action"><i class="ri-image-add-line"></i><span>Thêm ảnh</span><input type="file" name="Questions[@questionIndex].ImageFile" accept="image/jpeg,image/png,image/webp" /></label><label class="video-url-field"><i class="ri-video-line"></i><input name="Questions[@questionIndex].VideoUrl" value="@question.VideoUrl" class="form-control" placeholder="Liên kết video HTTPS" /></label></div>
+                                    @if (question.ExistingMedia.Count > 0)
+                                    {
+                                        <div class="question-media-existing">
+                                            @foreach (var media in question.ExistingMedia)
+                                            {
+                                                <label class="question-media-item">
+                                                    @if (media.IsImage)
+                                                    {
+                                                        <img src="@media.Url" alt="Ảnh câu hỏi" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="media-video-thumb"><i class="ri-video-line"></i> Video</span>
+                                                    }
+                                                    <span><input type="checkbox" name="Questions[@questionIndex].RemoveMediaIds" value="@media.Id" /> Xóa file này</span>
+                                                </label>
+                                            }
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(question.ExistingImageUrl))
+                                    {
+                                        <div class="question-image-preview">
+                                            <img src="@question.ExistingImageUrl" alt="Ảnh câu hỏi" />
+                                            <label><input type="checkbox" name="Questions[@questionIndex].RemoveImage" value="true" /> Xóa ảnh</label>
+                                        </div>
+                                    }
+
+                                    <div class="question-media-tools">
+                                        <label class="media-action">
+                                            <i class="ri-image-add-line"></i>
+                                            <span>Thêm ảnh</span>
+                                            <input type="file" name="Questions[@questionIndex].ImageFiles" accept="image/jpeg,image/png,image/webp" multiple data-question-images />
+                                        </label>
+                                        <label class="media-action">
+                                            <i class="ri-video-add-line"></i>
+                                            <span>Thêm video</span>
+                                            <input type="file" name="Questions[@questionIndex].VideoFiles" accept="video/mp4,video/webm,video/quicktime" multiple data-question-videos />
+                                        </label>
+                                    </div>
 
                                     <div class="option-editor-list" data-answer-list>
                                         @for (var optionIndex = 0; optionIndex < question.Options.Count; optionIndex++)
@@ -94,33 +231,55 @@
                                             var option = question.Options[optionIndex];
                                             <div class="option-editor-row" data-answer-row>
                                                 <input type="hidden" name="Questions[@questionIndex].Options[@optionIndex].OptionId" value="@option.OptionId" />
-                                                <input type="hidden" name="Questions[@questionIndex].Options[@optionIndex].IsCorrect" value="false" />
                                                 <input class="form-check-input" type="checkbox" name="Questions[@questionIndex].Options[@optionIndex].IsCorrect" value="true" checked="@option.IsCorrect" data-correct-option title="Đáp án đúng" />
                                                 <span class="option-letter">@((char)('A' + optionIndex))</span>
                                                 <input name="Questions[@questionIndex].Options[@optionIndex].Content" value="@option.Content" class="form-control" placeholder="Nhập nội dung đáp án" />
-                                                <button type="button" class="icon-button danger" data-remove-answer title="Xoá đáp án"><i class="ri-close-line"></i></button>
+                                                <button type="button" class="icon-button danger" data-remove-answer title="Xóa đáp án"><i class="ri-close-line"></i></button>
                                             </div>
                                         }
                                     </div>
                                     <button type="button" class="text-action" data-add-answer><i class="ri-add-line"></i> Thêm đáp án</button>
 
                                     <div class="question-editor-footer">
-                                        <div><label>Điểm</label><input name="Questions[@questionIndex].Score" value="@question.Score" class="form-control" type="number" min="0.01" step="0.01" placeholder="Tự chia" data-question-score /></div>
-                                        <div><label>Độ khó</label><select name="Questions[@questionIndex].Difficulty" class="form-select"><option value="@QuestionDifficulty.Easy" selected="@(question.Difficulty == QuestionDifficulty.Easy)">Dễ</option><option value="@QuestionDifficulty.Medium" selected="@(question.Difficulty == QuestionDifficulty.Medium)">Trung bình</option><option value="@QuestionDifficulty.Hard" selected="@(question.Difficulty == QuestionDifficulty.Hard)">Khó</option></select></div>
-                                        <div class="explanation-field"><label>Giải thích đáp án</label><textarea name="Questions[@questionIndex].Explanation" class="form-control" rows="2" placeholder="Chỉ hiển thị khi kết quả được công bố">@question.Explanation</textarea></div>
+                                        <div>
+                                            <label>Điểm</label>
+                                            <input name="Questions[@questionIndex].Score" value="@question.Score" class="form-control" type="number" min="0.01" step="0.01" placeholder="Tự chia" data-question-score />
+                                        </div>
+                                        <div>
+                                            <label>Độ khó</label>
+                                            <select name="Questions[@questionIndex].Difficulty" class="form-select">
+                                                <option value="@QuestionDifficulty.Easy" selected="@(question.Difficulty == QuestionDifficulty.Easy)">Dễ</option>
+                                                <option value="@QuestionDifficulty.Medium" selected="@(question.Difficulty == QuestionDifficulty.Medium)">Trung bình</option>
+                                                <option value="@QuestionDifficulty.Hard" selected="@(question.Difficulty == QuestionDifficulty.Hard)">Khó</option>
+                                            </select>
+                                        </div>
+                                        <div class="explanation-field">
+                                            <label>Giải thích đáp án</label>
+                                            <textarea name="Questions[@questionIndex].Explanation" class="form-control" rows="2" placeholder="Chỉ hiển thị khi kết quả được công bố">@question.Explanation</textarea>
+                                        </div>
                                     </div>
                                 </article>
                             }
                         </div>
 
-                        <footer class="question-pager"><button type="button" class="btn btn-light" data-previous-question><i class="ri-arrow-left-line"></i> Câu trước</button><button type="button" class="btn btn-primary" data-next-question>Câu tiếp <i class="ri-arrow-right-line"></i></button></footer>
+                        <footer class="question-pager">
+                            <button type="button" class="btn btn-light" data-previous-question><i class="ri-arrow-left-line"></i> Câu trước</button>
+                            <button type="button" class="btn btn-primary" data-next-question>Câu tiếp <i class="ri-arrow-right-line"></i></button>
+                        </footer>
                     </main>
 
                     <aside class="question-navigator">
-                        <div class="question-navigator-heading"><div><span>Danh sách câu</span><strong><span data-question-count>@Model.Questions.Count</span> câu hỏi</strong></div><button type="button" class="icon-button primary" data-add-question title="Thêm câu hỏi"><i class="ri-add-line"></i></button></div>
+                        <div class="question-navigator-heading">
+                            <div><span>Danh sách câu</span><strong><span data-question-count>@Model.Questions.Count</span> câu hỏi</strong></div>
+                            <button type="button" class="icon-button primary" data-add-question title="Thêm câu hỏi"><i class="ri-add-line"></i></button>
+                        </div>
                         <div class="question-number-grid" data-question-navigation></div>
                         <button type="button" class="btn btn-outline-primary w-100" data-add-question><i class="ri-add-line"></i> Thêm câu hỏi</button>
-                        <div class="score-summary"><span>Tổng điểm đã đặt</span><strong><span data-score-total>0</span> / <span data-max-score-label>@Model.MaxScore.ToString("0.##")</span></strong><small>Câu để trống điểm sẽ được chia phần còn lại.</small></div>
+                        <div class="score-summary">
+                            <span>Tổng điểm đã đặt</span>
+                            <strong><span data-score-total>0</span> / <span data-max-score-label>@Model.MaxScore.ToString("0.##")</span></strong>
+                            <small>Câu để trống điểm sẽ được chia phần còn lại.</small>
+                        </div>
                     </aside>
                 </div>
             </section>
@@ -131,16 +290,36 @@
 <template id="questionTemplate">
     <article class="question-editor-card" data-question-card>
         <input type="hidden" name="Questions[__Q__].QuestionId" value="" />
-        <div class="question-editor-top"><div class="question-content-field"><label>Nội dung câu hỏi</label><textarea name="Questions[__Q__].Content" class="form-control" rows="3" placeholder="Nhập câu hỏi"></textarea></div><div class="question-type-field"><label>Loại câu hỏi</label><select name="Questions[__Q__].QuestionType" class="form-select" data-question-type><option value="SingleChoice">Một đáp án</option><option value="MultipleChoice">Nhiều đáp án</option></select></div></div>
-        <div class="question-media-tools"><label class="media-action"><i class="ri-image-add-line"></i><span>Thêm ảnh</span><input type="file" name="Questions[__Q__].ImageFile" accept="image/jpeg,image/png,image/webp" /></label><label class="video-url-field"><i class="ri-video-line"></i><input name="Questions[__Q__].VideoUrl" class="form-control" placeholder="Liên kết video HTTPS" /></label></div>
+        <input type="hidden" name="Questions[__Q__].QuestionType" value="SingleChoice" />
+        <input type="hidden" name="Questions[__Q__].VideoUrl" value="" />
+        <div class="question-editor-top">
+            <div class="question-content-field">
+                <label>Nội dung câu hỏi</label>
+                <textarea name="Questions[__Q__].Content" class="form-control" rows="3" placeholder="Nhập câu hỏi"></textarea>
+            </div>
+        </div>
+        <div class="question-media-tools">
+            <label class="media-action"><i class="ri-image-add-line"></i><span>Thêm ảnh</span><input type="file" name="Questions[__Q__].ImageFiles" accept="image/jpeg,image/png,image/webp" multiple data-question-images /></label>
+            <label class="media-action"><i class="ri-video-add-line"></i><span>Thêm video</span><input type="file" name="Questions[__Q__].VideoFiles" accept="video/mp4,video/webm,video/quicktime" multiple data-question-videos /></label>
+        </div>
         <div class="option-editor-list" data-answer-list>__ANSWERS__</div>
         <button type="button" class="text-action" data-add-answer><i class="ri-add-line"></i> Thêm đáp án</button>
-        <div class="question-editor-footer"><div><label>Điểm</label><input name="Questions[__Q__].Score" class="form-control" type="number" min="0.01" step="0.01" placeholder="Tự chia" data-question-score /></div><div><label>Độ khó</label><select name="Questions[__Q__].Difficulty" class="form-select"><option value="Easy">Dễ</option><option value="Medium" selected>Trung bình</option><option value="Hard">Khó</option></select></div><div class="explanation-field"><label>Giải thích đáp án</label><textarea name="Questions[__Q__].Explanation" class="form-control" rows="2"></textarea></div></div>
+        <div class="question-editor-footer">
+            <div><label>Điểm</label><input name="Questions[__Q__].Score" class="form-control" type="number" min="0.01" step="0.01" placeholder="Tự chia" data-question-score /></div>
+            <div><label>Độ khó</label><select name="Questions[__Q__].Difficulty" class="form-select"><option value="Easy">Dễ</option><option value="Medium" selected>Trung bình</option><option value="Hard">Khó</option></select></div>
+            <div class="explanation-field"><label>Giải thích đáp án</label><textarea name="Questions[__Q__].Explanation" class="form-control" rows="2"></textarea></div>
+        </div>
     </article>
 </template>
 
 <template id="answerTemplate">
-    <div class="option-editor-row" data-answer-row><input type="hidden" name="Questions[__Q__].Options[__O__].OptionId" value="" /><input type="hidden" name="Questions[__Q__].Options[__O__].IsCorrect" value="false" /><input class="form-check-input" type="checkbox" name="Questions[__Q__].Options[__O__].IsCorrect" value="true" __CHECKED__ data-correct-option title="Đáp án đúng" /><span class="option-letter">__LETTER__</span><input name="Questions[__Q__].Options[__O__].Content" class="form-control" placeholder="Nhập nội dung đáp án" value="__VALUE__" /><button type="button" class="icon-button danger" data-remove-answer title="Xoá đáp án"><i class="ri-close-line"></i></button></div>
+    <div class="option-editor-row" data-answer-row>
+        <input type="hidden" name="Questions[__Q__].Options[__O__].OptionId" value="" />
+        <input class="form-check-input" type="checkbox" name="Questions[__Q__].Options[__O__].IsCorrect" value="true" __CHECKED__ data-correct-option title="Đáp án đúng" />
+        <span class="option-letter">__LETTER__</span>
+        <input name="Questions[__Q__].Options[__O__].Content" class="form-control" placeholder="Nhập nội dung đáp án" value="__VALUE__" />
+        <button type="button" class="icon-button danger" data-remove-answer title="Xóa đáp án"><i class="ri-close-line"></i></button>
+    </div>
 </template>
 
 @section Scripts {

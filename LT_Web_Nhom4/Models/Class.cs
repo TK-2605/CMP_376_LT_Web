@@ -33,5 +33,7 @@ namespace LT_Web_Nhom4.Models
         public ICollection<ClassMember> Members { get; set; } = new List<ClassMember>();
 
         public ICollection<Exam> Exams { get; set; } = new List<Exam>();
+
+        public ICollection<ClassMedia> MediaAssets { get; set; } = new List<ClassMedia>();
     }
 }

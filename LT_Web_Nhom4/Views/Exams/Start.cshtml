@@ -1,13 +1,35 @@
 @model ExamStartViewModel
 
-@{ ViewData["Title"] = Model.Title; ViewData["BodyClass"] = "exam-taking-body"; }
-@section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["BodyClass"] = "exam-taking-body";
+}
 
-<section class="take-exam-page" data-exam-app data-attempt-id="@Model.AttemptId" data-duration-minutes="@Model.DurationMinutes" data-expires-at="@Model.ExpiresAt.ToString("O")" data-autosave-url="@Url.Action("Autosave")" data-warning-url="@Url.Action("RecordWarning")" data-result-url="@Url.Action("Result", new { attemptId = Model.AttemptId })" data-require-fullscreen="@Model.RequireFullscreen.ToString().ToLowerInvariant()">
+@section Styles {
+    <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" />
+}
+
+<section class="take-exam-page"
+         data-exam-app
+         data-attempt-id="@Model.AttemptId"
+         data-duration-minutes="@Model.DurationMinutes"
+         data-expires-at="@Model.ExpiresAt.ToString("O")"
+         data-autosave-url="@Url.Action("Autosave")"
+         data-warning-url="@Url.Action("RecordWarning")"
+         data-result-url="@Url.Action("Result", new { attemptId = Model.AttemptId })"
+         data-require-fullscreen="@Model.RequireFullscreen.ToString().ToLowerInvariant()">
     <div class="container-fluid take-exam-container">
         <header class="take-exam-header">
-            <div class="take-title"><span>@Model.SubjectName</span><h1>@Model.Title</h1><small>Tiến độ: <b data-progress-label>0/@Model.Questions.Count</b></small></div>
-            <div class="take-timer"><span><i class="ri-time-line"></i> Thời gian còn lại</span><strong data-exam-timer>--:--</strong><div><i data-timer-progress></i></div></div>
+            <div class="take-title">
+                <span>@Model.SubjectName</span>
+                <h1>@Model.Title</h1>
+                <small>Tiến độ: <b data-progress-label>0/@Model.Questions.Count</b></small>
+            </div>
+            <div class="take-timer">
+                <span><i class="ri-time-line"></i> Thời gian còn lại</span>
+                <strong data-exam-timer>--:--</strong>
+                <div><i data-timer-progress></i></div>
+            </div>
             <div class="take-save-state"><i class="ri-cloud-line"></i><span data-save-state>Đáp án được tự động lưu</span></div>
         </header>
 
@@ -16,36 +38,91 @@
                 @for (var questionIndex = 0; questionIndex < Model.Questions.Count; questionIndex++)
                 {
                     var question = Model.Questions[questionIndex];
-                    <article class="take-question" data-take-question data-question-id="@question.QuestionId" data-question-index="@questionIndex" data-question-type="@question.QuestionType" hidden="@(questionIndex != 0)">
-                        <div class="take-question-meta"><span>Câu @(questionIndex + 1) / @Model.Questions.Count</span><span>@question.Score.ToString("0.##") điểm</span></div>
+                    <article class="take-question" data-take-question data-question-id="@question.QuestionId" data-question-index="@questionIndex" data-question-type="@QuestionType.SingleChoice" hidden="@(questionIndex != 0)">
+                        <div class="take-question-meta">
+                            <span>Câu @(questionIndex + 1) / @Model.Questions.Count</span>
+                            <span>@question.Score.ToString("0.##") điểm</span>
+                        </div>
                         <h2>@question.Content</h2>
-                        @if (!string.IsNullOrWhiteSpace(question.ImageUrl)) { <img src="@question.ImageUrl" class="take-question-image" alt="Ảnh minh hoạ câu hỏi" /> }
-                        @if (!string.IsNullOrWhiteSpace(question.VideoUrl)) { <a href="@question.VideoUrl" target="_blank" rel="noopener noreferrer" class="question-video-link"><i class="ri-video-line"></i> Mở video của câu hỏi</a> }
+
+                        @if (question.MediaAssets.Count > 0)
+                        {
+                            <div class="take-media-grid">
+                                @foreach (var media in question.MediaAssets)
+                                {
+                                    if (media.IsImage)
+                                    {
+                                        <img src="@media.Url" class="take-question-image" alt="Ảnh minh họa câu hỏi" />
+                                    }
+                                    else
+                                    {
+                                        <video class="take-question-video" controls preload="metadata">
+                                            <source src="@media.Url" />
+                                        </video>
+                                    }
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrWhiteSpace(question.ImageUrl))
+                            {
+                                <img src="@question.ImageUrl" class="take-question-image" alt="Ảnh minh họa câu hỏi" />
+                            }
+                            @if (!string.IsNullOrWhiteSpace(question.VideoUrl))
+                            {
+                                <a href="@question.VideoUrl" target="_blank" rel="noopener noreferrer" class="question-video-link"><i class="ri-video-line"></i> Mở video của câu hỏi</a>
+                            }
+                        }
+
                         <div class="take-options">
                             @for (var optionIndex = 0; optionIndex < question.Options.Count; optionIndex++)
                             {
                                 var option = question.Options[optionIndex];
                                 var selected = question.SelectedOptionIds.Contains(option.OptionId);
-                                var inputType = question.QuestionType == QuestionType.SingleChoice ? "radio" : "checkbox";
-                                <label class="take-option"><input type="@inputType" name="question-@question.QuestionId" value="@option.OptionId" checked="@selected" /><span class="option-letter">@((char)('A' + optionIndex))</span><span>@option.Content</span></label>
+                                <label class="take-option">
+                                    <input type="radio" name="question-@question.QuestionId" value="@option.OptionId" checked="@selected" />
+                                    <span class="option-letter">@((char)('A' + optionIndex))</span>
+                                    <span>@option.Content</span>
+                                </label>
                             }
                         </div>
                     </article>
                 }
-                <footer class="take-question-footer"><button type="button" class="btn btn-light" data-take-previous><i class="ri-arrow-left-line"></i> Câu trước</button><button type="button" class="btn btn-primary" data-take-next>Câu tiếp <i class="ri-arrow-right-line"></i></button></footer>
+
+                <footer class="take-question-footer">
+                    <button type="button" class="btn btn-light" data-take-previous><i class="ri-arrow-left-line"></i> Câu trước</button>
+                    <button type="button" class="btn btn-primary" data-take-next>Câu tiếp <i class="ri-arrow-right-line"></i></button>
+                </footer>
             </main>
 
             <aside class="take-navigation">
-                <div class="take-navigation-heading"><div><span>Điều hướng câu hỏi</span><strong><span data-answered-count>0</span>/@Model.Questions.Count đã trả lời</strong></div></div>
-                <div class="take-number-grid">
-                    @for (var index = 0; index < Model.Questions.Count; index++) { <button type="button" data-take-jump="@index">@(index + 1)</button> }
+                <div class="take-navigation-heading">
+                    <div><span>Điều hướng câu hỏi</span><strong><span data-answered-count>0</span>/@Model.Questions.Count đã trả lời</strong></div>
                 </div>
-                <div class="warning-counter"><i class="ri-shield-line"></i><span><strong>Cảnh báo <b data-warning-count>@Model.WarningCount</b>/@(Model.MaxWarningCount?.ToString() ?? "∞")</strong><small>Giữ trang thi ở trạng thái hoạt động.</small></span></div>
-                @if (Model.RequireFullscreen) { <button type="button" class="btn btn-outline-primary w-100 mb-2" data-enter-fullscreen><i class="ri-fullscreen-line"></i> Bật toàn màn hình</button> }
-                <form asp-action="Submit" method="post" data-submit-form><input type="hidden" name="AttemptId" value="@Model.AttemptId" /><button type="submit" class="btn btn-danger w-100">Nộp bài</button></form>
+                <div class="take-number-grid">
+                    @for (var index = 0; index < Model.Questions.Count; index++)
+                    {
+                        <button type="button" data-take-jump="@index">@(index + 1)</button>
+                    }
+                </div>
+                <div class="warning-counter">
+                    <i class="ri-shield-line"></i>
+                    <span><strong>Cảnh báo <b data-warning-count>@Model.WarningCount</b>/@(Model.MaxWarningCount?.ToString() ?? "∞")</strong><small>Không rời trang thi, sao chép hoặc dán nội dung.</small></span>
+                </div>
+                @if (Model.RequireFullscreen)
+                {
+                    <button type="button" class="btn btn-outline-primary w-100 mb-2" data-enter-fullscreen><i class="ri-fullscreen-line"></i> Bật toàn màn hình</button>
+                }
+                <form asp-action="Submit" method="post" data-submit-form>
+                    <input type="hidden" name="AttemptId" value="@Model.AttemptId" />
+                    <button type="submit" class="btn btn-danger w-100">Nộp bài</button>
+                </form>
             </aside>
         </div>
     </div>
 </section>
 
-@section Scripts { <script src="~/js/exam.js" asp-append-version="true"></script> }
+@section Scripts {
+    <script src="~/js/exam.js" asp-append-version="true"></script>
+}

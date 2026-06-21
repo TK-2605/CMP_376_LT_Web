@@ -27,6 +27,16 @@ artifacts/
 ## ASP.NET local config
 appsettings.*.local.json
 secrets.json
+.env
+.env.*
+!.env.example
+!*.env.example
+!.env.production.example
+LT_Web_Nhom4/App_Data/
+deploy/artifacts/
+*.bacpac
+*.bak
+*.trn
 
 ## Rider / VS Code
 .idea/

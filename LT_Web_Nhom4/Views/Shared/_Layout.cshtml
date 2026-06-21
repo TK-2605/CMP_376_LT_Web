@@ -1,10 +1,17 @@
-﻿<!DOCTYPE html>
-<html lang="vi">
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var bodyClass = ViewData["BodyClass"]?.ToString() ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - QuizHub</title>
     <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/vendor/fonts/iconify-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -13,42 +20,68 @@
     <link rel="stylesheet" href="~/LT_Web_Nhom4.styles.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="@ViewData["BodyClass"]">
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top student-navbar">
-            <div class="container">
-                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">QuizHub</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+<body class="scholar-body @(isAuthenticated ? "is-authenticated" : "is-guest") @bodyClass">
+    <header class="scholar-header" data-site-header>
+        <nav class="navbar navbar-expand-lg" aria-label="Điều hướng chính">
+            <div class="container scholar-nav-container">
+                <a class="scholar-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="QuizHub - Trang chủ">
+                    <span class="scholar-brand-mark"><i class="ri-graduation-cap-line" aria-hidden="true"></i></span>
+                    <span>QUIZHUB</span>
+                </a>
+
+                @if (isAuthenticated)
+                {
+                    <div class="scholar-search d-none d-lg-block" data-autocomplete-root data-search-url="@Url.Action("Suggestions", "Search")">
+                        <i class="ri-search-line" aria-hidden="true"></i>
+                        <input type="search" placeholder="@Localizer["SearchPlaceholder"]" autocomplete="off" aria-label="@Localizer["SearchPlaceholder"]" data-autocomplete-input />
+                        <div class="scholar-search-results" data-autocomplete-results hidden></div>
+                    </div>
+                }
+
+                <button class="navbar-toggler scholar-menu-button" type="button" data-bs-toggle="collapse" data-bs-target="#quizHubNavigation" aria-controls="quizHubNavigation" aria-expanded="false" aria-label="Mở menu">
+                    <i class="ri-menu-3-line" aria-hidden="true"></i>
                 </button>
-                <div class="navbar-collapse collapse">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
-                        </li>
-                        @if (User.Identity?.IsAuthenticated == true)
+
+                <div class="collapse navbar-collapse" id="quizHubNavigation">
+                    <ul class="navbar-nav ms-auto align-items-lg-center scholar-nav-links">
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">@Localizer["Home"]</a></li>
+                        @if (isAuthenticated)
                         {
-                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Classes" asp-action="Index">Lớp học</a></li>
-                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">Đề thi</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Classes" asp-action="Index">@Localizer["Classes"]</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Exams" asp-action="Index">@Localizer["Exams"]</a></li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link" href="@Url.Action("Index", "Home")#tinh-nang">@Localizer["Features"]</a></li>
+                            <li class="nav-item"><a class="nav-link" href="@Url.Action("Index", "Home")#quy-trinh">@Localizer["HowItWorks"]</a></li>
                         }
                     </ul>
+                    <partial name="_LanguageSelector" />
                     <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
-    <div class="student-page-shell">
-        <main role="main">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top py-4 text-muted">
-        <div class="container">
-            &copy; @DateTime.Now.Year QuizHub · Hệ thống thi trắc nghiệm trực tuyến
+    <main class="student-page-shell" role="main">@RenderBody()</main>
+
+    <footer class="scholar-footer">
+        <div class="container scholar-footer-inner">
+            <div><strong>QuizHub</strong><span>@Localizer["Footer"]</span></div>
+            <p>&copy; @DateTime.Now.Year QuizHub. Thiết kế dựa trên <a href="https://templatemo.com/tm-586-scholar" target="_blank" rel="noopener noreferrer">Scholar của TemplateMo</a>.</p>
         </div>
     </footer>
+
+    <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content scholar-confirm-modal">
+                <div class="modal-header"><div><span class="modal-icon"><i class="ri-question-line"></i></span><h2 class="modal-title" id="confirmActionTitle">Xác nhận thao tác</h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                <div class="modal-body"><p data-confirm-message>Bạn có chắc muốn tiếp tục?</p></div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Huỷ</button><button type="button" class="btn btn-primary" data-confirm-accept>Xác nhận</button></div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

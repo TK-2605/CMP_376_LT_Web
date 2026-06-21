@@ -27,6 +27,12 @@ namespace LT_Web_Nhom4.Models
         MultipleChoice = 2
     }
 
+    public enum MediaAssetType
+    {
+        Image = 1,
+        Video = 2
+    }
+
     public enum QuestionStatus
     {
         Draft = 1,

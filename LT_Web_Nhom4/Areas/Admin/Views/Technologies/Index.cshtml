@@ -1,0 +1,53 @@
+@model AdminTechnologyViewModel
+
+@{
+    ViewData["Title"] = "Công nghệ hệ thống";
+}
+
+<div class="container-xxl flex-grow-1 container-p-y technology-page">
+    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
+        <div>
+            <span class="text-uppercase text-primary fw-semibold small">Kiểm tra tích hợp</span>
+            <h1 class="h3 mt-1 mb-2">8 công nghệ chính</h1>
+            <p class="text-muted mb-0">Trạng thái được đọc từ cấu hình, dịch vụ và dữ liệu đang chạy; không hiển thị khóa bí mật.</p>
+        </div>
+        <div class="technology-summary"><strong>@Model.ReadyCount/8</strong><span>sẵn sàng đầy đủ</span></div>
+    </div>
+
+    <div class="technology-grid">
+        @foreach (var item in Model.Items)
+        {
+            var stateClass = item.State switch
+            {
+                TechnologyState.Ready => "ready",
+                TechnologyState.Fallback => "fallback",
+                _ => "needs-config"
+            };
+            var stateText = item.State switch
+            {
+                TechnologyState.Ready => "Sẵn sàng",
+                TechnologyState.Fallback => "Có dự phòng",
+                _ => "Cần cấu hình"
+            };
+            <article class="technology-card @stateClass">
+                <div class="technology-card-top">
+                    <span class="technology-icon"><i class="icon-base ri @item.Icon"></i></span>
+                    <span class="technology-state"><i></i>@stateText</span>
+                </div>
+                <span class="technology-category">@item.Category</span>
+                <h2>@item.Name</h2>
+                <p>@item.Description</p>
+                <div class="technology-detail">@item.Detail</div>
+                @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                {
+                    <a href="@item.ActionUrl" class="btn btn-sm btn-outline-primary mt-3">@item.ActionLabel <i class="ri-arrow-right-line ms-1"></i></a>
+                }
+            </article>
+        }
+    </div>
+
+    <div class="alert alert-info mt-4 mb-0" role="note">
+        <i class="ri-information-line me-2"></i>
+        OAuth, SMTP, JWT và Meilisearch cần secret hoặc dịch vụ ngoài. QuizHub chỉ bật nút cho người dùng khi cấu hình tương ứng thực sự hợp lệ.
+    </div>
+</div>

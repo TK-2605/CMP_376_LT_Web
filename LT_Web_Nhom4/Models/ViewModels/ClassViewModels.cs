@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LT_Web_Nhom4.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace LT_Web_Nhom4.Models.ViewModels
@@ -40,6 +41,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public bool IsOwner { get; set; }
 
         public string? IntroVideoUrl { get; set; }
+
+        public IList<MediaAssetViewModel> MediaAssets { get; set; } = new List<MediaAssetViewModel>();
 
         public IList<ExamCardViewModel> Exams { get; set; } = new List<ExamCardViewModel>();
 
@@ -92,6 +95,12 @@ namespace LT_Web_Nhom4.Models.ViewModels
         [Display(Name = "Ảnh bìa")]
         public IFormFile? CoverImage { get; set; }
 
+        [Display(Name = "Ảnh lớp học")]
+        public IFormFileCollection? ImageFiles { get; set; }
+
+        [Display(Name = "Video lớp học")]
+        public IFormFileCollection? VideoFiles { get; set; }
+
         public IList<SubjectOptionViewModel> Subjects { get; set; } = new List<SubjectOptionViewModel>();
     }
 
@@ -105,7 +114,26 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public bool RemoveCoverImage { get; set; }
 
+        public IList<MediaAssetViewModel> ExistingMedia { get; set; } = new List<MediaAssetViewModel>();
+
+        public IList<int> RemoveMediaIds { get; set; } = new List<int>();
+
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    }
+
+    public class MediaAssetViewModel
+    {
+        public int Id { get; set; }
+
+        public MediaAssetType MediaType { get; set; }
+
+        public string Url { get; set; } = string.Empty;
+
+        public string? FileName { get; set; }
+
+        public bool IsImage => MediaType == MediaAssetType.Image;
+
+        public bool IsVideo => MediaType == MediaAssetType.Video;
     }
 
     public class JoinClassViewModel

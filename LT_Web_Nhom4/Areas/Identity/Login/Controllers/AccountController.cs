@@ -1,9 +1,15 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using LT_Web_Nhom4.Areas.Identity.Login.Models;
+using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
+using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
@@ -16,42 +22,53 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationDbContext _context;
+        private readonly IEmailSender _emailSender;
+        private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
+        private readonly IPendingRegistrationService _pendingRegistrationService;
+        private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context,
+            IEmailSender emailSender,
+            IPasswordHasher<ApplicationUser> passwordHasher,
+            IPendingRegistrationService pendingRegistrationService,
+            IWebHostEnvironment environment,
             ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _roleManager = roleManager;
+            _context = context;
+            _emailSender = emailSender;
+            _passwordHasher = passwordHasher;
+            _pendingRegistrationService = pendingRegistrationService;
+            _environment = environment;
             _logger = logger;
         }
 
         [HttpGet]
         public async Task<IActionResult> Login(string? returnUrl = null)
         {
-            return View(new LoginViewModel
-            {
-                ReturnUrl = returnUrl,
-                ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList()
-            });
+            return View(await BuildLoginViewModelAsync(returnUrl));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            await PopulateExternalLoginStateAsync(model);
 
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await _userManager.FindByEmailAsync(model.Email.Trim());
             if (user is null)
             {
                 ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
@@ -85,7 +102,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             if (result.IsNotAllowed)
             {
-                ModelState.AddModelError(string.Empty, "Tài khoản chưa được phép đăng nhập.");
+                ModelState.AddModelError(string.Empty, "Tài khoản chưa được xác nhận email hoặc chưa được phép đăng nhập.");
                 return View(model);
             }
 
@@ -94,21 +111,24 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         }
 
         [HttpGet]
-        public IActionResult Register(string? returnUrl = null)
+        public async Task<IActionResult> Register(string? returnUrl = null)
         {
-            return View(new RegisterViewModel { ReturnUrl = returnUrl });
+            return View(await BuildRegisterViewModelAsync(returnUrl));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            await PopulateExternalRegisterStateAsync(model);
+
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
             var email = model.Email.Trim();
+            var normalizedEmail = _userManager.NormalizeEmail(email);
             var fullName = model.FullName.Trim();
             var studentCode = NormalizeOptional(model.StudentCode);
 
@@ -116,46 +136,140 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             model.FullName = fullName;
             model.StudentCode = studentCode;
 
-            if (await AddDuplicateUserErrorsAsync(email, studentCode))
+            if (!await CanStartPendingRegistrationAsync(email, normalizedEmail, studentCode))
+            {
+                return View(model);
+            }
+
+            var pendingUser = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                FullName = fullName,
+                StudentCode = studentCode,
+                IsActive = true
+            };
+
+            var passwordValidationResult = await ValidatePasswordForPendingUserAsync(pendingUser, model.Password);
+            if (!passwordValidationResult.Succeeded)
+            {
+                foreach (var error in passwordValidationResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            var passwordHash = _passwordHasher.HashPassword(pendingUser, model.Password);
+            var pendingResult = await _pendingRegistrationService.CreateOrUpdateAsync(
+                email,
+                normalizedEmail,
+                email,
+                _userManager.NormalizeName(email),
+                fullName,
+                studentCode,
+                "Student",
+                passwordHash);
+
+            var emailSent = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
+            TempData["AuthMessage"] = emailSent
+                ? "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác nhận."
+                : GetDevelopmentFallbackMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
+
+            return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl = model.ReturnUrl });
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmRegistration(string email, string? token = null, string? returnUrl = null)
+        {
+            return View(new ConfirmRegistrationViewModel
+            {
+                Email = email,
+                Token = token,
+                ReturnUrl = returnUrl
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmRegistration(ConfirmRegistrationViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Code) && string.IsNullOrWhiteSpace(model.Token))
+            {
+                ModelState.AddModelError(nameof(model.Code), "Vui lòng nhập mã xác nhận hoặc dùng liên kết xác nhận trong email.");
+                return View(model);
+            }
+
+            var email = model.Email.Trim();
+            var normalizedEmail = _userManager.NormalizeEmail(email);
+            var validation = await _pendingRegistrationService.ValidateAsync(normalizedEmail, model.Code, model.Token);
+
+            if (validation.Status != PendingRegistrationValidationStatus.Valid || validation.PendingRegistration is null)
+            {
+                AddPendingRegistrationValidationError(validation.Status);
+                return View(model);
+            }
+
+            var pendingRegistration = validation.PendingRegistration;
+            if (!await CanCreateConfirmedUserAsync(pendingRegistration.Email, pendingRegistration.StudentCode))
             {
                 return View(model);
             }
 
             var user = new ApplicationUser
             {
-                UserName = email,
-                Email = email,
+                UserName = pendingRegistration.UserName,
+                Email = pendingRegistration.Email,
                 EmailConfirmed = true,
-                FullName = fullName,
-                StudentCode = studentCode,
-                IsActive = true
+                FullName = pendingRegistration.FullName,
+                StudentCode = pendingRegistration.StudentCode,
+                IsActive = true,
+                PasswordHash = pendingRegistration.PasswordHash
             };
 
-            IdentityResult result;
-            try
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
             {
-                result = await _userManager.CreateAsync(user, model.Password);
-            }
-            catch (DbUpdateException exception)
-            {
-                AddDatabaseRegistrationError(exception, email);
+                foreach (var error in createResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
                 return View(model);
             }
 
-            if (result.Succeeded)
-            {
-                await AddDefaultStudentRoleAsync(user);
+            await AddRoleAsync(user, pendingRegistration.RoleName);
+            await _pendingRegistrationService.RemoveAsync(pendingRegistration);
 
-                TempData["AuthMessage"] = "Đăng ký thành công. Bạn có thể đăng nhập bằng tài khoản vừa tạo.";
-                return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
+            TempData["AuthMessage"] = "Xác nhận đăng ký thành công. Bạn có thể đăng nhập.";
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendRegistrationCode(string email, string? returnUrl = null)
+        {
+            var normalizedEmail = _userManager.NormalizeEmail(email.Trim());
+            var resendResult = await _pendingRegistrationService.ResendAsync(email.Trim(), normalizedEmail);
+            if (resendResult is not null)
+            {
+                var emailSent = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
+                TempData["AuthMessage"] = emailSent
+                    ? "Hệ thống đã gửi lại mã xác nhận."
+                    : GetDevelopmentFallbackMessage("Chưa gửi được email xác nhận.", resendResult.Code);
+            }
+            else
+            {
+                TempData["AuthMessage"] = "Không tìm thấy đăng ký đang chờ xác nhận.";
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            return View(model);
+            return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
         }
 
         [HttpPost]
@@ -174,21 +288,152 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ForgotPassword(ForgotPasswordViewModel model)
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            TempData["AuthMessage"] = "Chức năng đặt lại mật khẩu qua Gmail chưa được kích hoạt.";
+            var email = model.Email.Trim();
+            var user = await _userManager.FindByEmailAsync(email);
+            string? developmentMessage = null;
+            if (user is not null && user.IsActive && await _userManager.IsEmailConfirmedAsync(user))
+            {
+                var code = await CreatePasswordResetOtpAsync(user);
+                developmentMessage = await SendPasswordResetOtpEmailAsync(email, code);
+            }
+            else
+            {
+                _logger.LogInformation("Password reset requested for a missing, inactive, or unconfirmed account: {Email}.", email);
+            }
+
+            TempData["AuthMessage"] = developmentMessage
+                ?? "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.";
+            return RedirectToAction(nameof(ResetPasswordOtp), new { email });
+        }
+
+        [HttpGet]
+        public IActionResult ResetPasswordOtp(string email)
+        {
+            return View(new ResetPasswordOtpViewModel { Email = email });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPasswordOtp(ResetPasswordOtpViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+            if (user is null || !user.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
+                return View(model);
+            }
+
+            var otp = await _context.EmailOtps
+                .Where(item => item.UserId == user.Id
+                    && item.Purpose == OtpPurpose.ForgotPassword
+                    && item.UsedAt == null)
+                .OrderByDescending(item => item.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (otp is null || otp.ExpiresAt <= DateTime.UtcNow || otp.AttemptCount >= 5)
+            {
+                ModelState.AddModelError(string.Empty, "Mã OTP không hợp lệ hoặc đã hết hạn.");
+                return View(model);
+            }
+
+            if (!VerifyOtp(model.Code, otp.CodeHash, user))
+            {
+                otp.AttemptCount++;
+                await _context.SaveChangesAsync();
+                ModelState.AddModelError(nameof(model.Code), "Mã OTP không đúng.");
+                return View(model);
+            }
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            TempData["AuthMessage"] = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email, string token)
+        {
+            return View(new ResetPasswordViewModel { Email = email, Token = token });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+            if (user is null || !user.IsActive)
+            {
+                TempData["AuthMessage"] = "Liên kết đặt lại mật khẩu không hợp lệ.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            string resetToken;
+            try
+            {
+                resetToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Token));
+            }
+            catch (FormatException exception)
+            {
+                _logger.LogWarning(exception, "Invalid password reset token format for {Email}.", model.Email);
+                ModelState.AddModelError(string.Empty, "Liên kết đặt lại mật khẩu không hợp lệ.");
+                return View(model);
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            TempData["AuthMessage"] = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập.";
             return RedirectToAction(nameof(Login));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+        public async Task<IActionResult> ExternalLogin(string provider, string? returnUrl = null)
         {
+            var externalLogins = await _signInManager.GetExternalAuthenticationSchemesAsync();
+            if (!externalLogins.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase)))
+            {
+                TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình. Vui lòng thêm ClientId và ClientSecret trước khi đăng nhập bằng Google.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
             var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { area = "Identity", returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return Challenge(properties, provider);
@@ -216,6 +461,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
                 if (user is not null)
                 {
+                    if (!user.IsActive)
+                    {
+                        await _signInManager.SignOutAsync();
+                        TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                        return RedirectToAction(nameof(Login), new { returnUrl });
+                    }
+
                     return await RedirectAfterLoginAsync(user, returnUrl);
                 }
 
@@ -224,6 +476,41 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             var email = info.Principal.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
             var fullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["AuthMessage"] = "Nhà cung cấp OAuth không trả về email.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser is not null)
+            {
+                if (!existingUser.IsActive)
+                {
+                    TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                    return RedirectToAction(nameof(Login), new { returnUrl });
+                }
+
+                var userLogins = await _userManager.GetLoginsAsync(existingUser);
+                if (!userLogins.Any(login => login.LoginProvider == info.LoginProvider && login.ProviderKey == info.ProviderKey))
+                {
+                    var addLoginResult = await _userManager.AddLoginAsync(existingUser, info);
+                    if (!addLoginResult.Succeeded)
+                    {
+                        TempData["AuthMessage"] = string.Join(" ", addLoginResult.Errors.Select(error => error.Description));
+                        return RedirectToAction(nameof(Login), new { returnUrl });
+                    }
+                }
+
+                if (!existingUser.EmailConfirmed)
+                {
+                    existingUser.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(existingUser);
+                }
+
+                await _signInManager.SignInAsync(existingUser, isPersistent: false);
+                return await RedirectAfterLoginAsync(existingUser, returnUrl);
+            }
 
             return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel
             {
@@ -286,7 +573,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (createResult.Succeeded)
             {
                 await _userManager.AddLoginAsync(user, info);
-                await AddDefaultStudentRoleAsync(user);
+                await AddRoleAsync(user, "Student");
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 return await RedirectAfterLoginAsync(user, model.ReturnUrl);
@@ -304,6 +591,185 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        private async Task<bool> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult, string? returnUrl)
+        {
+            var confirmationUrl = Url.Action(
+                nameof(ConfirmRegistration),
+                "Account",
+                new
+                {
+                    area = "Identity",
+                    email = pendingResult.PendingRegistration.Email,
+                    token = pendingResult.Token,
+                    returnUrl
+                },
+                Request.Scheme);
+
+            var body = $"""
+                <p>Mã xác nhận đăng ký của bạn là: <strong>{pendingResult.Code}</strong></p>
+                <p>Mã có hiệu lực trong 15 phút.</p>
+                <p><a href="{confirmationUrl}">Bấm vào đây để xác nhận đăng ký</a></p>
+                <p>Nếu bạn không tạo tài khoản QuizHub, vui lòng bỏ qua email này.</p>
+                """;
+
+            try
+            {
+                await _emailSender.SendEmailAsync(pendingResult.PendingRegistration.Email, "Xác nhận đăng ký QuizHub", body);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Could not send pending registration confirmation email to {Email}.", pendingResult.PendingRegistration.Email);
+                return false;
+            }
+        }
+
+        private async Task<LoginViewModel> BuildLoginViewModelAsync(string? returnUrl)
+        {
+            var model = new LoginViewModel { ReturnUrl = returnUrl };
+            await PopulateExternalLoginStateAsync(model);
+            return model;
+        }
+
+        private async Task PopulateExternalLoginStateAsync(LoginViewModel model)
+        {
+            model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
+                string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
+            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+        }
+
+        private async Task<RegisterViewModel> BuildRegisterViewModelAsync(string? returnUrl)
+        {
+            var model = new RegisterViewModel { ReturnUrl = returnUrl };
+            await PopulateExternalRegisterStateAsync(model);
+            return model;
+        }
+
+        private async Task PopulateExternalRegisterStateAsync(RegisterViewModel model)
+        {
+            model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
+                string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
+            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+        }
+
+        private async Task<string?> SendPasswordResetEmailAsync(string email, string resetUrl)
+        {
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    email,
+                    "Đặt lại mật khẩu QuizHub",
+                    $"""
+                    <p>Bạn đã yêu cầu đặt lại mật khẩu.</p>
+                    <p><a href="{resetUrl}">Bấm vào đây để đặt lại mật khẩu</a></p>
+                    <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+                    """);
+                return null;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Could not send password reset email to {Email}.", email);
+                if (_environment.IsDevelopment())
+                {
+                    return $"SMTP chưa gửi được email. Liên kết đặt lại mật khẩu dev: {resetUrl}";
+                }
+
+                return null;
+            }
+        }
+
+        private async Task<IdentityResult> ValidatePasswordForPendingUserAsync(ApplicationUser user, string password)
+        {
+            var errors = new List<IdentityError>();
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, user, password);
+                if (!result.Succeeded)
+                {
+                    errors.AddRange(result.Errors);
+                }
+            }
+
+            return errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray());
+        }
+
+        private async Task<bool> CanStartPendingRegistrationAsync(string email, string normalizedEmail, string? studentCode)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email)
+                ?? await _userManager.FindByNameAsync(email);
+
+            if (existingUser is not null)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email này đã được đăng ký.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(studentCode))
+            {
+                var studentCodeUsed = await _userManager.Users.AnyAsync(user => user.StudentCode == studentCode)
+                    || await _context.PendingRegistrations.AnyAsync(item =>
+                        item.StudentCode == studentCode && item.NormalizedEmail != normalizedEmail);
+
+                if (studentCodeUsed)
+                {
+                    ModelState.AddModelError(nameof(RegisterViewModel.StudentCode), "Mã sinh viên này đã được sử dụng hoặc đang chờ xác nhận.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private async Task<bool> CanCreateConfirmedUserAsync(string email, string? studentCode)
+        {
+            if (await _userManager.FindByEmailAsync(email) is not null || await _userManager.FindByNameAsync(email) is not null)
+            {
+                ModelState.AddModelError(string.Empty, "Email này đã được đăng ký.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(studentCode)
+                && await _userManager.Users.AnyAsync(user => user.StudentCode == studentCode))
+            {
+                ModelState.AddModelError(string.Empty, "Mã sinh viên này đã được sử dụng.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void AddPendingRegistrationValidationError(PendingRegistrationValidationStatus status)
+        {
+            var message = status switch
+            {
+                PendingRegistrationValidationStatus.Expired => "Mã xác nhận đã hết hạn. Vui lòng gửi lại mã hoặc đăng ký lại.",
+                PendingRegistrationValidationStatus.TooManyAttempts => "Bạn đã nhập sai quá số lần cho phép. Vui lòng đăng ký lại.",
+                PendingRegistrationValidationStatus.InvalidCodeOrToken => "Mã xác nhận không đúng.",
+                _ => "Không tìm thấy đăng ký đang chờ xác nhận."
+            };
+
+            ModelState.AddModelError(string.Empty, message);
+        }
+
+        private async Task AddRoleAsync(ApplicationUser user, string roleName)
+        {
+            var safeRoleName = string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? "Admin"
+                : "Student";
+
+            if (!await _roleManager.RoleExistsAsync(safeRoleName))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(safeRoleName));
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, safeRoleName))
+            {
+                await _userManager.AddToRoleAsync(user, safeRoleName);
+            }
         }
 
         private string GetSafeReturnUrl(string? returnUrl)
@@ -331,14 +797,6 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 
-        private async Task AddDefaultStudentRoleAsync(ApplicationUser user)
-        {
-            if (await _roleManager.RoleExistsAsync("Student") && await _userManager.IsInRoleAsync(user, "Student") == false)
-            {
-                await _userManager.AddToRoleAsync(user, "Student");
-            }
-        }
-
         private async Task<bool> AddDuplicateUserErrorsAsync(string email, string? studentCode)
         {
             var hasError = false;
@@ -363,6 +821,72 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             _logger.LogWarning(exception, "Registration failed because user data is duplicated for {Email}.", email);
             ModelState.AddModelError(string.Empty, "Email hoặc mã sinh viên đã tồn tại. Vui lòng kiểm tra lại thông tin đăng ký.");
+        }
+
+        private string GetDevelopmentFallbackMessage(string message, string code)
+        {
+            return _environment.IsDevelopment()
+                ? $"{message} Mã xác nhận dev: {code}"
+                : $"{message} Vui lòng liên hệ quản trị viên hoặc thử gửi lại mã sau.";
+        }
+
+        private async Task<string> CreatePasswordResetOtpAsync(ApplicationUser user)
+        {
+            var now = DateTime.UtcNow;
+            var activeOtps = await _context.EmailOtps
+                .Where(item => item.UserId == user.Id
+                    && item.Purpose == OtpPurpose.ForgotPassword
+                    && item.UsedAt == null)
+                .ToListAsync();
+            foreach (var activeOtp in activeOtps)
+            {
+                activeOtp.UsedAt = now;
+            }
+
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            _context.EmailOtps.Add(new EmailOtp
+            {
+                UserId = user.Id,
+                Email = user.Email ?? string.Empty,
+                Purpose = OtpPurpose.ForgotPassword,
+                CodeHash = HashOtp(code, user),
+                ExpiresAt = now.AddMinutes(5),
+                CreatedAt = now
+            });
+            await _context.SaveChangesAsync();
+            return code;
+        }
+
+        private async Task<string?> SendPasswordResetOtpEmailAsync(string email, string code)
+        {
+            try
+            {
+                await _emailSender.SendEmailAsync(
+                    email,
+                    "Mã OTP đặt lại mật khẩu QuizHub",
+                    $"<p>Mã OTP đặt lại mật khẩu của bạn là: <strong>{code}</strong></p><p>Mã có hiệu lực trong 5 phút và chỉ được nhập tối đa 5 lần.</p>");
+                return null;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Could not send password reset OTP to {Email}.", email);
+                return _environment.IsDevelopment()
+                    ? $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}"
+                    : null;
+            }
+        }
+
+        private static string HashOtp(string code, ApplicationUser user)
+        {
+            return Convert.ToHexString(SHA256.HashData(
+                Encoding.UTF8.GetBytes($"{code}:{user.Id}:{user.SecurityStamp}")));
+        }
+
+        private static bool VerifyOtp(string code, string expectedHash, ApplicationUser user)
+        {
+            var actual = Convert.FromHexString(HashOtp(code, user));
+            var expected = Convert.FromHexString(expectedHash);
+            return CryptographicOperations.FixedTimeEquals(actual, expected);
         }
 
         private static string? NormalizeOptional(string? value)

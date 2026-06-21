@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Classes" xml:space="preserve"><value>Classes</value></data>
+  <data name="Exams" xml:space="preserve"><value>Exams</value></data>
+  <data name="Features" xml:space="preserve"><value>Features</value></data>
+  <data name="HowItWorks" xml:space="preserve"><value>How it works</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Search your classes and exams</value></data>
+  <data name="Admin" xml:space="preserve"><value>Admin</value></data>
+  <data name="Register" xml:space="preserve"><value>Register</value></data>
+  <data name="Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Footer" xml:space="preserve"><value>A private online quiz system for every class.</value></data>
+  <data name="WelcomeBack" xml:space="preserve"><value>Welcome back</value></data>
+  <data name="LoginDescription" xml:space="preserve"><value>Sign in to access classes, exams, and continue your work.</value></data>
+  <data name="LoginDesc" xml:space="preserve"><value>Sign in to access classes, exams, and continue your work.</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>Remember me</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="NoAccount" xml:space="preserve"><value>No account yet?</value></data>
+  <data name="CreateAccount" xml:space="preserve"><value>Create account</value></data>
+  <data name="CreateAccountDesc" xml:space="preserve"><value>Enter your details to join classes and take exams.</value></data>
+  <data name="FullName" xml:space="preserve"><value>Full name</value></data>
+  <data name="StudentCode" xml:space="preserve"><value>Student code</value></data>
+  <data name="ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="AlreadyAccount" xml:space="preserve"><value>Already have an account?</value></data>
+  <data name="LoginNote" xml:space="preserve"><value>Exam schedules, submissions, and results are managed in one place.</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>Enter your password</value></data>
+  <data name="Or" xml:space="preserve"><value>or</value></data>
+  <data name="ExternalLoginWith" xml:space="preserve"><value>Sign in with {0}</value></data>
+  <data name="FullNamePlaceholder" xml:space="preserve"><value>Alex Nguyen</value></data>
+  <data name="Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="PasswordRequirement" xml:space="preserve"><value>At least 6 characters</value></data>
+  <data name="ConfirmPasswordPlaceholder" xml:space="preserve"><value>Enter your password again</value></data>
+  <data name="ForgotPasswordTitle" xml:space="preserve"><value>Forgot password</value></data>
+  <data name="ForgotPasswordDesc" xml:space="preserve"><value>Enter your email to receive an OTP and password reset link through Gmail.</value></data>
+  <data name="ForgotPasswordHint" xml:space="preserve"><value>The OTP is valid for 5 minutes. If SMTP is not configured, the flow is still available but email will not be sent.</value></data>
+  <data name="SendOtp" xml:space="preserve"><value>Send OTP</value></data>
+  <data name="BackToLogin" xml:space="preserve"><value>Back to sign in</value></data>
+  <data name="ConfirmRegistrationTitle" xml:space="preserve"><value>Confirm registration</value></data>
+  <data name="ConfirmRegistrationDesc" xml:space="preserve"><value>Enter the 6-digit code or open the email link to finish your account.</value></data>
+  <data name="ConfirmCode" xml:space="preserve"><value>Confirmation code</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="ResendConfirmCode" xml:space="preserve"><value>Resend confirmation code</value></data>
+  <data name="ResetPasswordTitle" xml:space="preserve"><value>Reset password</value></data>
+  <data name="ResetPasswordOtpDesc" xml:space="preserve"><value>Enter the OTP from your email and choose a new password.</value></data>
+  <data name="ResetPasswordLinkDesc" xml:space="preserve"><value>The email link was verified. Enter a new password for your account.</value></data>
+  <data name="OtpCode" xml:space="preserve"><value>OTP code</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>New password</value></data>
+  <data name="ConfirmNewPassword" xml:space="preserve"><value>Confirm new password</value></data>
+  <data name="ConfirmNewPasswordPlaceholder" xml:space="preserve"><value>Enter the new password again</value></data>
+  <data name="ChangePassword" xml:space="preserve"><value>Change password</value></data>
+  <data name="ResendOtp" xml:space="preserve"><value>Resend OTP</value></data>
+  <data name="ResetPassword" xml:space="preserve"><value>Reset password</value></data>
+  <data name="ExternalAccountTitle" xml:space="preserve"><value>Complete account</value></data>
+  <data name="ExternalAccountDesc" xml:space="preserve"><value>Review your Google account details before entering the system.</value></data>
+  <data name="Complete" xml:space="preserve"><value>Complete</value></data>
+</root>

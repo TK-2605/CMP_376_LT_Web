@@ -6,49 +6,23 @@
   const questionTemplate = document.getElementById('questionTemplate');
   const answerTemplate = document.getElementById('answerTemplate');
   const activePanelInput = root.querySelector('[data-active-panel-input]');
+  const form = document.getElementById('examBuilderForm');
   let currentQuestion = 0;
 
   const cards = () => Array.from(questionList.querySelectorAll('[data-question-card]'));
-  const escapeHtml = (value) => String(value || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+  const escapeHtml = (value) => String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
   const buildAnswer = (questionIndex, optionIndex, value = '', checked = false) =>
-    answerTemplate.innerHTML.replaceAll('__Q__', questionIndex).replaceAll('__O__', optionIndex)
-      .replaceAll('__LETTER__', String.fromCharCode(65 + optionIndex)).replaceAll('__VALUE__', escapeHtml(value))
+    answerTemplate.innerHTML
+      .replaceAll('__Q__', questionIndex)
+      .replaceAll('__O__', optionIndex)
+      .replaceAll('__LETTER__', String.fromCharCode(65 + optionIndex))
+      .replaceAll('__VALUE__', escapeHtml(value))
       .replace('__CHECKED__', checked ? 'checked' : '');
-
-  const reindex = () => {
-    cards().forEach((card, questionIndex) => {
-      card.dataset.questionIndex = questionIndex;
-      card.querySelectorAll('[name]').forEach((field) => {
-        field.name = field.name.replace(/Questions\[\d+\]/g, 'Questions[' + questionIndex + ']');
-      });
-      card.querySelectorAll('[data-answer-row]').forEach((row, optionIndex) => {
-        row.querySelectorAll('[name]').forEach((field) => {
-          field.name = field.name.replace(/Questions\[\d+\]/g, 'Questions[' + questionIndex + ']')
-            .replace(/Options\[\d+\]/g, 'Options[' + optionIndex + ']');
-        });
-        const letter = row.querySelector('.option-letter');
-        if (letter) letter.textContent = String.fromCharCode(65 + optionIndex);
-      });
-    });
-    currentQuestion = Math.min(currentQuestion, Math.max(cards().length - 1, 0));
-    renderNavigation();
-    updateScore();
-  };
-
-  const renderNavigation = () => {
-    const navigation = root.querySelector('[data-question-navigation]');
-    if (!navigation) return;
-    navigation.innerHTML = cards().map((card, index) => {
-      const content = card.querySelector('textarea[name$=".Content"]')?.value.trim();
-      const answered = card.querySelectorAll('[data-answer-row]').length >= 2;
-      return '<button type="button" class="question-number-button' + (index === currentQuestion ? ' active' : '')
-        + (content && answered ? ' ready' : '') + '" data-question-jump="' + index + '">' + (index + 1) + '</button>';
-    }).join('');
-    root.querySelectorAll('[data-question-count]').forEach((item) => { item.textContent = cards().length; });
-    const current = root.querySelector('[data-current-question-number]');
-    if (current) current.textContent = currentQuestion + 1;
-    showCurrentQuestion();
-  };
 
   const showCurrentQuestion = () => {
     cards().forEach((card, index) => { card.hidden = index !== currentQuestion; });
@@ -68,6 +42,42 @@
     const maxValue = root.querySelector('[data-max-score]')?.value || '0';
     const maxLabel = root.querySelector('[data-max-score-label]');
     if (maxLabel) maxLabel.textContent = maxValue;
+  };
+
+  const renderNavigation = () => {
+    const navigation = root.querySelector('[data-question-navigation]');
+    if (!navigation) return;
+    navigation.innerHTML = cards().map((card, index) => {
+      const content = card.querySelector('textarea[name$=".Content"]')?.value.trim();
+      const answered = card.querySelectorAll('[data-answer-row]').length >= 2;
+      return '<button type="button" class="question-number-button' + (index === currentQuestion ? ' active' : '')
+        + (content && answered ? ' ready' : '') + '" data-question-jump="' + index + '">' + (index + 1) + '</button>';
+    }).join('');
+    root.querySelectorAll('[data-question-count]').forEach((item) => { item.textContent = cards().length; });
+    const current = root.querySelector('[data-current-question-number]');
+    if (current) current.textContent = currentQuestion + 1;
+    showCurrentQuestion();
+  };
+
+  const reindex = () => {
+    cards().forEach((card, questionIndex) => {
+      card.dataset.questionIndex = questionIndex;
+      card.querySelectorAll('[name]').forEach((field) => {
+        field.name = field.name.replace(/Questions\[\d+\]/g, 'Questions[' + questionIndex + ']');
+      });
+      card.querySelectorAll('[data-answer-row]').forEach((row, optionIndex) => {
+        row.querySelectorAll('[name]').forEach((field) => {
+          field.name = field.name
+            .replace(/Questions\[\d+\]/g, 'Questions[' + questionIndex + ']')
+            .replace(/Options\[\d+\]/g, 'Options[' + optionIndex + ']');
+        });
+        const letter = row.querySelector('.option-letter');
+        if (letter) letter.textContent = String.fromCharCode(65 + optionIndex);
+      });
+    });
+    currentQuestion = Math.min(currentQuestion, Math.max(cards().length - 1, 0));
+    renderNavigation();
+    updateScore();
   };
 
   const addQuestion = () => {
@@ -116,8 +126,49 @@
 
   const setPanel = (name) => {
     root.querySelectorAll('[data-builder-panel]').forEach((panel) => { panel.hidden = panel.dataset.builderPanel !== name; });
-    root.querySelectorAll('[data-panel-target]').forEach((button) => button.classList.toggle('active', button.dataset.panelTarget === name));
+    root.querySelectorAll('[data-panel-target]').forEach((button) => {
+      const active = button.dataset.panelTarget === name;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
     if (activePanelInput) activePanelInput.value = name;
+  };
+
+  const validateQuestion = (card) => {
+    const content = card.querySelector('textarea[name$=".Content"]');
+    const options = Array.from(card.querySelectorAll('[data-answer-row] input[name$=".Content"]'));
+    const correctOptions = card.querySelectorAll('[data-correct-option]:checked');
+    const valid = Boolean(content?.value.trim()) && options.filter((option) => option.value.trim()).length >= 2 && correctOptions.length === 1;
+    content?.classList.toggle('is-invalid', !content.value.trim());
+    options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
+    return valid;
+  };
+
+  const showPublishError = (questionIndex) => {
+    currentQuestion = questionIndex;
+    setPanel('questions');
+    renderNavigation();
+    const stage = root.querySelector('.question-stage');
+    let alert = stage.querySelector('[data-builder-client-error]');
+    if (!alert) {
+      alert = document.createElement('div');
+      alert.className = 'alert alert-danger builder-client-error';
+      alert.dataset.builderClientError = '';
+      stage.querySelector('.question-stage-header').after(alert);
+    }
+    alert.textContent = 'Câu hỏi này cần có nội dung, ít nhất hai đáp án và đúng một đáp án đúng trước khi đăng đề.';
+    cards()[questionIndex]?.querySelector('textarea[name$=".Content"]')?.focus();
+    stage.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  };
+
+  const validateFileInput = (input, options) => {
+    const files = Array.from(input.files || []);
+    const invalid = files.length > options.maxCount || files.some((file) => !options.types.includes(file.type) || file.size > options.maxBytes);
+    if (!invalid) return;
+    input.value = '';
+    input.setCustomValidity(options.message);
+    input.reportValidity();
+    input.setCustomValidity('');
   };
 
   root.addEventListener('click', (event) => {
@@ -142,15 +193,25 @@
   root.addEventListener('change', (event) => {
     if (event.target.matches('[data-correct-option]') && event.target.checked) {
       const card = event.target.closest('[data-question-card]');
-      if (card.querySelector('[data-question-type]').value === 'SingleChoice') {
-        card.querySelectorAll('[data-correct-option]').forEach((input) => { if (input !== event.target) input.checked = false; });
-      }
-    }
-    if (event.target.matches('[data-question-type]') && event.target.value === 'SingleChoice') {
-      const checked = Array.from(event.target.closest('[data-question-card]').querySelectorAll('[data-correct-option]:checked'));
-      checked.slice(1).forEach((input) => { input.checked = false; });
+      card.querySelectorAll('[data-correct-option]').forEach((input) => { if (input !== event.target) input.checked = false; });
     }
     if (event.target.matches('[data-max-score], [data-question-score]')) updateScore();
+    if (event.target.matches('[data-question-images]')) {
+      validateFileInput(event.target, {
+        maxCount: 5,
+        maxBytes: 5 * 1024 * 1024,
+        types: ['image/jpeg', 'image/png', 'image/webp'],
+        message: 'Chỉ được chọn tối đa 5 ảnh JPG, PNG hoặc WebP, mỗi ảnh không vượt quá 5 MB.'
+      });
+    }
+    if (event.target.matches('[data-question-videos]')) {
+      validateFileInput(event.target, {
+        maxCount: 2,
+        maxBytes: 100 * 1024 * 1024,
+        types: ['video/mp4', 'video/webm', 'video/quicktime'],
+        message: 'Chỉ được chọn tối đa 2 video MP4, WebM hoặc MOV, mỗi video không vượt quá 100 MB.'
+      });
+    }
     renderNavigation();
   });
 
@@ -160,9 +221,39 @@
       if (title) title.textContent = event.target.value.trim() || 'Đề thi chưa đặt tên';
     }
     if (event.target.matches('textarea[name$=".Content"], input[name$=".Content"]')) renderNavigation();
+    if (event.target.matches('textarea[name$=".Content"], input[name$=".Content"]')) event.target.classList.remove('is-invalid');
     if (event.target.matches('[data-question-score], [data-max-score]')) updateScore();
+  });
+
+  const focusFirstFormError = () => {
+    const firstError = root.querySelector('.field-validation-error:not(:empty), .validation-summary-errors, .input-validation-error, .is-invalid');
+    if (!firstError) return false;
+    const inSettings = firstError.closest('[data-builder-panel="settings"]');
+    setPanel(inSettings ? 'settings' : 'questions');
+    const target = firstError.matches('input, select, textarea')
+      ? firstError
+      : firstError.closest('.form-field, .question-editor-card')?.querySelector('input, select, textarea');
+    window.setTimeout(() => {
+      (target || firstError).scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      target?.focus?.();
+    }, 50);
+    return true;
+  };
+
+  form?.addEventListener('submit', (event) => {
+    if (!form.checkValidity()) {
+      focusFirstFormError();
+      return;
+    }
+    if (event.submitter?.value !== 'publish') return;
+    const invalidIndex = cards().findIndex((card) => !validateQuestion(card));
+    if (invalidIndex >= 0) {
+      event.preventDefault();
+      showPublishError(invalidIndex);
+    }
   });
 
   setPanel(root.dataset.activePanel === 'settings' ? 'settings' : 'questions');
   reindex();
+  focusFirstFormError();
 })();

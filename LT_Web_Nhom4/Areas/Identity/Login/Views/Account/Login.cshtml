@@ -1,7 +1,7 @@
 @model LoginViewModel
 
 @{
-    ViewData["Title"] = "Đăng nhập";
+    ViewData["Title"] = Localizer["Login"];
 }
 
 <section class="auth-shell">
@@ -16,17 +16,17 @@
                                 <span>QuizHub</span>
                             </div>
                             <div class="auth-panel-content">
-                                <h1>Chào mừng trở lại</h1>
-                                <p>Đăng nhập để vào lớp học, xem đề thi và tiếp tục bài làm của bạn.</p>
+                                <h1>@Localizer["WelcomeBack"]</h1>
+                                <p>@Localizer["LoginDesc"]</p>
                             </div>
                             <div class="auth-panel-note">
-                                <span>Lịch thi, bài làm và kết quả được quản lý tập trung.</span>
+                                <span>@Localizer["LoginNote"]</span>
                             </div>
                         </div>
                         <div class="col-lg-7 auth-form-side">
                             <div class="auth-form-heading">
-                                <h2>Đăng nhập</h2>
-                                <p>Sử dụng email đã đăng ký với hệ thống.</p>
+                                <h2>@Localizer["Login"]</h2>
+                                <p>@Localizer["LoginDesc"]</p>
                             </div>
 
                             @if (TempData["AuthMessage"] is string message)
@@ -39,45 +39,72 @@
                                 <input asp-for="ReturnUrl" type="hidden" />
 
                                 <div class="auth-field">
-                                    <label asp-for="Email" class="form-label">Email</label>
+                                    <label asp-for="Email" class="form-label">@Localizer["Email"]</label>
                                     <input asp-for="Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
                                     <span asp-validation-for="Email" class="text-danger"></span>
                                 </div>
 
                                 <div class="auth-field">
-                                    <label asp-for="Password" class="form-label">Mật khẩu</label>
-                                    <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu" />
+                                    <label asp-for="Password" class="form-label">@Localizer["Password"]</label>
+                                    <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="@Localizer["PasswordPlaceholder"]" />
                                     <span asp-validation-for="Password" class="text-danger"></span>
                                 </div>
 
                                 <div class="auth-row">
                                     <div class="form-check">
                                         <input asp-for="RememberMe" class="form-check-input" />
-                                        <label asp-for="RememberMe" class="form-check-label">Ghi nhớ tôi</label>
+                                        <label asp-for="RememberMe" class="form-check-label">@Localizer["RememberMe"]</label>
                                     </div>
+                                    <a asp-area="Identity" asp-controller="Account" asp-action="ForgotPassword" class="auth-inline-link">@Localizer["ForgotPassword"]</a>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary auth-submit">Đăng nhập</button>
+                                <button type="submit" class="btn btn-primary auth-submit">@Localizer["Login"]</button>
                             </form>
 
-                            @if (Model.ExternalLogins.Count > 0)
+                            @if (Model.ExternalLogins.Count > 0 || Model.ShowGoogleOAuthHint)
                             {
-                                <div class="auth-divider"><span>hoặc</span></div>
-                                @foreach (var provider in Model.ExternalLogins)
-                                {
-                                    <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLogin" method="post" class="mb-2">
-                                        <input type="hidden" name="provider" value="@provider.Name" />
-                                        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-                                        <button type="submit" class="btn btn-outline-secondary auth-provider-button w-100">
-                                            Đăng nhập bằng @provider.DisplayName
+                                <div class="auth-divider"><span>@Localizer["Or"]</span></div>
+                                <div class="auth-oauth-simple">
+                                    <p class="auth-oauth-label">Đăng nhập bằng OAuth 2.0</p>
+
+                                    @foreach (var provider in Model.ExternalLogins)
+                                    {
+                                        var providerName = provider.DisplayName ?? provider.Name;
+                                        var isGoogle = string.Equals(provider.Name, "Google", StringComparison.OrdinalIgnoreCase);
+
+                                        <form asp-area="Identity" asp-controller="Account" asp-action="ExternalLogin" method="post" class="mb-2">
+                                            <input type="hidden" name="provider" value="@provider.Name" />
+                                            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                                            <button type="submit" class="btn auth-provider-button w-100 @(isGoogle ? "auth-google-button" : "btn-outline-secondary")">
+                                                @if (isGoogle)
+                                                {
+                                                    <span class="auth-google-mark">G</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="ri-login-circle-line"></i>
+                                                }
+                                                <span>Tiếp tục với @providerName</span>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (Model.ShowGoogleOAuthHint)
+                                    {
+                                        <button type="button" class="btn auth-provider-button auth-google-button is-disabled w-100" disabled>
+                                            <span class="auth-google-mark">G</span>
+                                            <span>Google OAuth 2.0 chưa cấu hình</span>
                                         </button>
-                                    </form>
-                                }
+                                        <p class="auth-oauth-hint">
+                                            Cần thêm ClientId và ClientSecret để bật đăng nhập Google thật.
+                                        </p>
+                                    }
+                                </div>
                             }
 
                             <p class="auth-switch">
-                                Chưa có tài khoản?
-                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Đăng ký</a>
+                                @Localizer["NoAccount"]
+                                <a asp-area="Identity" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">@Localizer["Register"]</a>
                             </p>
                         </div>
                     </div>

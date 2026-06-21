@@ -1,0 +1,47 @@
+@model ChatRoomViewModel
+
+@{
+    ViewData["Title"] = "Trao đổi trực tiếp";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/chat.css" asp-append-version="true" />
+}
+
+<section class="workspace-page chat-page">
+    <div class="container chat-container" data-chat-app data-room-type="@Model.RoomType" data-room-id="@Model.RoomId">
+        <a href="@Model.BackUrl" class="back-link"><i class="ri-arrow-left-line"></i> Quay lại</a>
+
+        <header class="chat-header">
+            <div>
+                <span class="workspace-kicker">SignalR · Không lưu lịch sử</span>
+                <h1>@Model.Title</h1>
+                <p>@Model.Subtitle</p>
+            </div>
+            <span class="chat-connection" data-chat-status><i></i> Đang kết nối</span>
+        </header>
+
+        <div class="chat-surface">
+            <div class="chat-messages" data-chat-messages role="log" aria-live="polite">
+                <div class="chat-empty" data-chat-empty>
+                    <i class="ri-chat-3-line"></i>
+                    <strong>Bắt đầu cuộc trao đổi</strong>
+                    <span>Tin nhắn chỉ xuất hiện với thành viên đang trực tuyến và sẽ mất khi tải lại trang.</span>
+                </div>
+            </div>
+            <form class="chat-composer" data-chat-form>
+                <label for="chatMessage" class="visually-hidden">Tin nhắn</label>
+                <textarea id="chatMessage" maxlength="500" rows="2" placeholder="Nhập tin nhắn..." data-chat-input disabled></textarea>
+                <button type="submit" class="btn btn-primary" disabled data-chat-send>
+                    <i class="ri-send-plane-2-line"></i><span>Gửi</span>
+                </button>
+            </form>
+            <p class="chat-error" data-chat-error hidden></p>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/vendor/signalr/signalr.min.js"></script>
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+}

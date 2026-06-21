@@ -5,7 +5,7 @@
 <section class="workspace-page">
     <div class="container">
         @if (TempData["ExamMessage"] is string message) { <div class="alert alert-success workspace-alert">@message</div> }
-        <header class="workspace-header"><div><span class="workspace-kicker">Đúng lớp, đúng quyền</span><h1>Đề thi của tôi</h1><p>Đề bạn tạo được tách riêng với đề bạn tham gia.</p></div><a asp-controller="Classes" asp-action="Index" class="btn btn-primary"><i class="ri-group-line"></i> Mở lớp học</a></header>
+        <header class="workspace-header" data-reveal><div><span class="workspace-kicker">Đúng lớp, đúng quyền</span><h1>Đề thi của tôi</h1><p>Đề bạn tạo được tách riêng với đề bạn tham gia.</p></div><a asp-controller="Classes" asp-action="Index" class="btn btn-primary"><i class="ri-group-line"></i> Mở lớp học</a></header>
 
         <section class="workspace-section">
             <div class="workspace-section-heading"><h2>Đề tôi quản lý</h2><span>@Model.OwnedExams.Count đề</span></div>
@@ -13,7 +13,7 @@
                 @if (Model.OwnedExams.Count == 0) { <div class="empty-state"><i class="ri-file-add-line"></i><strong>Chưa tạo đề thi</strong><span>Hãy mở một lớp học để tạo đề.</span></div> }
                 @foreach (var exam in Model.OwnedExams)
                 {
-                    <article class="exam-tile"><div class="exam-tile-heading"><span class="status-chip owner">Chủ phòng</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary w-100">Quản lý đề thi</a></article>
+                    <article class="exam-tile" data-reveal><div class="exam-tile-heading"><span class="status-chip owner">Chủ phòng</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary w-100">Quản lý đề thi</a></article>
                 }
             </div>
         </section>
@@ -25,9 +25,25 @@
                 @foreach (var exam in Model.ParticipatingExams)
                 {
                     var now = DateTime.Now;
-                    var state = now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
-                    var stateText = now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Phòng chờ";
-                    <article class="exam-tile"><div class="exam-tile-heading"><span class="status-chip @state">@stateText</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">@(state == "open" ? "Vào làm bài" : "Mở phòng thi")</a></article>
+                    var state = exam.HasCompletedAttempt ? "completed" : now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
+                    var stateText = exam.HasCompletedAttempt ? "Đã hoàn thành" : now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Phòng chờ";
+                    <article class="exam-tile" data-reveal>
+                        <div class="exam-tile-heading"><span class="status-chip @state">@stateText</span><code>@exam.Code</code></div>
+                        <h3>@exam.Title</h3>
+                        <p>@exam.ClassName · @exam.SubjectName</p>
+                        <dl>
+                            <div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div>
+                            <div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div>
+                        </dl>
+                        @if (exam.HasCompletedAttempt)
+                        {
+                            <a asp-action="Result" asp-route-attemptId="@exam.CurrentUserAttemptId" class="btn btn-outline-primary w-100">Xem kết quả</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">@(state == "open" ? "Vào làm bài" : "Mở phòng thi")</a>
+                        }
+                    </article>
                 }
             </div>
         </section>

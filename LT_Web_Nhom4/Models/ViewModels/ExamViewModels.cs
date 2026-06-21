@@ -37,6 +37,15 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public bool IsOwnedByCurrentUser { get; set; }
 
         public bool IsParticipant { get; set; }
+
+        public int? CurrentUserAttemptId { get; set; }
+
+        public DateTime? CurrentUserSubmittedAt { get; set; }
+
+        public ExamAttemptStatus? CurrentUserAttemptStatus { get; set; }
+
+        public bool HasCompletedAttempt => CurrentUserSubmittedAt.HasValue
+            || CurrentUserAttemptStatus is ExamAttemptStatus.Submitted or ExamAttemptStatus.AutoSubmitted;
     }
 
     public class ExamBuilderViewModel
@@ -126,6 +135,14 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public string? ExistingImageUrl { get; set; }
 
         public bool RemoveImage { get; set; }
+
+        public IFormFileCollection? ImageFiles { get; set; }
+
+        public IFormFileCollection? VideoFiles { get; set; }
+
+        public IList<MediaAssetViewModel> ExistingMedia { get; set; } = new List<MediaAssetViewModel>();
+
+        public IList<int> RemoveMediaIds { get; set; } = new List<int>();
 
         [Url(ErrorMessage = "Liên kết video không hợp lệ.")]
         public string? VideoUrl { get; set; }
@@ -329,6 +346,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public string? ImageUrl { get; set; }
 
         public string? VideoUrl { get; set; }
+
+        public IList<MediaAssetViewModel> MediaAssets { get; set; } = new List<MediaAssetViewModel>();
 
         public QuestionType QuestionType { get; set; }
 

@@ -4,7 +4,7 @@
 @section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
 
 <section class="result-page">
-    <div class="container result-container">
+    <div class="container result-container" data-reveal>
         <div class="result-icon @(Model.IsReleased ? "released" : "pending")"><i class="@(Model.IsReleased ? "ri-checkbox-circle-line" : "ri-time-line")"></i></div>
         <span class="workspace-kicker">Bài làm đã được ghi nhận</span>
         <h1>@Model.ExamTitle</h1><p>@Model.ClassName</p>

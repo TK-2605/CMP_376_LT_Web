@@ -7,7 +7,7 @@ namespace LT_Web_Nhom4.Models
             ExamStatus.Draft => "Bản nháp",
             ExamStatus.Published => "Đã công bố",
             ExamStatus.Closed => "Đã đóng",
-            ExamStatus.Cancelled => "Đã huỷ",
+            ExamStatus.Cancelled => "Đã hủy",
             _ => "Không xác định"
         };
 
@@ -16,7 +16,7 @@ namespace LT_Web_Nhom4.Models
             ExamAttemptStatus.InProgress => "Đang làm",
             ExamAttemptStatus.Submitted => "Đã nộp",
             ExamAttemptStatus.AutoSubmitted => "Tự động nộp",
-            ExamAttemptStatus.Cancelled => "Đã huỷ",
+            ExamAttemptStatus.Cancelled => "Đã hủy",
             _ => "Không xác định"
         };
 
@@ -24,7 +24,7 @@ namespace LT_Web_Nhom4.Models
         {
             ResultReleaseMode.Immediately => "Ngay sau khi nộp",
             ResultReleaseMode.AfterExamClosed => "Sau khi đề đóng",
-            ResultReleaseMode.Manual => "Khi giáo viên công bố",
+            ResultReleaseMode.Manual => "Khi chủ lớp công bố",
             _ => "Không xác định"
         };
 

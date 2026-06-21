@@ -35,6 +35,7 @@ namespace LT_Web_Nhom4.Controllers
         {
             var exams = await _context.Exams.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Class).Include(item => item.ExamQuestions)
+                .Include(item => item.Attempts.Where(attempt => attempt.UserId == CurrentUserId))
                 .Where(item => IsAdmin
                     || item.CreatedById == CurrentUserId
                     || item.Class.TeacherId == CurrentUserId
@@ -326,6 +327,20 @@ namespace LT_Web_Nhom4.Controllers
                 return Forbid();
             }
 
+            var completedAttempt = await _context.ExamAttempts
+                .AsNoTracking()
+                .Where(item => item.ExamId == id
+                    && item.UserId == CurrentUserId
+                    && (item.SubmittedAt.HasValue
+                        || item.Status == ExamAttemptStatus.Submitted
+                        || item.Status == ExamAttemptStatus.AutoSubmitted))
+                .Select(item => new { item.Id })
+                .FirstOrDefaultAsync();
+            if (completedAttempt is not null)
+            {
+                return RedirectToAction(nameof(Result), new { attemptId = completedAttempt.Id });
+            }
+
             var room = await BuildRoomModelAsync(id);
             if (room is null)
             {
@@ -452,8 +467,7 @@ namespace LT_Web_Nhom4.Controllers
 
             var selectedIds = model.SelectedOptionIds.Distinct().ToList();
             var validIds = examQuestion.Question.Options.Select(item => item.Id).ToHashSet();
-            if (selectedIds.Any(id => !validIds.Contains(id))
-                || (examQuestion.Question.QuestionType == QuestionType.SingleChoice && selectedIds.Count > 1))
+            if (selectedIds.Any(id => !validIds.Contains(id)) || selectedIds.Count > 1)
             {
                 return BadRequest(new { ok = false, message = "Đáp án không hợp lệ." });
             }
@@ -627,6 +641,7 @@ namespace LT_Web_Nhom4.Controllers
                 .ToList();
             foreach (var question in model.Questions)
             {
+                question.QuestionType = QuestionType.SingleChoice;
                 question.Options = question.Options.Where(option => !string.IsNullOrWhiteSpace(option.Content)).ToList();
             }
 
@@ -680,13 +695,9 @@ namespace LT_Web_Nhom4.Controllers
                 }
 
                 var correctCount = question.Options.Count(option => option.IsCorrect);
-                if (question.QuestionType == QuestionType.SingleChoice && correctCount != 1)
+                if (correctCount != 1)
                 {
-                    ModelState.AddModelError($"Questions[{index}].Options", "Câu một lựa chọn phải có đúng một đáp án đúng.");
-                }
-                if (question.QuestionType == QuestionType.MultipleChoice && correctCount < 1)
-                {
-                    ModelState.AddModelError($"Questions[{index}].Options", "Câu nhiều lựa chọn cần ít nhất một đáp án đúng.");
+                    ModelState.AddModelError($"Questions[{index}].Options", "Mỗi câu phải có đúng một đáp án đúng.");
                 }
             }
 
@@ -742,15 +753,18 @@ namespace LT_Web_Nhom4.Controllers
             for (var index = 0; index < model.Questions.Count; index++)
             {
                 var input = model.Questions[index];
-                var imagePath = input.ImageFile is null
-                    ? null
-                    : await _mediaStorage.SaveImageAsync(input.ImageFile, "questions", cancellationToken);
-                if (imagePath is not null)
+                var mediaAssets = await BuildQuestionMediaAsync(input, null, storedImages, null, false, cancellationToken);
+                var imagePath = mediaAssets
+                    .Where(media => media.MediaType == MediaAssetType.Image)
+                    .OrderBy(media => media.DisplayOrder)
+                    .Select(media => media.Path)
+                    .FirstOrDefault();
+                var question = BuildQuestion(input, exam.SubjectId, imagePath);
+                foreach (var media in mediaAssets)
                 {
-                    storedImages.Add(imagePath);
+                    question.MediaAssets.Add(media);
                 }
 
-                var question = BuildQuestion(input, exam.SubjectId, imagePath);
                 exam.ExamQuestions.Add(new ExamQuestion
                 {
                     Question = question,
@@ -770,6 +784,10 @@ namespace LT_Web_Nhom4.Controllers
         {
             var existingLinks = exam.ExamQuestions.ToList();
             var existingById = existingLinks.ToDictionary(item => item.QuestionId, item => item.Question);
+            var retainedQuestionIds = model.Questions
+                .Where(item => item.QuestionId.HasValue)
+                .Select(item => item.QuestionId!.Value)
+                .ToHashSet();
             _context.ExamQuestions.RemoveRange(existingLinks);
 
             foreach (var link in existingLinks)
@@ -778,6 +796,19 @@ namespace LT_Web_Nhom4.Controllers
                 var usedElsewhere = question.ExamQuestions.Any(item => item.ExamId != exam.Id);
                 if (!usedElsewhere && question.AttemptAnswers.Count == 0)
                 {
+                    if (!retainedQuestionIds.Contains(question.Id))
+                    {
+                        if (question.ImagePath is not null)
+                        {
+                            imagesToDelete.Add(question.ImagePath);
+                        }
+
+                        foreach (var media in question.MediaAssets)
+                        {
+                            imagesToDelete.Add(media.Path);
+                        }
+                    }
+
                     _context.Questions.Remove(question);
                 }
             }
@@ -788,20 +819,19 @@ namespace LT_Web_Nhom4.Controllers
             {
                 var input = model.Questions[index];
                 existingById.TryGetValue(input.QuestionId ?? 0, out var oldQuestion);
-                var imagePath = input.RemoveImage ? null : oldQuestion?.ImagePath;
-                if (input.ImageFile is not null)
-                {
-                    imagePath = await _mediaStorage.SaveImageAsync(input.ImageFile, "questions", cancellationToken);
-                    storedImages.Add(imagePath);
-                }
-
-                if (oldQuestion?.ImagePath is not null && oldQuestion.ImagePath != imagePath
-                    && !oldQuestion.ExamQuestions.Any(item => item.ExamId != exam.Id))
-                {
-                    imagesToDelete.Add(oldQuestion.ImagePath);
-                }
-
+                var oldQuestionUsedElsewhere = oldQuestion?.ExamQuestions.Any(item => item.ExamId != exam.Id) == true;
+                var mediaAssets = await BuildQuestionMediaAsync(input, oldQuestion, storedImages, imagesToDelete, oldQuestionUsedElsewhere, cancellationToken);
+                var imagePath = mediaAssets
+                    .Where(media => media.MediaType == MediaAssetType.Image)
+                    .OrderBy(media => media.DisplayOrder)
+                    .Select(media => media.Path)
+                    .FirstOrDefault();
                 var question = BuildQuestion(input, exam.SubjectId, imagePath);
+                foreach (var media in mediaAssets)
+                {
+                    question.MediaAssets.Add(media);
+                }
+
                 exam.ExamQuestions.Add(new ExamQuestion
                 {
                     Question = question,
@@ -809,6 +839,131 @@ namespace LT_Web_Nhom4.Controllers
                     Score = scores[index]
                 });
             }
+        }
+
+        private async Task<IList<QuestionMedia>> BuildQuestionMediaAsync(
+            ExamBuilderQuestionInputModel input,
+            Question? oldQuestion,
+            IList<string> storedMediaPaths,
+            IList<string>? mediaToDelete,
+            bool oldQuestionUsedElsewhere,
+            CancellationToken cancellationToken)
+        {
+            var mediaAssets = new List<QuestionMedia>();
+            var removeIds = input.RemoveMediaIds.Distinct().ToHashSet();
+            var oldMediaAssets = oldQuestion?.MediaAssets
+                .OrderBy(media => media.MediaType)
+                .ThenBy(media => media.DisplayOrder)
+                .ToList() ?? new List<QuestionMedia>();
+
+            foreach (var oldMedia in oldMediaAssets)
+            {
+                if (removeIds.Contains(oldMedia.Id))
+                {
+                    if (!oldQuestionUsedElsewhere)
+                    {
+                        mediaToDelete?.Add(oldMedia.Path);
+                    }
+
+                    continue;
+                }
+
+                mediaAssets.Add(CloneQuestionMedia(oldMedia, NextQuestionMediaOrder(mediaAssets, oldMedia.MediaType)));
+            }
+
+            if (oldQuestion?.ImagePath is not null && oldMediaAssets.All(media => media.Path != oldQuestion.ImagePath))
+            {
+                if (input.RemoveImage)
+                {
+                    if (!oldQuestionUsedElsewhere)
+                    {
+                        mediaToDelete?.Add(oldQuestion.ImagePath);
+                    }
+                }
+                else
+                {
+                    mediaAssets.Add(new QuestionMedia
+                    {
+                        MediaType = MediaAssetType.Image,
+                        Path = oldQuestion.ImagePath,
+                        DisplayOrder = NextQuestionMediaOrder(mediaAssets, MediaAssetType.Image)
+                    });
+                }
+            }
+
+            var imageFiles = GetFiles(input.ImageFiles);
+            if (input.ImageFile is not null && imageFiles.Count == 0)
+            {
+                imageFiles.Add(input.ImageFile);
+            }
+
+            var videoFiles = GetFiles(input.VideoFiles);
+            ValidateQuestionMediaLimit(mediaAssets, imageFiles.Count, videoFiles.Count);
+
+            foreach (var file in imageFiles)
+            {
+                var path = await _mediaStorage.SaveImageAsync(file, "questions", cancellationToken);
+                storedMediaPaths.Add(path);
+                mediaAssets.Add(new QuestionMedia
+                {
+                    MediaType = MediaAssetType.Image,
+                    Path = path,
+                    OriginalFileName = file.FileName,
+                    DisplayOrder = NextQuestionMediaOrder(mediaAssets, MediaAssetType.Image)
+                });
+            }
+
+            foreach (var file in videoFiles)
+            {
+                var path = await _mediaStorage.SaveVideoAsync(file, "questions", cancellationToken);
+                storedMediaPaths.Add(path);
+                mediaAssets.Add(new QuestionMedia
+                {
+                    MediaType = MediaAssetType.Video,
+                    Path = path,
+                    OriginalFileName = file.FileName,
+                    DisplayOrder = NextQuestionMediaOrder(mediaAssets, MediaAssetType.Video)
+                });
+            }
+
+            return mediaAssets;
+        }
+
+        private static QuestionMedia CloneQuestionMedia(QuestionMedia media, int displayOrder)
+        {
+            return new QuestionMedia
+            {
+                MediaType = media.MediaType,
+                Path = media.Path,
+                OriginalFileName = media.OriginalFileName,
+                DisplayOrder = displayOrder
+            };
+        }
+
+        private static List<IFormFile> GetFiles(IFormFileCollection? files)
+        {
+            return files?.Where(file => file is not null && file.Length > 0).ToList() ?? new List<IFormFile>();
+        }
+
+        private static void ValidateQuestionMediaLimit(IEnumerable<QuestionMedia> existingMedia, int newImageCount, int newVideoCount)
+        {
+            var existingImages = existingMedia.Count(media => media.MediaType == MediaAssetType.Image);
+            var existingVideos = existingMedia.Count(media => media.MediaType == MediaAssetType.Video);
+            if (existingImages + newImageCount > 5)
+            {
+                throw new InvalidOperationException("Mỗi câu hỏi chỉ được lưu tối đa 5 ảnh.");
+            }
+
+            if (existingVideos + newVideoCount > 2)
+            {
+                throw new InvalidOperationException("Mỗi câu hỏi chỉ được lưu tối đa 2 video.");
+            }
+        }
+
+        private static int NextQuestionMediaOrder(IEnumerable<QuestionMedia> mediaAssets, MediaAssetType mediaType)
+        {
+            var ordered = mediaAssets.Where(media => media.MediaType == mediaType).ToList();
+            return ordered.Count == 0 ? 1 : ordered.Max(media => media.DisplayOrder) + 1;
         }
 
         private Question BuildQuestion(ExamBuilderQuestionInputModel input, int subjectId, string? imagePath)
@@ -820,7 +975,7 @@ namespace LT_Web_Nhom4.Controllers
                 Content = input.Content.Trim(),
                 ImagePath = imagePath,
                 VideoUrl = NormalizeOptional(input.VideoUrl),
-                QuestionType = input.QuestionType,
+                QuestionType = QuestionType.SingleChoice,
                 Difficulty = input.Difficulty,
                 Explanation = NormalizeOptional(input.Explanation),
                 Status = QuestionStatus.Published
@@ -870,6 +1025,7 @@ namespace LT_Web_Nhom4.Controllers
                 .Include(item => item.Class)
                 .Include(item => item.Attempts)
                 .Include(item => item.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.Options)
+                .Include(item => item.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.MediaAssets)
                 .Include(item => item.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.ExamQuestions)
                 .Include(item => item.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.AttemptAnswers)
                 .FirstOrDefaultAsync(item => item.Id == id);
@@ -905,6 +1061,16 @@ namespace LT_Web_Nhom4.Controllers
                     Score = item.Score > 0 ? item.Score : null,
                     Difficulty = item.Question.Difficulty,
                     ExistingImageUrl = item.Question.ImagePath is null ? null : Url.Action("QuestionImage", "Media", new { id = item.QuestionId }),
+                    ExistingMedia = item.Question.MediaAssets
+                        .OrderBy(media => media.MediaType)
+                        .ThenBy(media => media.DisplayOrder)
+                        .Select(media => new MediaAssetViewModel
+                        {
+                            Id = media.Id,
+                            MediaType = media.MediaType,
+                            FileName = media.OriginalFileName,
+                            Url = Url.Action("QuestionMedia", "Media", new { id = item.QuestionId, mediaId = media.Id }) ?? string.Empty
+                        }).ToList(),
                     VideoUrl = item.Question.VideoUrl,
                     Explanation = item.Question.Explanation,
                     Options = item.Question.Options.OrderBy(option => option.DisplayOrder).Select(option => new ExamBuilderOptionInputModel
@@ -948,6 +1114,7 @@ namespace LT_Web_Nhom4.Controllers
                 .Include(item => item.Exam).ThenInclude(exam => exam.Class)
                 .Include(item => item.Exam).ThenInclude(exam => exam.Subject)
                 .Include(item => item.Exam).ThenInclude(exam => exam.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.Options)
+                .Include(item => item.Exam).ThenInclude(exam => exam.ExamQuestions).ThenInclude(link => link.Question).ThenInclude(question => question.MediaAssets)
                 .Include(item => item.Answers).ThenInclude(answer => answer.Selections)
                 .Include(item => item.AntiCheatEvents)
                 .FirstOrDefaultAsync(item => item.Id == attemptId);
@@ -990,6 +1157,16 @@ namespace LT_Web_Nhom4.Controllers
                         Content = link.Question.Content,
                         ImageUrl = link.Question.ImagePath is null ? null : Url.Action("QuestionImage", "Media", new { id = link.QuestionId }),
                         VideoUrl = link.Question.VideoUrl,
+                        MediaAssets = link.Question.MediaAssets
+                            .OrderBy(media => media.MediaType)
+                            .ThenBy(media => media.DisplayOrder)
+                            .Select(media => new MediaAssetViewModel
+                            {
+                                Id = media.Id,
+                                MediaType = media.MediaType,
+                                FileName = media.OriginalFileName,
+                                Url = Url.Action("QuestionMedia", "Media", new { id = link.QuestionId, mediaId = media.Id }) ?? string.Empty
+                            }).ToList(),
                         QuestionType = link.Question.QuestionType,
                         Score = link.Score,
                         SelectedOptionIds = answer?.Selections.Select(item => item.QuestionOptionId).ToList() ?? new List<int>(),
@@ -1033,6 +1210,10 @@ namespace LT_Web_Nhom4.Controllers
         private ExamCardViewModel ToExamCard(Exam item)
         {
             var owns = IsAdmin || item.CreatedById == CurrentUserId || item.Class.TeacherId == CurrentUserId;
+            var attempt = item.Attempts
+                .Where(attempt => attempt.UserId == CurrentUserId)
+                .OrderByDescending(attempt => attempt.StartedAt)
+                .FirstOrDefault();
             return new ExamCardViewModel
             {
                 Id = item.Id,
@@ -1046,7 +1227,10 @@ namespace LT_Web_Nhom4.Controllers
                 QuestionCount = item.ExamQuestions.Count,
                 Status = item.Status,
                 IsOwnedByCurrentUser = owns,
-                IsParticipant = !owns
+                IsParticipant = !owns,
+                CurrentUserAttemptId = attempt?.Id,
+                CurrentUserSubmittedAt = attempt?.SubmittedAt,
+                CurrentUserAttemptStatus = attempt?.Status
             };
         }
 

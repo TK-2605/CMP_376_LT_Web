@@ -52,19 +52,22 @@ namespace LT_Web_Nhom4.Controllers
         {
             await PopulateSubjectsAsync(model);
             ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
+            var imageFiles = GetFiles(model.ImageFiles);
+            if (model.CoverImage is not null && imageFiles.Count == 0)
+            {
+                imageFiles.Add(model.CoverImage);
+            }
+
+            var videoFiles = GetFiles(model.VideoFiles);
+            ValidateMediaLimit(imageFiles.Count, videoFiles.Count, 0, 0, nameof(model.ImageFiles));
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            string? coverImagePath = null;
+            var storedPaths = new List<string>();
             try
             {
-                if (model.CoverImage is not null)
-                {
-                    coverImagePath = await _mediaStorage.SaveImageAsync(model.CoverImage, "classes", cancellationToken);
-                }
-
                 var classRoom = new ClassEntity
                 {
                     SubjectId = model.SubjectId,
@@ -74,9 +77,15 @@ namespace LT_Web_Nhom4.Controllers
                     Description = NormalizeOptional(model.Description),
                     Semester = NormalizeOptional(model.Semester),
                     AcademicYear = NormalizeOptional(model.AcademicYear),
-                    IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl),
-                    CoverImagePath = coverImagePath
+                    IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl)
                 };
+
+                await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
+                classRoom.CoverImagePath = classRoom.MediaAssets
+                    .Where(media => media.MediaType == MediaAssetType.Image)
+                    .OrderBy(media => media.DisplayOrder)
+                    .Select(media => media.Path)
+                    .FirstOrDefault();
 
                 _context.Classes.Add(classRoom);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -85,8 +94,12 @@ namespace LT_Web_Nhom4.Controllers
             }
             catch (InvalidOperationException exception)
             {
-                await _mediaStorage.DeleteAsync(coverImagePath, cancellationToken);
-                ModelState.AddModelError(nameof(model.CoverImage), exception.Message);
+                foreach (var path in storedPaths)
+                {
+                    await _mediaStorage.DeleteAsync(path, cancellationToken);
+                }
+
+                ModelState.AddModelError(nameof(model.ImageFiles), exception.Message);
                 return View(model);
             }
         }
@@ -149,8 +162,10 @@ namespace LT_Web_Nhom4.Controllers
             var classRoom = await _context.Classes
                 .AsNoTracking()
                 .Include(item => item.Subject)
+                .Include(item => item.MediaAssets)
                 .Include(item => item.Members).ThenInclude(member => member.User)
                 .Include(item => item.Exams).ThenInclude(exam => exam.ExamQuestions)
+                .Include(item => item.Exams).ThenInclude(exam => exam.Attempts)
                 .FirstOrDefaultAsync(item => item.Id == id);
 
             if (classRoom is null)
@@ -172,6 +187,7 @@ namespace LT_Web_Nhom4.Controllers
                 Description = classRoom.Description,
                 CoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = classRoom.Id }),
                 IntroVideoUrl = classRoom.IntroVideoUrl,
+                MediaAssets = ToClassMediaViewModels(classRoom).ToList(),
                 Semester = classRoom.Semester,
                 AcademicYear = classRoom.AcademicYear,
                 ExamCount = visibleExams.Count(),
@@ -186,20 +202,30 @@ namespace LT_Web_Nhom4.Controllers
                         Status = "Đang tham gia"
                     }).ToList()
                     : new List<ClassMemberItemViewModel>(),
-                Exams = visibleExams.OrderByDescending(exam => exam.StartAt).Select(exam => new ExamCardViewModel
+                Exams = visibleExams.OrderByDescending(exam => exam.StartAt).Select(exam =>
                 {
-                    Id = exam.Id,
-                    Code = exam.Code,
-                    Title = exam.Title,
-                    SubjectName = classRoom.Subject.Name,
-                    ClassName = classRoom.Name,
-                    StartAt = exam.StartAt,
-                    EndAt = exam.EndAt,
-                    DurationMinutes = exam.DurationMinutes,
-                    QuestionCount = exam.ExamQuestions.Count,
-                    Status = exam.Status,
-                    IsOwnedByCurrentUser = isOwner,
-                    IsParticipant = !isOwner
+                    var attempt = exam.Attempts
+                        .Where(attempt => attempt.UserId == CurrentUserId)
+                        .OrderByDescending(attempt => attempt.StartedAt)
+                        .FirstOrDefault();
+                    return new ExamCardViewModel
+                    {
+                        Id = exam.Id,
+                        Code = exam.Code,
+                        Title = exam.Title,
+                        SubjectName = classRoom.Subject.Name,
+                        ClassName = classRoom.Name,
+                        StartAt = exam.StartAt,
+                        EndAt = exam.EndAt,
+                        DurationMinutes = exam.DurationMinutes,
+                        QuestionCount = exam.ExamQuestions.Count,
+                        Status = exam.Status,
+                        IsOwnedByCurrentUser = isOwner,
+                        IsParticipant = !isOwner,
+                        CurrentUserAttemptId = attempt?.Id,
+                        CurrentUserSubmittedAt = attempt?.SubmittedAt,
+                        CurrentUserAttemptStatus = attempt?.Status
+                    };
                 }).ToList()
             });
         }
@@ -212,7 +238,9 @@ namespace LT_Web_Nhom4.Controllers
                 return Forbid();
             }
 
-            var classRoom = await _context.Classes.AsNoTracking().FirstOrDefaultAsync(item => item.Id == id);
+            var classRoom = await _context.Classes.AsNoTracking()
+                .Include(item => item.MediaAssets)
+                .FirstOrDefaultAsync(item => item.Id == id);
             if (classRoom is null)
             {
                 return NotFound();
@@ -229,6 +257,7 @@ namespace LT_Web_Nhom4.Controllers
                 AcademicYear = classRoom.AcademicYear,
                 IntroVideoUrl = classRoom.IntroVideoUrl,
                 ExistingCoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id }),
+                ExistingMedia = ToClassMediaViewModels(classRoom).ToList(),
                 RowVersion = classRoom.RowVersion
             };
             await PopulateSubjectsAsync(model);
@@ -246,7 +275,9 @@ namespace LT_Web_Nhom4.Controllers
 
             await PopulateSubjectsAsync(model);
             ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
-            var classRoom = await _context.Classes.FirstOrDefaultAsync(item => item.Id == model.Id);
+            var classRoom = await _context.Classes
+                .Include(item => item.MediaAssets)
+                .FirstOrDefaultAsync(item => item.Id == model.Id);
             if (classRoom is null)
             {
                 return NotFound();
@@ -254,37 +285,68 @@ namespace LT_Web_Nhom4.Controllers
 
             model.Code = classRoom.Code;
             model.ExistingCoverImageUrl = classRoom.CoverImagePath is null ? null : Url.Action("ClassCover", "Media", new { id = model.Id });
+            model.ExistingMedia = ToClassMediaViewModels(classRoom).ToList();
+            var imageFiles = GetFiles(model.ImageFiles);
+            if (model.CoverImage is not null && imageFiles.Count == 0)
+            {
+                imageFiles.Add(model.CoverImage);
+            }
+
+            var videoFiles = GetFiles(model.VideoFiles);
+            var removeIds = model.RemoveMediaIds.Distinct().ToHashSet();
+            var keptImageCount = classRoom.MediaAssets.Count(media => media.MediaType == MediaAssetType.Image && !removeIds.Contains(media.Id));
+            var keptVideoCount = classRoom.MediaAssets.Count(media => media.MediaType == MediaAssetType.Video && !removeIds.Contains(media.Id));
+            ValidateMediaLimit(imageFiles.Count, videoFiles.Count, keptImageCount, keptVideoCount, nameof(model.ImageFiles));
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
             var oldImagePath = classRoom.CoverImagePath;
-            string? newImagePath = null;
+            var storedPaths = new List<string>();
+            var deletedPaths = new List<string>();
             try
             {
-                if (model.CoverImage is not null)
+                var removedMedia = classRoom.MediaAssets.Where(media => removeIds.Contains(media.Id)).ToList();
+                foreach (var media in removedMedia)
                 {
-                    newImagePath = await _mediaStorage.SaveImageAsync(model.CoverImage, "classes", cancellationToken);
-                    classRoom.CoverImagePath = newImagePath;
-                }
-                else if (model.RemoveCoverImage)
-                {
-                    classRoom.CoverImagePath = null;
+                    deletedPaths.Add(media.Path);
+                    classRoom.MediaAssets.Remove(media);
+                    _context.ClassMedia.Remove(media);
                 }
 
+                await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
                 classRoom.SubjectId = model.SubjectId;
                 classRoom.Name = model.Name.Trim();
                 classRoom.Description = NormalizeOptional(model.Description);
                 classRoom.Semester = NormalizeOptional(model.Semester);
                 classRoom.AcademicYear = NormalizeOptional(model.AcademicYear);
                 classRoom.IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl);
+                classRoom.CoverImagePath = classRoom.MediaAssets
+                    .Where(media => media.MediaType == MediaAssetType.Image)
+                    .OrderBy(media => media.DisplayOrder)
+                    .Select(media => media.Path)
+                    .FirstOrDefault();
+                if (classRoom.CoverImagePath is null && !model.RemoveCoverImage)
+                {
+                    classRoom.CoverImagePath = oldImagePath;
+                }
+
+                if (model.RemoveCoverImage && oldImagePath is not null && classRoom.MediaAssets.All(media => media.Path != oldImagePath))
+                {
+                    deletedPaths.Add(oldImagePath);
+                    if (classRoom.CoverImagePath == oldImagePath)
+                    {
+                        classRoom.CoverImagePath = null;
+                    }
+                }
+
                 _context.Entry(classRoom).Property(item => item.RowVersion).OriginalValue = model.RowVersion;
                 await _context.SaveChangesAsync(cancellationToken);
 
-                if ((newImagePath is not null || model.RemoveCoverImage) && oldImagePath != classRoom.CoverImagePath)
+                foreach (var path in deletedPaths.Distinct())
                 {
-                    await _mediaStorage.DeleteAsync(oldImagePath, cancellationToken);
+                    await _mediaStorage.DeleteAsync(path, cancellationToken);
                 }
 
                 TempData["ClassMessage"] = "Thông tin lớp đã được cập nhật.";
@@ -292,14 +354,24 @@ namespace LT_Web_Nhom4.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                await _mediaStorage.DeleteAsync(newImagePath, cancellationToken);
+                foreach (var path in storedPaths)
+                {
+                    await _mediaStorage.DeleteAsync(path, cancellationToken);
+                }
+
                 ModelState.AddModelError(string.Empty, "Lớp vừa được cập nhật ở nơi khác. Vui lòng tải lại trang.");
+                model.ExistingMedia = ToClassMediaViewModels(classRoom).ToList();
                 return View(model);
             }
             catch (InvalidOperationException exception)
             {
-                await _mediaStorage.DeleteAsync(newImagePath, cancellationToken);
-                ModelState.AddModelError(nameof(model.CoverImage), exception.Message);
+                foreach (var path in storedPaths)
+                {
+                    await _mediaStorage.DeleteAsync(path, cancellationToken);
+                }
+
+                ModelState.AddModelError(nameof(model.ImageFiles), exception.Message);
+                model.ExistingMedia = ToClassMediaViewModels(classRoom).ToList();
                 return View(model);
             }
         }
@@ -352,10 +424,9 @@ namespace LT_Web_Nhom4.Controllers
                 .Where(item => IsAdmin || item.TeacherId == CurrentUserId)
                 .OrderByDescending(item => item.CreatedAt).ToListAsync();
 
-            var participatingClasses = await _context.ClassMembers.AsNoTracking()
-                .Where(member => member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active)
-                .Select(member => member.Class)
+            var participatingClasses = await _context.Classes.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => item.Members.Any(member => member.UserId == CurrentUserId && member.Status == ClassMemberStatus.Active))
                 .OrderByDescending(item => item.CreatedAt).ToListAsync();
 
             return new ClassListViewModel
@@ -380,6 +451,80 @@ namespace LT_Web_Nhom4.Controllers
                 ExamCount = classRoom.Exams.Count,
                 MemberCount = classRoom.Members.Count(member => member.Status == ClassMemberStatus.Active)
             };
+        }
+
+        private async Task AddClassMediaAsync(
+            ClassEntity classRoom,
+            IReadOnlyList<IFormFile> imageFiles,
+            IReadOnlyList<IFormFile> videoFiles,
+            IList<string> storedPaths,
+            CancellationToken cancellationToken)
+        {
+            var nextImageOrder = NextMediaOrder(classRoom.MediaAssets, MediaAssetType.Image);
+            foreach (var file in imageFiles)
+            {
+                var path = await _mediaStorage.SaveImageAsync(file, "classes", cancellationToken);
+                storedPaths.Add(path);
+                classRoom.MediaAssets.Add(new ClassMedia
+                {
+                    MediaType = MediaAssetType.Image,
+                    Path = path,
+                    OriginalFileName = file.FileName,
+                    DisplayOrder = nextImageOrder++
+                });
+            }
+
+            var nextVideoOrder = NextMediaOrder(classRoom.MediaAssets, MediaAssetType.Video);
+            foreach (var file in videoFiles)
+            {
+                var path = await _mediaStorage.SaveVideoAsync(file, "classes", cancellationToken);
+                storedPaths.Add(path);
+                classRoom.MediaAssets.Add(new ClassMedia
+                {
+                    MediaType = MediaAssetType.Video,
+                    Path = path,
+                    OriginalFileName = file.FileName,
+                    DisplayOrder = nextVideoOrder++
+                });
+            }
+        }
+
+        private IEnumerable<MediaAssetViewModel> ToClassMediaViewModels(ClassEntity classRoom)
+        {
+            return classRoom.MediaAssets
+                .OrderBy(media => media.MediaType)
+                .ThenBy(media => media.DisplayOrder)
+                .Select(media => new MediaAssetViewModel
+                {
+                    Id = media.Id,
+                    MediaType = media.MediaType,
+                    FileName = media.OriginalFileName,
+                    Url = Url.Action("ClassMedia", "Media", new { id = classRoom.Id, mediaId = media.Id }) ?? string.Empty
+                });
+        }
+
+        private static List<IFormFile> GetFiles(IFormFileCollection? files)
+        {
+            return files?.Where(file => file is not null && file.Length > 0).ToList() ?? new List<IFormFile>();
+        }
+
+        private void ValidateMediaLimit(int newImageCount, int newVideoCount, int existingImageCount, int existingVideoCount, string key)
+        {
+            if (existingImageCount + newImageCount > 5)
+            {
+                ModelState.AddModelError(key, "Mỗi lớp chỉ được lưu tối đa 5 ảnh.");
+            }
+
+            if (existingVideoCount + newVideoCount > 2)
+            {
+                ModelState.AddModelError(key, "Mỗi lớp chỉ được lưu tối đa 2 video.");
+            }
+        }
+
+        private static int NextMediaOrder(IEnumerable<ClassMedia> mediaAssets, MediaAssetType mediaType)
+        {
+            var ordered = mediaAssets.Where(media => media.MediaType == mediaType).ToList();
+            return ordered.Count == 0 ? 1 : ordered.Max(media => media.DisplayOrder) + 1;
         }
 
         private async Task PopulateSubjectsAsync(CreateClassViewModel model)

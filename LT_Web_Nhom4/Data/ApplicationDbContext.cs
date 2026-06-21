@@ -15,13 +15,19 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<PendingRegistration> PendingRegistrations { get; set; }
+
         public DbSet<Subject> Subjects { get; set; }
 
         public DbSet<Class> Classes { get; set; }
 
         public DbSet<ClassMember> ClassMembers { get; set; }
 
+        public DbSet<ClassMedia> ClassMedia { get; set; }
+
         public DbSet<Question> Questions { get; set; }
+
+        public DbSet<QuestionMedia> QuestionMedia { get; set; }
 
         public DbSet<QuestionOption> QuestionOptions { get; set; }
 
@@ -73,6 +79,22 @@ namespace LT_Web_Nhom4.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            builder.Entity<PendingRegistration>(entity =>
+            {
+                entity.Property(pending => pending.Email).HasMaxLength(256);
+                entity.Property(pending => pending.NormalizedEmail).HasMaxLength(256);
+                entity.Property(pending => pending.UserName).HasMaxLength(256);
+                entity.Property(pending => pending.NormalizedUserName).HasMaxLength(256);
+                entity.Property(pending => pending.FullName).HasMaxLength(150);
+                entity.Property(pending => pending.StudentCode).HasMaxLength(50);
+                entity.Property(pending => pending.RoleName).HasMaxLength(100);
+                entity.Property(pending => pending.PasswordHash).HasMaxLength(1000);
+                entity.Property(pending => pending.ConfirmationCodeHash).HasMaxLength(256);
+                entity.Property(pending => pending.ConfirmationTokenHash).HasMaxLength(256);
+                entity.Property(pending => pending.TokenSalt).HasMaxLength(256);
+                entity.HasIndex(pending => pending.NormalizedEmail).IsUnique();
+            });
+
             builder.Entity<Subject>(entity =>
             {
                 entity.Property(subject => subject.Code).HasMaxLength(50);
@@ -118,6 +140,18 @@ namespace LT_Web_Nhom4.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            builder.Entity<ClassMedia>(entity =>
+            {
+                entity.Property(media => media.Path).HasMaxLength(500);
+                entity.Property(media => media.OriginalFileName).HasMaxLength(255);
+                entity.HasIndex(media => new { media.ClassId, media.MediaType, media.DisplayOrder });
+
+                entity.HasOne(media => media.Class)
+                    .WithMany(classRoom => classRoom.MediaAssets)
+                    .HasForeignKey(media => media.ClassId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             builder.Entity<Question>(entity =>
             {
                 entity.Property(question => question.Content).HasMaxLength(4000);
@@ -134,6 +168,18 @@ namespace LT_Web_Nhom4.Data
                     .WithMany(user => user.QuestionsCreated)
                     .HasForeignKey(question => question.CreatedById)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<QuestionMedia>(entity =>
+            {
+                entity.Property(media => media.Path).HasMaxLength(500);
+                entity.Property(media => media.OriginalFileName).HasMaxLength(255);
+                entity.HasIndex(media => new { media.QuestionId, media.MediaType, media.DisplayOrder });
+
+                entity.HasOne(media => media.Question)
+                    .WithMany(question => question.MediaAssets)
+                    .HasForeignKey(media => media.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<QuestionOption>(entity =>

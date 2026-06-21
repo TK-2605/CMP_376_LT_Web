@@ -2,25 +2,25 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 
-<ul class="navbar-nav align-items-lg-center gap-lg-2">
+<ul class="navbar-nav align-items-lg-center gap-lg-2 scholar-account-nav">
     @if (SignInManager.IsSignedIn(User))
     {
         @if (User.IsInRole("Admin"))
         {
-            <li class="nav-item"><a class="btn btn-admin-return btn-sm" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="ri-shield-user-line"></i> Quản trị</a></li>
+            <li class="nav-item"><a class="btn btn-admin-return" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="ri-shield-user-line"></i> @Localizer["Admin"]</a></li>
         }
         <li class="nav-item dropdown">
-            <button class="btn user-menu-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span class="user-avatar"><i class="ri-user-line"></i></span><span class="d-none d-xl-inline">@User.Identity?.Name</span></button>
+            <button class="btn user-menu-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span class="user-avatar"><i class="ri-user-line"></i></span><span class="d-none d-xl-inline user-menu-name">@User.Identity?.Name</span></button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><span class="dropdown-item-text small text-muted">@User.Identity?.Name</span></li>
                 <li><hr class="dropdown-divider" /></li>
-                <li><form asp-area="Identity" asp-controller="Account" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post"><button type="submit" class="dropdown-item"><i class="ri-logout-box-r-line me-2"></i>Đăng xuất</button></form></li>
+                <li><form asp-area="Identity" asp-controller="Account" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post"><button type="submit" class="dropdown-item"><i class="ri-logout-box-r-line me-2"></i>@Localizer["Logout"]</button></form></li>
             </ul>
         </li>
     }
     else
     {
-        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Register">Đăng ký</a></li>
-        <li class="nav-item"><a class="btn btn-primary btn-sm" asp-area="Identity" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
+        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Register">@Localizer["Register"]</a></li>
+        <li class="nav-item"><a class="btn btn-light scholar-login-button" asp-area="Identity" asp-controller="Account" asp-action="Login">@Localizer["Login"]</a></li>
     }
 </ul>

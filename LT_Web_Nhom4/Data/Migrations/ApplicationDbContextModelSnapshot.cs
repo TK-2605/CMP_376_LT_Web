@@ -255,6 +255,42 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.ToTable("Classes");
                 });
 
+            modelBuilder.Entity("LT_Web_Nhom4.Models.ClassMedia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MediaType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId", "MediaType", "DisplayOrder");
+
+                    b.ToTable("ClassMedia");
+                });
+
             modelBuilder.Entity("LT_Web_Nhom4.Models.ClassMember", b =>
                 {
                     b.Property<int>("ClassId")
@@ -502,6 +538,91 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.ToTable("ExamQuestions");
                 });
 
+            modelBuilder.Entity("LT_Web_Nhom4.Models.PendingRegistration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConfirmationCodeHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ConfirmationTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("LastSentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StudentCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TokenSalt")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
+                    b.ToTable("PendingRegistrations");
+                });
+
             modelBuilder.Entity("LT_Web_Nhom4.Models.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -556,6 +677,42 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.HasIndex("SubjectId");
 
                     b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("LT_Web_Nhom4.Models.QuestionMedia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MediaType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId", "MediaType", "DisplayOrder");
+
+                    b.ToTable("QuestionMedia");
                 });
 
             modelBuilder.Entity("LT_Web_Nhom4.Models.QuestionOption", b =>
@@ -865,6 +1022,17 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("LT_Web_Nhom4.Models.ClassMedia", b =>
+                {
+                    b.HasOne("LT_Web_Nhom4.Models.Class", "Class")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+                });
+
             modelBuilder.Entity("LT_Web_Nhom4.Models.ClassMember", b =>
                 {
                     b.HasOne("LT_Web_Nhom4.Models.Class", "Class")
@@ -979,6 +1147,17 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("LT_Web_Nhom4.Models.QuestionMedia", b =>
+                {
+                    b.HasOne("LT_Web_Nhom4.Models.Question", "Question")
+                        .WithMany("MediaAssets")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("LT_Web_Nhom4.Models.QuestionOption", b =>
                 {
                     b.HasOne("LT_Web_Nhom4.Models.Question", "Question")
@@ -1078,6 +1257,8 @@ namespace LT_Web_Nhom4.Data.Migrations
                 {
                     b.Navigation("Exams");
 
+                    b.Navigation("MediaAssets");
+
                     b.Navigation("Members");
                 });
 
@@ -1100,6 +1281,8 @@ namespace LT_Web_Nhom4.Data.Migrations
                     b.Navigation("AttemptAnswers");
 
                     b.Navigation("ExamQuestions");
+
+                    b.Navigation("MediaAssets");
 
                     b.Navigation("Options");
                 });

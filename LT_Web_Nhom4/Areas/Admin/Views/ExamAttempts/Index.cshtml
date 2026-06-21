@@ -1,0 +1,66 @@
+@using LT_Web_Nhom4.Models
+@model IReadOnlyList<AdminExamAttemptViewModel>
+
+@{
+    ViewData["Title"] = "Lượt thi";
+}
+
+<section class="admin-crud-page">
+    <div class="admin-crud-header">
+        <div>
+            <span class="admin-crud-kicker">Theo dõi bài thi</span>
+            <h1>Lượt thi của học viên</h1>
+            <p>Quản trị viên xem nhanh trạng thái làm bài, điểm và số cảnh báo chống gian lận.</p>
+        </div>
+    </div>
+
+    <div class="card admin-crud-card">
+        <div class="table-responsive">
+            <table class="table admin-crud-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Đề thi</th>
+                        <th>Học viên</th>
+                        <th>Bắt đầu</th>
+                        <th>Nộp bài</th>
+                        <th>Điểm</th>
+                        <th>Trạng thái</th>
+                        <th>Cảnh báo</th>
+                        <th>Đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">Chưa có lượt thi nào.</td>
+                        </tr>
+                    }
+                    @foreach (var attempt in Model)
+                    {
+                        var suspicious = attempt.AntiCheatEventCount > 3;
+                        <tr>
+                            <td>
+                                <strong>@attempt.ExamTitle</strong>
+                            </td>
+                            <td>
+                                <strong class="d-block">@attempt.StudentName</strong>
+                                <small class="text-muted">@attempt.StudentEmail</small>
+                            </td>
+                            <td>@attempt.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(attempt.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa nộp")</td>
+                            <td>@(attempt.Score?.ToString("0.##") ?? "—")</td>
+                            <td><span class="badge bg-label-primary">@attempt.Status.ToVietnamese()</span></td>
+                            <td><span class="badge bg-label-@(suspicious ? "danger" : "info")">@attempt.AntiCheatEventCount</span></td>
+                            <td>
+                                <span class="badge bg-label-@(suspicious ? "danger" : "success")">
+                                    @(suspicious ? "Cần xem lại" : "Bình thường")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

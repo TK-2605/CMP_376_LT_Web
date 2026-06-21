@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - QuizHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
@@ -11,6 +14,7 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="auth-body">
+    <div class="auth-language"><partial name="/Views/Shared/_LanguageSelector.cshtml" /></div>
     @RenderBody()
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

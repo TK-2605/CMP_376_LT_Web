@@ -5,87 +5,69 @@
 
 <section class="workspace-page exam-manage-page">
     <div class="container">
-        @if (TempData["ExamMessage"] is string message) { <div class="alert alert-success workspace-alert">@message</div> }
-        <header class="manage-header">
+        @if (TempData["ExamMessage"] is string message) { <div class="alert alert-success scholar-alert">@message</div> }
+        <header class="manage-header" data-reveal>
             <div class="manage-header-copy">
                 <div class="manage-labels"><span class="status-chip owner">Chủ phòng</span><span class="status-chip @Model.Status.ToString().ToLowerInvariant()">@Model.Status.ToVietnamese()</span><code>@Model.Code</code></div>
-                <h1>@Model.Title</h1>
-                <p>@Model.ClassName · @Model.SubjectName</p>
+                <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
             </div>
             <div class="manage-header-actions">
+                <a asp-controller="Chat" asp-action="Room" asp-route-type="exam" asp-route-id="@Model.Id" class="btn btn-outline-light"><i class="ri-chat-3-line"></i>Chat phòng thi</a>
                 @if (Model.CanEditContent)
                 {
-                    <a asp-action="EditBuilder" asp-route-id="@Model.Id" asp-route-panel="settings" class="btn btn-light"><i class="ri-settings-3-line"></i> Cài đặt bài thi</a>
-                    <a asp-action="EditBuilder" asp-route-id="@Model.Id" asp-route-panel="questions" class="btn btn-primary"><i class="ri-edit-line"></i> Chỉnh sửa câu hỏi</a>
+                    <a asp-action="EditBuilder" asp-route-id="@Model.Id" asp-route-panel="settings" class="btn btn-light"><i class="ri-settings-3-line"></i>Cài đặt bài thi</a>
+                    <a asp-action="EditBuilder" asp-route-id="@Model.Id" asp-route-panel="questions" class="btn btn-primary"><i class="ri-edit-line"></i>Chỉnh sửa câu hỏi</a>
                 }
-                else
-                {
-                    <span class="locked-note"><i class="ri-lock-line"></i> Nội dung đã khóa</span>
-                }
+                else { <span class="locked-note"><i class="ri-lock-line"></i>Nội dung đã khóa sau lượt thi đầu tiên</span> }
             </div>
         </header>
 
-        <div class="manage-stats">
+        <div class="manage-stats" data-reveal>
             <article><i class="ri-group-line"></i><span>Học viên</span><strong>@Model.ParticipantCount</strong></article>
             <article><i class="ri-question-answer-line"></i><span>Câu hỏi</span><strong>@Model.QuestionCount</strong></article>
             <article><i class="ri-checkbox-circle-line"></i><span>Đã nộp</span><strong>@Model.SubmittedCount/@Model.AttemptCount</strong></article>
             <article><i class="ri-alarm-warning-line"></i><span>Cảnh báo</span><strong>@Model.WarningCount</strong></article>
         </div>
 
-        <nav class="manage-section-nav">
-            <a href="#overview">Tổng quan</a><a href="#questions">Câu hỏi</a><a href="#students">Học viên</a><a href="#attempts">Bài làm</a><a href="#warnings">Cảnh báo</a>
+        <nav class="manage-section-nav" data-tabs role="tablist" aria-label="Nội dung quản lý đề thi">
+            <button type="button" data-tab-target="overview" role="tab"><i class="ri-dashboard-line"></i>Tổng quan</button>
+            <button type="button" data-tab-target="questions" role="tab"><i class="ri-question-answer-line"></i>Câu hỏi</button>
+            <button type="button" data-tab-target="students" role="tab"><i class="ri-group-line"></i>Học viên</button>
+            <button type="button" data-tab-target="attempts" role="tab"><i class="ri-file-chart-line"></i>Bài làm</button>
+            <button type="button" data-tab-target="warnings" role="tab"><i class="ri-alarm-warning-line"></i>Cảnh báo</button>
         </nav>
 
-        <section id="overview" class="manage-section">
+        <section id="overview" class="manage-section" data-tab-panel="overview">
             <div class="surface-heading"><div><span class="workspace-kicker">Tổng quan</span><h2>Cấu hình đang áp dụng</h2></div></div>
-            <dl class="overview-grid">
-                <div><dt>Thời gian mở</dt><dd>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div>
-                <div><dt>Thời gian đóng</dt><dd>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</dd></div>
-                <div><dt>Thời lượng</dt><dd>@Model.DurationMinutes phút</dd></div>
-                <div><dt>Điểm tối đa</dt><dd>@Model.MaxScore.ToString("0.##") điểm</dd></div>
-                <div><dt>Công bố kết quả</dt><dd>@Model.ResultReleaseMode.ToVietnamese()</dd></div>
-                <div><dt>Giới hạn cảnh báo</dt><dd>@(Model.MaxWarningCount?.ToString() ?? "Không giới hạn")</dd></div>
-            </dl>
+            <dl class="overview-grid"><div><dt>Thời gian mở</dt><dd>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Thời gian đóng</dt><dd>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Thời lượng</dt><dd>@Model.DurationMinutes phút</dd></div><div><dt>Điểm tối đa</dt><dd>@Model.MaxScore.ToString("0.##") điểm</dd></div><div><dt>Công bố kết quả</dt><dd>@Model.ResultReleaseMode.ToVietnamese()</dd></div><div><dt>Giới hạn cảnh báo</dt><dd>@(Model.MaxWarningCount?.ToString() ?? "Không giới hạn")</dd></div></dl>
             <div class="manage-actions-row">
-                @if (Model.Status != ExamStatus.Closed) { <form asp-action="Close" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="btn btn-outline-danger" type="submit" data-confirm="Đóng đề thi này?"><i class="ri-stop-circle-line"></i> Đóng đề</button></form> }
-                @if (Model.ResultReleaseMode == ResultReleaseMode.Manual && !Model.ResultsReleased) { <form asp-action="ReleaseResults" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="btn btn-primary" type="submit"><i class="ri-megaphone-line"></i> Công bố kết quả</button></form> }
-                <a asp-controller="Classes" asp-action="Details" asp-route-id="@Model.ClassId" class="btn btn-light">Quay lại lớp</a>
+                @if (Model.Status != ExamStatus.Closed) { <form asp-action="Close" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="btn btn-outline-danger" type="submit" data-confirm="Đóng đề thi này? Học viên sẽ không thể bắt đầu lượt thi mới."><i class="ri-stop-circle-line"></i>Đóng đề</button></form> }
+                @if (Model.ResultReleaseMode == ResultReleaseMode.Manual && !Model.ResultsReleased) { <form asp-action="ReleaseResults" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="btn btn-primary" type="submit" data-confirm="Công bố kết quả cho tất cả học viên đã nộp bài?"><i class="ri-megaphone-line"></i>Công bố kết quả</button></form> }
+                <a asp-controller="Classes" asp-action="Details" asp-route-id="@Model.ClassId" class="btn btn-light"><i class="ri-arrow-left-line"></i>Quay lại lớp</a>
             </div>
         </section>
 
-        <section id="questions" class="manage-section">
+        <section id="questions" class="manage-section" data-tab-panel="questions" hidden>
             <div class="surface-heading"><div><span class="workspace-kicker">Nội dung</span><h2>Câu hỏi trong đề</h2></div><span>@Model.QuestionCount câu</span></div>
             <div class="manage-question-list">
-                @for (var index = 0; index < Model.Questions.Count; index++)
-                {
-                    var question = Model.Questions[index];
-                    <article><span class="question-index">@(index + 1)</span><div><strong>@question.Content</strong><small>@question.OptionCount lựa chọn</small></div><b>@question.Score.ToString("0.##") điểm</b></article>
-                }
+                @if (Model.Questions.Count == 0) { <div class="empty-state"><i class="ri-question-line"></i><strong>Đề chưa có câu hỏi</strong><span>Mở trình soạn đề để thêm nội dung.</span></div> }
+                @for (var index = 0; index < Model.Questions.Count; index++) { var question = Model.Questions[index]; <article><span class="question-index">@(index + 1)</span><div><strong>@question.Content</strong><small>@question.OptionCount lựa chọn</small></div><b>@question.Score.ToString("0.##") điểm</b></article> }
             </div>
         </section>
 
-        <section id="students" class="manage-section">
+        <section id="students" class="manage-section" data-tab-panel="students" hidden>
             <div class="surface-heading"><div><span class="workspace-kicker">Thành viên</span><h2>Học viên trong lớp</h2></div><span>@Model.ParticipantCount học viên</span></div>
-            <div class="responsive-table"><table><thead><tr><th>Học viên</th><th>Email</th></tr></thead><tbody>
-                @if (Model.Participants.Count == 0) { <tr><td colspan="2" class="empty-cell">Chưa có học viên tham gia.</td></tr> }
-                @foreach (var student in Model.Participants) { <tr><td><strong>@student.DisplayName</strong></td><td>@student.Email</td></tr> }
-            </tbody></table></div>
+            <div class="responsive-table"><table><thead><tr><th>Học viên</th><th>Email</th></tr></thead><tbody>@if (Model.Participants.Count == 0) { <tr><td colspan="2" class="empty-cell">Chưa có học viên tham gia.</td></tr> } @foreach (var student in Model.Participants) { <tr><td><strong>@student.DisplayName</strong></td><td>@student.Email</td></tr> }</tbody></table></div>
         </section>
 
-        <section id="attempts" class="manage-section">
+        <section id="attempts" class="manage-section" data-tab-panel="attempts" hidden>
             <div class="surface-heading"><div><span class="workspace-kicker">Kết quả</span><h2>Lượt thi và điểm</h2></div><span>Điểm trung bình @(Model.AverageScore?.ToString("0.##") ?? "—")</span></div>
-            <div class="responsive-table"><table><thead><tr><th>Học viên</th><th>Bắt đầu</th><th>Nộp bài</th><th>Điểm</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-                @if (Model.Attempts.Count == 0) { <tr><td colspan="6" class="empty-cell">Chưa có lượt thi.</td></tr> }
-                @foreach (var attempt in Model.Attempts) { <tr><td><strong>@attempt.StudentName</strong></td><td>@attempt.StartedAt.ToLocalTime().ToString("dd/MM HH:mm")</td><td>@(attempt.SubmittedAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")</td><td>@(attempt.Score?.ToString("0.##") ?? "—")</td><td><span class="status-chip">@attempt.Status.ToVietnamese()</span></td><td><a asp-action="Result" asp-route-attemptId="@attempt.AttemptId" class="icon-button" title="Xem kết quả"><i class="ri-eye-line"></i></a></td></tr> }
-            </tbody></table></div>
+            <div class="responsive-table"><table><thead><tr><th>Học viên</th><th>Bắt đầu</th><th>Nộp bài</th><th>Điểm</th><th>Trạng thái</th><th><span class="visually-hidden">Xem</span></th></tr></thead><tbody>@if (Model.Attempts.Count == 0) { <tr><td colspan="6" class="empty-cell">Chưa có lượt thi.</td></tr> } @foreach (var attempt in Model.Attempts) { <tr><td><strong>@attempt.StudentName</strong></td><td>@attempt.StartedAt.ToLocalTime().ToString("dd/MM HH:mm")</td><td>@(attempt.SubmittedAt?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")</td><td>@(attempt.Score?.ToString("0.##") ?? "—")</td><td><span class="status-chip">@attempt.Status.ToVietnamese()</span></td><td><a asp-action="Result" asp-route-attemptId="@attempt.AttemptId" class="icon-button" title="Xem kết quả"><i class="ri-eye-line"></i></a></td></tr> }</tbody></table></div>
         </section>
 
-        <section id="warnings" class="manage-section">
+        <section id="warnings" class="manage-section" data-tab-panel="warnings" hidden>
             <div class="surface-heading"><div><span class="workspace-kicker">Giám sát</span><h2>Cảnh báo làm bài</h2></div><span>@Model.WarningCount sự kiện</span></div>
-            <div class="warning-list">
-                @if (Model.Warnings.Count == 0) { <div class="empty-state compact"><i class="ri-shield-check-line"></i><strong>Chưa có cảnh báo</strong><span>Các sự kiện đáng chú ý sẽ xuất hiện tại đây.</span></div> }
-                @foreach (var warning in Model.Warnings) { <article><i class="ri-alarm-warning-line"></i><div><strong>@warning.EventType.ToVietnamese()</strong><span>@warning.StudentName</span></div><time>@warning.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</time></article> }
-            </div>
+            <div class="warning-list">@if (Model.Warnings.Count == 0) { <div class="empty-state"><i class="ri-shield-check-line"></i><strong>Chưa có cảnh báo</strong><span>Các sự kiện đáng chú ý sẽ xuất hiện tại đây.</span></div> } @foreach (var warning in Model.Warnings) { <article><i class="ri-alarm-warning-line"></i><div><strong>@warning.EventType.ToVietnamese()</strong><span>@warning.StudentName</span></div><time>@warning.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</time></article> }</div>
         </section>
     </div>
 </section>

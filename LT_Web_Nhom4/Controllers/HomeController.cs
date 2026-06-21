@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,10 +33,9 @@ namespace LT_Web_Nhom4.Controllers
                 .Where(item => isAdmin || item.TeacherId == userId)
                 .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
 
-            var joinedClasses = await _context.ClassMembers.AsNoTracking()
-                .Where(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)
-                .Select(member => member.Class)
+            var joinedClasses = await _context.Classes.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Exams).Include(item => item.Members)
+                .Where(item => item.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active))
                 .OrderByDescending(item => item.CreatedAt).Take(4).ToListAsync();
 
             var upcoming = await _context.Exams.AsNoTracking()
@@ -72,6 +72,69 @@ namespace LT_Web_Nhom4.Controllers
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> SearchSuggestions(string? q)
+        {
+            var term = q?.Trim();
+            if (string.IsNullOrWhiteSpace(term) || term.Length < 2)
+            {
+                return Json(Array.Empty<object>());
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var classRows = await _context.Classes.AsNoTracking()
+                .Where(item => (item.TeacherId == userId
+                        || item.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active))
+                    && (item.Name.Contains(term) || item.Subject.Name.Contains(term) || item.Code.Contains(term)))
+                .OrderBy(item => item.Name)
+                .Take(5)
+                .Select(item => new
+                {
+                    item.Id,
+                    item.Name,
+                    SubjectName = item.Subject.Name,
+                    item.Code
+                })
+                .ToListAsync();
+
+            var classResults = classRows.Select(item => new
+            {
+                type = "class",
+                title = item.Name,
+                meta = item.SubjectName + " · " + item.Code,
+                url = Url.Action("Details", "Classes", new { id = item.Id })
+            });
+
+            var examRows = await _context.Exams.AsNoTracking()
+                .Where(item => (item.CreatedById == userId || item.Class.TeacherId == userId
+                        || (item.Status == ExamStatus.Published && item.Class.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)))
+                    && (item.Title.Contains(term) || item.Class.Name.Contains(term) || item.Code.Contains(term)))
+                .OrderBy(item => item.StartAt)
+                .Take(5)
+                .Select(item => new
+                {
+                    item.Id,
+                    item.Title,
+                    ClassName = item.Class.Name,
+                    item.Code,
+                    CanManage = item.CreatedById == userId || item.Class.TeacherId == userId
+                })
+                .ToListAsync();
+
+            var examResults = examRows.Select(item => new
+            {
+                type = "exam",
+                title = item.Title,
+                meta = item.ClassName + " · " + item.Code,
+                url = item.CanManage
+                    ? Url.Action("Manage", "Exams", new { id = item.Id })
+                    : Url.Action("Room", "Exams", new { id = item.Id })
+            });
+
+            return Json(classResults.Concat(examResults).Take(8));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
