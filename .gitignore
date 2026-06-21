@@ -32,8 +32,10 @@ secrets.json
 !.env.example
 !*.env.example
 !.env.production.example
+!.env.postgres.example
 LT_Web_Nhom4/App_Data/
 deploy/artifacts/
+deploy/postgres/render-deploy-summary.json
 *.bacpac
 *.bak
 *.trn

@@ -26,6 +26,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
         private readonly IPendingRegistrationService _pendingRegistrationService;
+        private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AccountController> _logger;
 
@@ -37,6 +38,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             IEmailSender emailSender,
             IPasswordHasher<ApplicationUser> passwordHasher,
             IPendingRegistrationService pendingRegistrationService,
+            IConfiguration configuration,
             IWebHostEnvironment environment,
             ILogger<AccountController> logger)
         {
@@ -47,13 +49,19 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             _emailSender = emailSender;
             _passwordHasher = passwordHasher;
             _pendingRegistrationService = pendingRegistrationService;
+            _configuration = configuration;
             _environment = environment;
             _logger = logger;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Login(string? returnUrl = null)
+        public async Task<IActionResult> Login(string? returnUrl = null, bool oauthUnavailable = false)
         {
+            if (oauthUnavailable)
+            {
+                TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình trên môi trường deploy.";
+            }
+
             return View(await BuildLoginViewModelAsync(returnUrl));
         }
 
@@ -121,6 +129,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             await PopulateExternalRegisterStateAsync(model);
+
+            if (!model.SmtpConfigured)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Dịch vụ email chưa được cấu hình. Hệ thống tạm dừng đăng ký để tránh tạo tài khoản không thể xác nhận.");
+                return View(model);
+            }
 
             if (!ModelState.IsValid)
             {
@@ -255,6 +270,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendRegistrationCode(string email, string? returnUrl = null)
         {
+            if (!IsSmtpConfigured())
+            {
+                TempData["AuthMessage"] = "Dịch vụ email chưa được cấu hình nên chưa thể gửi lại mã xác nhận.";
+                return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
+            }
+
             var normalizedEmail = _userManager.NormalizeEmail(email.Trim());
             var resendResult = await _pendingRegistrationService.ResendAsync(email.Trim(), normalizedEmail);
             if (resendResult is not null)
@@ -283,13 +304,21 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View(new ForgotPasswordViewModel());
+            return View(new ForgotPasswordViewModel { SmtpConfigured = IsSmtpConfigured() });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
+            model.SmtpConfigured = IsSmtpConfigured();
+            if (!model.SmtpConfigured)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Dịch vụ email chưa được cấu hình nên chưa thể gửi mã đặt lại mật khẩu.");
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -638,7 +667,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
                 string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
-            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+            model.ShowGoogleOAuthHint = !model.GoogleOAuthConfigured;
         }
 
         private async Task<RegisterViewModel> BuildRegisterViewModelAsync(string? returnUrl)
@@ -653,7 +682,18 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
                 string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
-            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+            model.ShowGoogleOAuthHint = !model.GoogleOAuthConfigured;
+            model.SmtpConfigured = IsSmtpConfigured();
+        }
+
+        private bool IsSmtpConfigured()
+        {
+            return HasConfigurationValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail");
+        }
+
+        private bool HasConfigurationValues(params string[] keys)
+        {
+            return keys.All(key => !string.IsNullOrWhiteSpace(_configuration[key]));
         }
 
         private async Task<string?> SendPasswordResetEmailAsync(string email, string resetUrl)

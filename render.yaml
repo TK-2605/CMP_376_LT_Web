@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: quizhub-nhom4
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__Provider
+        value: PostgreSql
+      - key: Database__EnsureCreatedOnStartup
+        value: true
+      - key: Database__ApplyMigrationsOnStartup
+        value: false
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Authentication__Google__ClientId
+        sync: false
+      - key: Authentication__Google__ClientSecret
+        sync: false
+      - key: Jwt__Issuer
+        value: QuizHub
+      - key: Jwt__Audience
+        value: QuizHub.Api
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__ExpireMinutes
+        value: 120
+      - key: Jwt__RefreshTokenDays
+        value: 7
+      - key: Smtp__Host
+        value: smtp.gmail.com
+      - key: Smtp__Port
+        value: 587
+      - key: Smtp__UserName
+        sync: false
+      - key: Smtp__Password
+        sync: false
+      - key: Smtp__FromEmail
+        sync: false
+      - key: Smtp__FromName
+        value: QuizHub
+      - key: Meilisearch__Url
+        sync: false
+      - key: Meilisearch__ApiKey
+        sync: false
+      - key: Meilisearch__IndexName
+        value: quizhub-private-search
+      - key: PrivateMediaRoot
+        value: /tmp/quizhub-uploads
+      - key: ForwardedHeaders__Enabled
+        value: true
+      - key: Swagger__Enabled
+        value: true

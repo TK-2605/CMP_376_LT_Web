@@ -51,7 +51,9 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(user => user.FullName).HasMaxLength(150);
                 entity.Property(user => user.StudentCode).HasMaxLength(50);
-                entity.HasIndex(user => user.StudentCode).IsUnique().HasFilter("[StudentCode] IS NOT NULL");
+                entity.HasIndex(user => user.StudentCode)
+                    .IsUnique()
+                    .HasFilter(IsPostgreSqlProvider() ? "\"StudentCode\" IS NOT NULL" : "[StudentCode] IS NOT NULL");
             });
 
             builder.Entity<EmailOtp>(entity =>
@@ -109,7 +111,7 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(classRoom => classRoom.Description).HasMaxLength(2000);
                 entity.Property(classRoom => classRoom.CoverImagePath).HasMaxLength(500);
                 entity.Property(classRoom => classRoom.IntroVideoUrl).HasMaxLength(1000);
-                entity.Property(classRoom => classRoom.RowVersion).IsRowVersion();
+                ConfigureRowVersion(entity.Property(classRoom => classRoom.RowVersion));
                 entity.Property(classRoom => classRoom.Semester).HasMaxLength(50);
                 entity.Property(classRoom => classRoom.AcademicYear).HasMaxLength(50);
                 entity.HasIndex(classRoom => classRoom.Code).IsUnique();
@@ -199,7 +201,7 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(exam => exam.Instructions).HasMaxLength(4000);
                 entity.Property(exam => exam.PassingScore).HasPrecision(6, 2);
                 entity.Property(exam => exam.MaxScore).HasPrecision(6, 2).HasDefaultValue(10);
-                entity.Property(exam => exam.RowVersion).IsRowVersion();
+                ConfigureRowVersion(entity.Property(exam => exam.RowVersion));
                 entity.HasIndex(exam => exam.Code).IsUnique();
 
                 entity.HasOne(exam => exam.Subject)
@@ -294,6 +296,22 @@ namespace LT_Web_Nhom4.Data
                     .HasForeignKey(antiCheatEvent => antiCheatEvent.ExamAttemptId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+        }
+
+        private bool IsPostgreSqlProvider()
+        {
+            return Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private void ConfigureRowVersion(Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder<byte[]> property)
+        {
+            if (IsPostgreSqlProvider())
+            {
+                property.IsConcurrencyToken().HasDefaultValueSql("''::bytea");
+                return;
+            }
+
+            property.IsRowVersion();
         }
     }
 }

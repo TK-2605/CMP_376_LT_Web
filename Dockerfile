@@ -27,4 +27,4 @@ USER app
 EXPOSE 8080
 
 ENV ASPNETCORE_HTTP_PORTS=8080
-ENTRYPOINT ["dotnet", "LT_Web_Nhom4.dll"]
+ENTRYPOINT ["sh", "-c", "dotnet LT_Web_Nhom4.dll --urls http://0.0.0.0:${PORT:-8080}"]

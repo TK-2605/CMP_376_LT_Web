@@ -17,6 +17,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
@@ -25,12 +27,26 @@ builder.Logging.AddDebug();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "SqlServer";
+var usePostgreSql = IsPostgreSqlProvider(databaseProvider);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString, sqlOptions =>
+{
+    if (usePostgreSql)
     {
-        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-    }));
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+        });
+    }
+    else
+    {
+        options.UseSqlServer(connectionString, sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+        });
+    }
+});
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -67,12 +83,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 var authenticationBuilder = builder.Services.AddAuthentication();
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+var googleOAuthConfigured = !string.IsNullOrWhiteSpace(googleClientId)
+    && !string.IsNullOrWhiteSpace(googleClientSecret);
+if (googleOAuthConfigured)
 {
     authenticationBuilder.AddGoogle(options =>
         {
-            options.ClientId = googleClientId;
-            options.ClientSecret = googleClientSecret;
+            options.ClientId = googleClientId!;
+            options.ClientSecret = googleClientSecret!;
             options.CallbackPath = "/signin-google";
         });
 }
@@ -192,7 +210,11 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 var app = builder.Build();
 if (!app.Environment.IsEnvironment("Testing"))
 {
-    if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+    if (app.Configuration.GetValue<bool>("Database:EnsureCreatedOnStartup"))
+    {
+        await EnsureDatabaseCreatedAsync(app);
+    }
+    else if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
     {
         await ApplyDatabaseMigrationsAsync(app);
     }
@@ -267,6 +289,13 @@ app.MapGet("/health", () => Results.Ok(new
     Utc = DateTimeOffset.UtcNow
 })).AllowAnonymous();
 
+if (!googleOAuthConfigured)
+{
+    app.MapGet("/signin-google", () => Results.Redirect(
+        "/Identity/Login/Account/Login?oauthUnavailable=true"))
+        .AllowAnonymous();
+}
+
 app.MapGet("/health/ready", async (
     ApplicationDbContext context,
     IMeilisearchService meilisearch,
@@ -328,6 +357,30 @@ app.Run();
 static bool IsSwaggerRequest(HttpContext context)
 {
     return context.Request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsPostgreSqlProvider(string? provider)
+{
+    return string.Equals(provider, "PostgreSql", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(provider, "Postgres", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(provider, "Npgsql", StringComparison.OrdinalIgnoreCase);
+}
+
+static async Task EnsureDatabaseCreatedAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseEnsureCreated");
+
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await context.Database.EnsureCreatedAsync();
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(exception, "Database schema creation failed.");
+        throw;
+    }
 }
 
 static async Task ApplyDatabaseMigrationsAsync(WebApplication app)
@@ -396,3 +449,5 @@ static async Task SeedDefaultDataAsync(WebApplication app)
         logger.LogWarning(exception, "Default application data was not seeded.");
     }
 }
+
+public partial class Program;
