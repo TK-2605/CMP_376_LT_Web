@@ -34,6 +34,7 @@ services:
       AllowedHosts: "${DOMAIN:?Set DOMAIN in .env.production}"
     volumes:
       - quizhub_uploads:/app/App_Data/Uploads
+      - quizhub_data_protection:/home/app/.aspnet/DataProtection-Keys
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -144,6 +145,8 @@ volumes:
     name: quizhub_meili_data
   quizhub_uploads:
     name: quizhub_uploads
+  quizhub_data_protection:
+    name: quizhub_data_protection
   quizhub_caddy_data:
     name: quizhub_caddy_data
   quizhub_caddy_config:

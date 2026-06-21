@@ -19,8 +19,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-RUN mkdir -p /app/App_Data/Uploads \
-    && chown -R app:app /app
+RUN mkdir -p /app/App_Data/Uploads /home/app/.aspnet/DataProtection-Keys \
+    && chown -R app:app /app \
+    && chown -R app:app /home/app/.aspnet
 
 USER app
 EXPOSE 8080
