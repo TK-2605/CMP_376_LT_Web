@@ -158,10 +158,22 @@ namespace LT_Web_Nhom4.Controllers
             var subject = string.IsNullOrWhiteSpace(request.Subject)
                 ? "QuizHub SMTP test"
                 : request.Subject.Trim();
-            await _emailService.SendEmailAsync(
+            try
+            {
+                await _emailService.SendEmailAsync(
                 request.ToEmail.Trim(),
                 subject,
                 "<p>Đây là email kiểm thử Gmail SMTP từ QuizHub.</p><p>Nếu bạn nhận được email này, MailKit/MimeKit đã hoạt động.</p>");
+
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status502BadGateway, new SendTestEmailResponse
+                {
+                    Sent = false,
+                    Message = $"SMTP failed: {exception.GetType().Name}: {exception.Message}"
+                });
+            }
 
             return Ok(new SendTestEmailResponse
             {
