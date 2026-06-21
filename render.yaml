@@ -1,5 +1,17 @@
 services:
   - type: web
+    name: quizhub-meili-nhom4
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/meilisearch/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MEILI_MASTER_KEY
+        sync: false
+      - key: MEILI_NO_ANALYTICS
+        value: true
+
+  - type: web
     name: quizhub-nhom4
     runtime: docker
     plan: free

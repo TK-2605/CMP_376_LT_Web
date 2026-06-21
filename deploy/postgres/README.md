@@ -38,6 +38,14 @@ You can also deploy through Render's API after the branch has been pushed:
 .\deploy\postgres\deploy-render.ps1 -RenderApiKey '<render-api-key>'
 ```
 
+For Meilisearch on Render, create a second free Docker web service from the same repo and set its Dockerfile path to:
+
+```text
+./deploy/meilisearch/Dockerfile
+```
+
+Set `MEILI_MASTER_KEY` to the same value used by `Meilisearch__ApiKey`, then set the QuizHub web service `Meilisearch__Url` to the Meilisearch service URL.
+
 ## Import the local sample database
 
 Copy `.env.postgres.example` to `.env.postgres`, fill `POSTGRES_CONNECTION_STRING`, then run:
@@ -74,7 +82,7 @@ Use these values from `.env.postgres`:
 - `Smtp__FromEmail`
 - `Jwt__Key`
 
-Meilisearch is still optional. If it is empty, search falls back to SQL and the app works, but `/Admin/Technologies` will show Meilisearch as fallback instead of Ready.
+Meilisearch is optional for app availability. If it is empty, search falls back to SQL and the app works, but `/Admin/Technologies` will show Meilisearch as fallback instead of Ready.
 
 ## Verify
 
