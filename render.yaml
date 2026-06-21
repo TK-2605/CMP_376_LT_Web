@@ -58,6 +58,14 @@ services:
         sync: false
       - key: Smtp__FromName
         value: QuizHub
+      - key: Resend__ApiKey
+        sync: false
+      - key: Resend__FromEmail
+        sync: false
+      - key: Resend__FromName
+        value: QuizHub
+      - key: Resend__TimeoutSeconds
+        value: 20
       - key: Meilisearch__Url
         sync: false
       - key: Meilisearch__ApiKey

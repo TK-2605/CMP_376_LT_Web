@@ -80,9 +80,12 @@ Use these values from `.env.postgres`:
 - `Smtp__UserName`
 - `Smtp__Password`
 - `Smtp__FromEmail`
+- `Resend__ApiKey` and `Resend__FromEmail` if the app is running on Render Free and needs real email delivery
 - `Jwt__Key`
 
 Meilisearch is optional for app availability. If it is empty, search falls back to SQL and the app works, but `/Admin/Technologies` will show Meilisearch as fallback instead of Ready.
+
+Render Free Web Services block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP app passwords can validate locally but still time out on Render Free. Use Resend over HTTPS for OTP email on the free deployment, or upgrade Render to a paid instance if you want to keep SMTP.
 
 ## Verify
 

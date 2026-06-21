@@ -3,6 +3,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using MimeKit;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace LT_Web_Nhom4.Services.Implementations
 {
@@ -18,6 +20,17 @@ namespace LT_Web_Nhom4.Services.Implementations
         }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
+        {
+            if (IsResendConfigured())
+            {
+                await SendWithResendAsync(email, subject, htmlMessage);
+                return;
+            }
+
+            await SendWithSmtpAsync(email, subject, htmlMessage);
+        }
+
+        private async Task SendWithSmtpAsync(string email, string subject, string htmlMessage)
         {
             var host = _configuration["Smtp:Host"];
             var port = int.TryParse(_configuration["Smtp:Port"], out var configuredPort) ? configuredPort : 587;
@@ -59,6 +72,47 @@ namespace LT_Web_Nhom4.Services.Implementations
             _logger.LogInformation("SMTP email '{Subject}' sent to {Email}.", subject, email);
         }
 
+        private async Task SendWithResendAsync(string email, string subject, string htmlMessage)
+        {
+            var apiKey = _configuration["Resend:ApiKey"];
+            var fromEmail = _configuration["Resend:FromEmail"];
+            var fromName = _configuration["Resend:FromName"] ?? _configuration["Smtp:FromName"] ?? "QuizHub";
+            var timeoutSeconds = int.TryParse(_configuration["Resend:TimeoutSeconds"], out var configuredTimeout)
+                ? Math.Clamp(configuredTimeout, 5, 60)
+                : 20;
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException("Resend email provider is not configured.");
+            }
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+            };
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            using var response = await httpClient.PostAsJsonAsync(
+                "https://api.resend.com/emails",
+                new
+                {
+                    from = $"{fromName} <{fromEmail}>",
+                    to = new[] { email },
+                    subject,
+                    html = htmlMessage
+                },
+                timeout.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(timeout.Token);
+                throw new InvalidOperationException($"Resend returned HTTP {(int)response.StatusCode}: {body}");
+            }
+
+            _logger.LogInformation("Resend email '{Subject}' sent to {Email}.", subject, email);
+        }
+
         public Task SendOtpEmailAsync(string toEmail, string otp, string purpose)
         {
             var isConfirmEmail = string.Equals(purpose, "ConfirmEmail", StringComparison.OrdinalIgnoreCase);
@@ -80,6 +134,12 @@ namespace LT_Web_Nhom4.Services.Implementations
             }
 
             return port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+        }
+
+        private bool IsResendConfigured()
+        {
+            return !string.IsNullOrWhiteSpace(_configuration["Resend:ApiKey"])
+                && !string.IsNullOrWhiteSpace(_configuration["Resend:FromEmail"]);
         }
     }
 }

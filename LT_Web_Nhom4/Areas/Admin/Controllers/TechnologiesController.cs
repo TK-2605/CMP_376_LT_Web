@@ -31,7 +31,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var googleConfigured = HasValues("Authentication:Google:ClientId", "Authentication:Google:ClientSecret");
-            var smtpConfigured = HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail");
+            var smtpConfigured = HasEmailProvider();
             var jwtKey = _configuration["Jwt:Key"];
             var jwtConfigured = !string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32;
             var meilisearch = await _meilisearch.GetHealthAsync(cancellationToken);
@@ -94,6 +94,12 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         private bool HasValues(params string[] keys)
         {
             return keys.All(key => !string.IsNullOrWhiteSpace(_configuration[key]));
+        }
+
+        private bool HasEmailProvider()
+        {
+            return HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
+                || HasValues("Resend:ApiKey", "Resend:FromEmail");
         }
 
         private static AdminTechnologyItemViewModel Item(

@@ -37,7 +37,7 @@ namespace LT_Web_Nhom4.Controllers
         public IActionResult Status()
         {
             var googleConfigured = HasValues("Authentication:Google:ClientId", "Authentication:Google:ClientSecret");
-            var smtpConfigured = HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail");
+            var smtpConfigured = HasEmailProvider();
             var jwtConfigured = _jwtTokenService.IsConfigured;
 
             return Ok(new AuthFeatureStatusResponse
@@ -146,7 +146,7 @@ namespace LT_Web_Nhom4.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         public async Task<IActionResult> SendTestEmail(SendTestEmailRequest request)
         {
-            if (!HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail"))
+            if (!HasEmailProvider())
             {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new SendTestEmailResponse
                 {
@@ -208,6 +208,12 @@ namespace LT_Web_Nhom4.Controllers
         private bool HasValues(params string[] keys)
         {
             return keys.All(key => !string.IsNullOrWhiteSpace(_configuration[key]));
+        }
+
+        private bool HasEmailProvider()
+        {
+            return HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
+                || HasValues("Resend:ApiKey", "Resend:FromEmail");
         }
     }
 }

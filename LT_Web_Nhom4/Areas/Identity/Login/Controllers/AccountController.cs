@@ -688,7 +688,8 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private bool IsSmtpConfigured()
         {
-            return HasConfigurationValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail");
+            return HasConfigurationValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
+                || HasConfigurationValues("Resend:ApiKey", "Resend:FromEmail");
         }
 
         private bool HasConfigurationValues(params string[] keys)
