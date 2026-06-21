@@ -28,6 +28,7 @@ namespace LT_Web_Nhom4.Services.Implementations
             var timeoutSeconds = int.TryParse(_configuration["Smtp:TimeoutSeconds"], out var configuredTimeout)
                 ? Math.Clamp(configuredTimeout, 5, 60)
                 : 20;
+            var secureSocketOptions = ResolveSecureSocketOptions(_configuration["Smtp:SecureSocketOptions"], port);
 
             if (string.IsNullOrWhiteSpace(host) ||
                 string.IsNullOrWhiteSpace(userName) ||
@@ -50,7 +51,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                 Timeout = timeoutSeconds * 1000
             };
 
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, timeout.Token);
+            await client.ConnectAsync(host, port, secureSocketOptions, timeout.Token);
             await client.AuthenticateAsync(userName, password, timeout.Token);
             await client.SendAsync(message, timeout.Token);
             await client.DisconnectAsync(true, timeout.Token);
@@ -68,6 +69,17 @@ namespace LT_Web_Nhom4.Services.Implementations
                 """;
 
             return SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        private static SecureSocketOptions ResolveSecureSocketOptions(string? configuredValue, int port)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredValue)
+                && Enum.TryParse<SecureSocketOptions>(configuredValue, ignoreCase: true, out var parsed))
+            {
+                return parsed;
+            }
+
+            return port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
         }
     }
 }

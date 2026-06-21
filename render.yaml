@@ -46,6 +46,8 @@ services:
         value: smtp.gmail.com
       - key: Smtp__Port
         value: 587
+      - key: Smtp__SecureSocketOptions
+        value: StartTls
       - key: Smtp__TimeoutSeconds
         value: 20
       - key: Smtp__UserName
