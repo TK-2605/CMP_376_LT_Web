@@ -92,7 +92,7 @@ function Convert-PostgresConnectionString {
 function New-EnvVar {
     param(
         [Parameter(Mandatory = $true)][string]$Key,
-        [Parameter(Mandatory = $true)][string]$Value
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value
     )
 
     return @{ key = $Key; value = $Value }
