@@ -25,6 +25,9 @@ namespace LT_Web_Nhom4.Services.Implementations
             var password = _configuration["Smtp:Password"];
             var fromEmail = _configuration["Smtp:FromEmail"];
             var fromName = _configuration["Smtp:FromName"] ?? "QuizHub";
+            var timeoutSeconds = int.TryParse(_configuration["Smtp:TimeoutSeconds"], out var configuredTimeout)
+                ? Math.Clamp(configuredTimeout, 5, 60)
+                : 20;
 
             if (string.IsNullOrWhiteSpace(host) ||
                 string.IsNullOrWhiteSpace(userName) ||
@@ -41,11 +44,16 @@ namespace LT_Web_Nhom4.Services.Implementations
             message.Subject = subject;
             message.Body = new TextPart("html") { Text = htmlMessage };
 
-            using var client = new SmtpClient();
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(userName, password);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var client = new SmtpClient
+            {
+                Timeout = timeoutSeconds * 1000
+            };
+
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, timeout.Token);
+            await client.AuthenticateAsync(userName, password, timeout.Token);
+            await client.SendAsync(message, timeout.Token);
+            await client.DisconnectAsync(true, timeout.Token);
 
             _logger.LogInformation("SMTP email '{Subject}' sent to {Email}.", subject, email);
         }

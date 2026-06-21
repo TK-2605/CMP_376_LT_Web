@@ -174,6 +174,7 @@ $envVars = @(
     New-EnvVar 'Jwt__RefreshTokenDays' (Get-Setting -Values $envValues -Name 'JWT_REFRESH_TOKEN_DAYS' -Default '7')
     New-EnvVar 'Smtp__Host' (Get-Setting -Values $envValues -Name 'SMTP_HOST' -Default 'smtp.gmail.com')
     New-EnvVar 'Smtp__Port' (Get-Setting -Values $envValues -Name 'SMTP_PORT' -Default '587')
+    New-EnvVar 'Smtp__TimeoutSeconds' (Get-Setting -Values $envValues -Name 'SMTP_TIMEOUT_SECONDS' -Default '20')
     New-EnvVar 'Smtp__UserName' (Get-Setting -Values $envValues -Name 'SMTP_USERNAME')
     New-EnvVar 'Smtp__Password' (Get-Setting -Values $envValues -Name 'SMTP_PASSWORD')
     New-EnvVar 'Smtp__FromEmail' (Get-Setting -Values $envValues -Name 'SMTP_FROM_EMAIL')
@@ -195,11 +196,14 @@ $body = @{
     autoDeploy = 'yes'
     envVars = $envVars
     serviceDetails = @{
-        env = 'docker'
+        runtime = 'docker'
         plan = 'free'
-        dockerfilePath = './Dockerfile'
         healthCheckPath = '/health'
         region = 'oregon'
+        envSpecificDetails = @{
+            dockerContext = '.'
+            dockerfilePath = './Dockerfile'
+        }
     }
 }
 
