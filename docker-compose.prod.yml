@@ -109,6 +109,7 @@ services:
     image: mcr.microsoft.com/dotnet/sdk:9.0
     profiles: ["tools"]
     environment:
+      DOTNET_ROLL_FORWARD: Major
       SQL_DATABASE: "${SQL_DATABASE:-QuizHub}"
       SQL_SA_PASSWORD: "${SQL_SA_PASSWORD:?Set SQL_SA_PASSWORD in .env.production}"
     volumes:
