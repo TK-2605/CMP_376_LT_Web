@@ -565,6 +565,12 @@ static async Task EnsureStoredMediaFilesTableAsync(WebApplication app)
     catch (Exception exception)
     {
         logger.LogError(exception, "Stored media schema check failed.");
+        if (app.Configuration.GetValue<bool>("Database:ContinueOnMigrationFailure"))
+        {
+            logger.LogWarning("Continuing startup because Database:ContinueOnMigrationFailure is enabled.");
+            return;
+        }
+
         throw;
     }
 }

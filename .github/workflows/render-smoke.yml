@@ -1,0 +1,19 @@
+name: Render Smoke Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  smoke:
+    name: Check live QuizHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Smoke check Render
+        shell: pwsh
+        run: ./deploy/postgres/smoke-render.ps1 -BaseUrl "https://quizhub-nhom4.onrender.com" -Attempts 5 -DelaySeconds 20
