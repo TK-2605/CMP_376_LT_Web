@@ -77,15 +77,47 @@ Use these values from `.env.postgres`:
 - `Database__ApplyMigrationsOnStartup` = `false`
 - `Authentication__Google__ClientId`
 - `Authentication__Google__ClientSecret`
+- `Email__Provider` = `GmailApi` on Render Free
+- `GmailApi__ClientId`
+- `GmailApi__ClientSecret`
+- `GmailApi__RefreshToken`
+- `GmailApi__FromEmail`
 - `Smtp__UserName`
 - `Smtp__Password`
 - `Smtp__FromEmail`
-- `Resend__ApiKey` and `Resend__FromEmail` if the app is running on Render Free and needs real email delivery
+- `Resend__ApiKey` and `Resend__FromEmail` as a HTTPS fallback if Gmail API is not used
+- `Brevo__ApiKey` and `Brevo__FromEmail` as a HTTPS fallback if Gmail API is not used
+- `SendGrid__ApiKey` and `SendGrid__FromEmail` as a HTTPS fallback if Gmail API is not used
 - `Jwt__Key`
 
 Meilisearch is optional for app availability. If it is empty, search falls back to SQL and the app works, but `/Admin/Technologies` will show Meilisearch as fallback instead of Ready.
 
-Render Free Web Services block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP app passwords can validate locally but still time out on Render Free. Use Resend over HTTPS for OTP email on the free deployment, or upgrade Render to a paid instance if you want to keep SMTP.
+Render Free Web Services block outbound SMTP ports `25`, `465`, and `587`, so Gmail SMTP app passwords can validate locally but still time out on Render Free. Use Gmail API over HTTPS for OTP email on the free deployment, or use another HTTPS provider such as Resend, Brevo, or SendGrid. Upgrade Render to a paid instance only if you want to keep SMTP.
+
+## Gmail API OTP on Render Free
+
+Use this path when OTP must be sent from a Gmail account while the app is deployed on Render Free.
+
+1. In Google Cloud Console, enable Gmail API for the project.
+2. Create an OAuth client that allows loopback redirect `http://127.0.0.1:53682/`.
+3. Generate a refresh token locally:
+
+```powershell
+deploy/postgres/get-gmail-refresh-token.ps1 `
+  -ClientId "YOUR_GOOGLE_CLIENT_ID" `
+  -ClientSecret "YOUR_GOOGLE_CLIENT_SECRET"
+```
+
+4. Put these values in Render Environment:
+
+- `Email__Provider` = `GmailApi`
+- `GmailApi__ClientId`
+- `GmailApi__ClientSecret`
+- `GmailApi__RefreshToken`
+- `GmailApi__FromEmail`
+- `GmailApi__FromName` = `QuizHub`
+
+When `GmailApi__*` is complete, QuizHub sends OTP through `gmail.googleapis.com` on HTTPS port `443`, not through SMTP.
 
 ## Verify
 
