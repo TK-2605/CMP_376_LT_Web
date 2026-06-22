@@ -8,6 +8,7 @@ using LT_Web_Nhom4.Hubs;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Repositories.Implementations;
 using LT_Web_Nhom4.Repositories.Interfaces;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Implementations;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -182,7 +183,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "QuizHub API",
         Version = "v1",
-        Description = "API kiểm thử OAuth, SMTP, xác nhận email, quên mật khẩu và JWT cho hệ thống thi trắc nghiệm."
+        Description = "API kiểm thử OAuth, email provider, xác nhận email, quên mật khẩu và JWT cho hệ thống thi trắc nghiệm."
     });
 
     options.TagActionsBy(api =>
@@ -360,6 +361,7 @@ app.MapGet("/health/ready", async (
     ApplicationDbContext context,
     IMeilisearchService meilisearch,
     IConfiguration configuration,
+    IWebHostEnvironment environment,
     CancellationToken cancellationToken) =>
 {
     var databaseReady = false;
@@ -382,10 +384,26 @@ app.MapGet("/health/ready", async (
     }
 
     var searchHealth = await meilisearch.GetHealthAsync(cancellationToken);
+    var deploy = DeployMetadataHelper.Get(configuration, environment);
+    var emailProviderReady = EmailConfigurationHelper.HasEmailProvider(configuration);
     var ready = databaseReady;
     var payload = new
     {
         Status = ready ? "Ready" : "Degraded",
+        Deploy = new
+        {
+            deploy.CommitSha,
+            deploy.CommitShortSha,
+            deploy.Environment,
+            deploy.IsRender,
+            deploy.RenderServiceId
+        },
+        EmailProvider = new
+        {
+            Provider = EmailConfigurationHelper.ProviderLabel(configuration),
+            Ready = emailProviderReady,
+            Problem = EmailConfigurationHelper.GetEmailProviderProblem(configuration)
+        },
         Database = new
         {
             Ready = databaseReady,

@@ -55,12 +55,12 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                     Item("OTP đăng ký", "Xác thực", "Xác nhận email bằng mã dùng một lần trước khi tạo tài khoản.",
                         smtpConfigured
                             ? $"Provider {EmailConfigurationHelper.ProviderLabel(_configuration)} đã sẵn sàng gửi mã."
-                            : "Luồng OTP đã có; cần cấu hình Resend hoặc SMTP để gửi email thật.",
+                            : "Luồng OTP đã có; cần cấu hình email provider HTTPS để gửi email thật.",
                         "ri-mail-check-line", smtpConfigured, Url.Action("Register", "Account", new { area = "Identity" }), "Mở đăng ký"),
                     Item("OTP quên mật khẩu", "Bảo mật", "Mã OTP 6 số, hết hạn sau 5 phút và giới hạn 5 lần nhập.",
                         smtpConfigured
                             ? "Luồng gửi, xác minh và đổi mật khẩu đã sẵn sàng."
-                            : "Luồng đã có; production phải cấu hình Resend/SMTP trước khi gửi OTP.",
+                            : "Luồng đã có; production phải cấu hình email provider HTTPS trước khi gửi OTP.",
                         "ri-key-2-line", smtpConfigured, Url.Action("ForgotPassword", "Account", new { area = "Identity" }), "Mở khôi phục"),
                     Item("JWT & Refresh Token", "API", "Access token ký HMAC, refresh token chỉ lưu bản băm và được xoay vòng.",
                         jwtConfigured ? "Khóa ký hợp lệ; API /api/auth đã sẵn sàng." : "Đặt Jwt:Key tối thiểu 32 ký tự trong User Secrets.",

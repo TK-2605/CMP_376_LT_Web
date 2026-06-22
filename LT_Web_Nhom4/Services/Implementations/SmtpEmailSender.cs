@@ -4,6 +4,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using MimeKit;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
@@ -98,7 +99,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                 string.IsNullOrWhiteSpace(password) ||
                 string.IsNullOrWhiteSpace(fromEmail))
             {
-                _logger.LogWarning("SMTP configuration is incomplete. Email '{Subject}' was not sent to {Email}.", subject, email);
+                _logger.LogWarning("SMTP configuration is incomplete. Email '{Subject}' was not sent to {Email}.", subject, MaskEmail(email));
                 throw new InvalidOperationException("SMTP chưa được cấu hình đầy đủ.");
             }
 
@@ -173,7 +174,7 @@ namespace LT_Web_Nhom4.Services.Implementations
             await client.SendAsync(message, timeout.Token);
             await client.DisconnectAsync(true, timeout.Token);
 
-            _logger.LogInformation("SMTP email '{Subject}' sent to {Email} via {Host}:{Port}/{Options}.", subject, email, host, port, secureSocketOptions);
+            _logger.LogInformation("SMTP email '{Subject}' sent to {Email} via {Host}:{Port}/{Options}.", subject, MaskEmail(email), host, port, secureSocketOptions);
         }
 
         private async Task SendWithResendAsync(string email, string subject, string htmlMessage)
@@ -208,15 +209,22 @@ namespace LT_Web_Nhom4.Services.Implementations
 
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(timeout.Token);
-                throw new InvalidOperationException($"Resend returned HTTP {(int)response.StatusCode}: {body}");
+                var body = SanitizeProviderBody(await response.Content.ReadAsStringAsync(timeout.Token));
+                _logger.LogError(
+                    "Resend email provider failed. CorrelationId {CorrelationId}, To {ToEmail}, HTTP {StatusCode}, Body {Body}",
+                    CreateCorrelationId(),
+                    MaskEmail(email),
+                    (int)response.StatusCode,
+                    body);
+                throw new InvalidOperationException($"Resend send failed HTTP {(int)response.StatusCode}: {body}");
             }
 
-            _logger.LogInformation("Resend email '{Subject}' sent to {Email}.", subject, email);
+            _logger.LogInformation("Resend email '{Subject}' sent to {Email}.", subject, MaskEmail(email));
         }
 
         private async Task SendWithGmailApiAsync(string email, string subject, string htmlMessage)
         {
+            var correlationId = CreateCorrelationId();
             var clientId = EmailConfigurationHelper.GetGmailApiClientId(_configuration);
             var clientSecret = EmailConfigurationHelper.GetGmailApiClientSecret(_configuration);
             var refreshToken = _configuration["GmailApi:RefreshToken"];
@@ -232,6 +240,12 @@ namespace LT_Web_Nhom4.Services.Implementations
                 throw new InvalidOperationException("Gmail API email provider is not configured.");
             }
 
+            _logger.LogInformation(
+                "Gmail API send starting. CorrelationId {CorrelationId}, From {FromEmail}, To {ToEmail}.",
+                correlationId,
+                MaskEmail(fromEmail),
+                MaskEmail(email));
+
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             using var httpClient = new HttpClient
             {
@@ -243,6 +257,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                 clientId,
                 clientSecret,
                 refreshToken,
+                correlationId,
                 timeout.Token);
 
             var message = new MimeMessage();
@@ -267,18 +282,32 @@ namespace LT_Web_Nhom4.Services.Implementations
             using var response = await httpClient.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(timeout.Token);
-                throw new InvalidOperationException($"Gmail API returned HTTP {(int)response.StatusCode}: {body}");
+                var body = SanitizeProviderBody(await response.Content.ReadAsStringAsync(timeout.Token));
+                _logger.LogError(
+                    "Gmail API send failed. CorrelationId {CorrelationId}, From {FromEmail}, To {ToEmail}, HTTP {StatusCode}, Body {Body}",
+                    correlationId,
+                    MaskEmail(fromEmail),
+                    MaskEmail(email),
+                    (int)response.StatusCode,
+                    body);
+                throw new InvalidOperationException($"Gmail API send failed HTTP {(int)response.StatusCode}: {body}");
             }
 
-            _logger.LogInformation("Gmail API email '{Subject}' sent to {Email}.", subject, email);
+            _logger.LogInformation(
+                "Gmail API email '{Subject}' sent. CorrelationId {CorrelationId}, From {FromEmail}, To {ToEmail}, HTTP {StatusCode}.",
+                subject,
+                correlationId,
+                MaskEmail(fromEmail),
+                MaskEmail(email),
+                (int)response.StatusCode);
         }
 
-        private static async Task<string> GetGmailAccessTokenAsync(
+        private async Task<string> GetGmailAccessTokenAsync(
             HttpClient httpClient,
             string clientId,
             string clientSecret,
             string refreshToken,
+            string correlationId,
             CancellationToken cancellationToken)
         {
             using var tokenResponse = await httpClient.PostAsync(
@@ -295,8 +324,19 @@ namespace LT_Web_Nhom4.Services.Implementations
             var body = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
             if (!tokenResponse.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"Gmail token endpoint returned HTTP {(int)tokenResponse.StatusCode}: {body}");
+                var sanitizedBody = SanitizeProviderBody(body);
+                _logger.LogError(
+                    "Gmail API token endpoint failed. CorrelationId {CorrelationId}, HTTP {StatusCode}, Body {Body}",
+                    correlationId,
+                    (int)tokenResponse.StatusCode,
+                    sanitizedBody);
+                throw new InvalidOperationException($"Gmail API token endpoint failed HTTP {(int)tokenResponse.StatusCode}: {sanitizedBody}");
             }
+
+            _logger.LogInformation(
+                "Gmail API token endpoint succeeded. CorrelationId {CorrelationId}, HTTP {StatusCode}.",
+                correlationId,
+                (int)tokenResponse.StatusCode);
 
             using var json = JsonDocument.Parse(body);
             if (!json.RootElement.TryGetProperty("access_token", out var accessTokenElement))
@@ -345,11 +385,17 @@ namespace LT_Web_Nhom4.Services.Implementations
 
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(timeout.Token);
-                throw new InvalidOperationException($"Brevo returned HTTP {(int)response.StatusCode}: {body}");
+                var body = SanitizeProviderBody(await response.Content.ReadAsStringAsync(timeout.Token));
+                _logger.LogError(
+                    "Brevo email provider failed. CorrelationId {CorrelationId}, To {ToEmail}, HTTP {StatusCode}, Body {Body}",
+                    CreateCorrelationId(),
+                    MaskEmail(email),
+                    (int)response.StatusCode,
+                    body);
+                throw new InvalidOperationException($"Brevo send failed HTTP {(int)response.StatusCode}: {body}");
             }
 
-            _logger.LogInformation("Brevo email '{Subject}' sent to {Email}.", subject, email);
+            _logger.LogInformation("Brevo email '{Subject}' sent to {Email}.", subject, MaskEmail(email));
         }
 
         private async Task SendWithSendGridAsync(string email, string subject, string htmlMessage)
@@ -390,11 +436,17 @@ namespace LT_Web_Nhom4.Services.Implementations
 
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync(timeout.Token);
-                throw new InvalidOperationException($"SendGrid returned HTTP {(int)response.StatusCode}: {body}");
+                var body = SanitizeProviderBody(await response.Content.ReadAsStringAsync(timeout.Token));
+                _logger.LogError(
+                    "SendGrid email provider failed. CorrelationId {CorrelationId}, To {ToEmail}, HTTP {StatusCode}, Body {Body}",
+                    CreateCorrelationId(),
+                    MaskEmail(email),
+                    (int)response.StatusCode,
+                    body);
+                throw new InvalidOperationException($"SendGrid send failed HTTP {(int)response.StatusCode}: {body}");
             }
 
-            _logger.LogInformation("SendGrid email '{Subject}' sent to {Email}.", subject, email);
+            _logger.LogInformation("SendGrid email '{Subject}' sent to {Email}.", subject, MaskEmail(email));
         }
 
         public Task SendOtpEmailAsync(string toEmail, string otp, string purpose)
@@ -501,6 +553,50 @@ namespace LT_Web_Nhom4.Services.Implementations
                 .Where(provider => !string.IsNullOrWhiteSpace(provider))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static string CreateCorrelationId()
+        {
+            return Activity.Current?.Id ?? Guid.NewGuid().ToString("N");
+        }
+
+        private static string MaskEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return "<empty>";
+            }
+
+            var trimmed = email.Trim();
+            var atIndex = trimmed.IndexOf('@');
+            if (atIndex <= 1)
+            {
+                return "***";
+            }
+
+            var local = trimmed[..atIndex];
+            var domain = trimmed[(atIndex + 1)..];
+            var visibleLocal = local.Length <= 2 ? local[..1] : local[..Math.Min(2, local.Length)];
+            return $"{visibleLocal}***@{domain}";
+        }
+
+        private static string SanitizeProviderBody(string? body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                return "<empty>";
+            }
+
+            var normalized = body.Replace('\r', ' ').Replace('\n', ' ').Trim();
+            if (normalized.Contains("access_token", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("refresh_token", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains("client_secret", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[redacted provider response containing token material]";
+            }
+
+            const int maxLength = 1000;
+            return normalized.Length <= maxLength ? normalized : normalized[..maxLength] + "...";
         }
     }
 }

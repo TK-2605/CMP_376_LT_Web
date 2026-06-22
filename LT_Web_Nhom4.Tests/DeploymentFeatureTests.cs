@@ -62,6 +62,9 @@ public sealed class DeploymentFeatureTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.False(payload.RootElement.GetProperty("googleOAuthConfigured").GetBoolean());
         Assert.False(payload.RootElement.GetProperty("smtpConfigured").GetBoolean());
+        Assert.False(payload.RootElement.GetProperty("emailProviderReady").GetBoolean());
+        Assert.Equal("Chưa cấu hình", payload.RootElement.GetProperty("emailProvider").GetString());
+        Assert.True(payload.RootElement.TryGetProperty("deployCommit", out _));
         Assert.True(payload.RootElement.GetProperty("jwtConfigured").GetBoolean());
     }
 
@@ -92,6 +95,8 @@ public sealed class DeploymentFeatureTests
 
         Assert.True(payload.RootElement.GetProperty("googleOAuthConfigured").GetBoolean());
         Assert.True(payload.RootElement.GetProperty("smtpConfigured").GetBoolean());
+        Assert.True(payload.RootElement.GetProperty("emailProviderReady").GetBoolean());
+        Assert.Equal("SMTP", payload.RootElement.GetProperty("emailProvider").GetString());
         Assert.Contains("Tiếp tục với Google", loginHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Đăng ký đang tạm dừng", registerHtml, StringComparison.Ordinal);
     }
@@ -111,6 +116,9 @@ public sealed class DeploymentFeatureTests
 
         Assert.Equal(HttpStatusCode.OK, statusResponse.StatusCode);
         Assert.False(payload.RootElement.GetProperty("smtpConfigured").GetBoolean());
+        Assert.False(payload.RootElement.GetProperty("emailProviderReady").GetBoolean());
+        Assert.Equal("SMTP (blocked on Render Free)", payload.RootElement.GetProperty("emailProvider").GetString());
+        Assert.Contains("Gmail API", payload.RootElement.GetProperty("emailProviderProblem").GetString(), StringComparison.Ordinal);
         Assert.Contains("Đăng ký đang tạm dừng", registerHtml, StringComparison.Ordinal);
         Assert.Contains("Chức năng quên mật khẩu đang tạm dừng", forgotHtml, StringComparison.Ordinal);
     }
@@ -131,6 +139,8 @@ public sealed class DeploymentFeatureTests
 
         Assert.Equal(HttpStatusCode.OK, statusResponse.StatusCode);
         Assert.True(payload.RootElement.GetProperty("smtpConfigured").GetBoolean());
+        Assert.True(payload.RootElement.GetProperty("emailProviderReady").GetBoolean());
+        Assert.Equal("Brevo HTTPS", payload.RootElement.GetProperty("emailProvider").GetString());
         Assert.DoesNotContain("Đăng ký đang tạm dừng", registerHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("Chức năng quên mật khẩu đang tạm dừng", forgotHtml, StringComparison.Ordinal);
     }

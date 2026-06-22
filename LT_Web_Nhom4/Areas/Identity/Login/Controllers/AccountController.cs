@@ -189,10 +189,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 "Student",
                 passwordHash);
 
-            var emailSent = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
+            var emailError = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
+            var emailSent = string.IsNullOrWhiteSpace(emailError);
             TempData["AuthMessage"] = emailSent
                 ? "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác nhận."
-                : GetDevelopmentFallbackMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
+                : GetDevelopmentFallbackMessage(emailError ?? "Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
             TempData["AuthMessageType"] = emailSent ? "success" : "danger";
 
             return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl = model.ReturnUrl });
@@ -284,10 +285,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var resendResult = await _pendingRegistrationService.ResendAsync(email.Trim(), normalizedEmail);
             if (resendResult is not null)
             {
-                var emailSent = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
+                var emailError = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
+                var emailSent = string.IsNullOrWhiteSpace(emailError);
                 TempData["AuthMessage"] = emailSent
                     ? "Hệ thống đã gửi lại mã xác nhận."
-                    : GetDevelopmentFallbackMessage("Chưa gửi được email xác nhận.", resendResult.Code);
+                    : GetDevelopmentFallbackMessage(emailError ?? "Chưa gửi được email xác nhận.", resendResult.Code);
                 TempData["AuthMessageType"] = emailSent ? "success" : "danger";
             }
             else
@@ -341,10 +343,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             string? developmentMessage = null;
             if (user is not null && user.IsActive)
             {
-                var code = await CreatePasswordResetOtpAsync(user);
-                developmentMessage = await SendPasswordResetOtpEmailAsync(email, code);
+                var otpIssue = await CreatePasswordResetOtpAsync(user);
+                developmentMessage = await SendPasswordResetOtpEmailAsync(email, otpIssue.Code);
                 if (!string.IsNullOrWhiteSpace(developmentMessage) && !_environment.IsDevelopment())
                 {
+                    await DeactivatePasswordResetOtpAsync(otpIssue.OtpId);
                     ModelState.AddModelError(string.Empty, developmentMessage);
                     return View(model);
                 }
@@ -649,7 +652,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             return View();
         }
 
-        private async Task<bool> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult, string? returnUrl)
+        private async Task<string?> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult, string? returnUrl)
         {
             var confirmationUrl = Url.Action(
                 nameof(ConfirmRegistration),
@@ -673,12 +676,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             try
             {
                 await _emailSender.SendEmailAsync(pendingResult.PendingRegistration.Email, "Xác nhận đăng ký QuizHub", body);
-                return true;
+                return null;
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send pending registration confirmation email to {Email}.", pendingResult.PendingRegistration.Email);
-                return false;
+                return BuildEmailProviderFailureMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", exception);
             }
         }
 
@@ -743,7 +746,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 _logger.LogWarning(exception, "Could not send password reset email to {Email}.", email);
                 if (_environment.IsDevelopment())
                 {
-                    return $"SMTP chưa gửi được email. Liên kết đặt lại mật khẩu dev: {resetUrl}";
+                    return $"Email provider chưa gửi được email. Liên kết đặt lại mật khẩu dev: {resetUrl}";
                 }
 
                 return null;
@@ -894,12 +897,23 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private string GetDevelopmentFallbackMessage(string message, string code)
         {
-            return _environment.IsDevelopment()
-                ? $"{message} Mã xác nhận dev: {code}"
-                : $"{message} Vui lòng liên hệ quản trị viên hoặc thử gửi lại mã sau.";
+            if (_environment.IsDevelopment())
+            {
+                return $"{message} Mã xác nhận dev: {code}";
+            }
+
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var problem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+                ?? "Vui lòng kiểm tra Render logs hoặc thử gửi lại mã sau.";
+            if (message.Contains("Provider hiện tại:", StringComparison.OrdinalIgnoreCase))
+            {
+                return message;
+            }
+
+            return $"{message} Provider hiện tại: {provider}. {problem}";
         }
 
-        private async Task<string> CreatePasswordResetOtpAsync(ApplicationUser user)
+        private async Task<PasswordResetOtpIssue> CreatePasswordResetOtpAsync(ApplicationUser user)
         {
             var now = DateTime.UtcNow;
             var activeOtps = await _context.EmailOtps
@@ -913,7 +927,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             }
 
             var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-            _context.EmailOtps.Add(new EmailOtp
+            var otp = new EmailOtp
             {
                 UserId = user.Id,
                 Email = user.Email ?? string.Empty,
@@ -921,9 +935,22 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 CodeHash = HashOtp(code, user),
                 ExpiresAt = now.AddMinutes(5),
                 CreatedAt = now
-            });
+            };
+            _context.EmailOtps.Add(otp);
             await _context.SaveChangesAsync();
-            return code;
+            return new PasswordResetOtpIssue(code, otp.Id);
+        }
+
+        private async Task DeactivatePasswordResetOtpAsync(int otpId)
+        {
+            var otp = await _context.EmailOtps.FirstOrDefaultAsync(item => item.Id == otpId);
+            if (otp is null || otp.UsedAt is not null)
+            {
+                return;
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
         }
 
         private async Task<string?> SendPasswordResetOtpEmailAsync(string email, string code)
@@ -941,12 +968,28 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 _logger.LogWarning(exception, "Could not send password reset OTP to {Email}.", email);
                 if (_environment.IsDevelopment())
                 {
-                    return $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}";
+                    return $"Email provider chưa gửi được OTP. Mã OTP phát triển: {code}";
                 }
 
-                return "Chưa gửi được OTP qua email. Nếu đang chạy Render Free, Gmail SMTP qua cổng 587 thường không gửi ra ngoài; hãy cấu hình Resend hoặc kiểm tra lại SMTP/App Password.";
+                return BuildEmailProviderFailureMessage("Chưa gửi được OTP qua email. OTP vừa tạo đã được vô hiệu hóa.", exception);
             }
         }
+
+        private string BuildEmailProviderFailureMessage(string prefix, Exception? exception)
+        {
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var providerProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var problemText = string.IsNullOrWhiteSpace(providerProblem)
+                ? "Kiểm tra Render logs để xem phản hồi chi tiết từ provider."
+                : providerProblem;
+            var exceptionText = exception is null
+                ? string.Empty
+                : $" Lỗi: {exception.GetType().Name}: {exception.Message}";
+
+            return $"{prefix} Provider hiện tại: {provider}. {problemText}{exceptionText}";
+        }
+
+        private sealed record PasswordResetOtpIssue(string Code, int OtpId);
 
         private static string HashOtp(string code, ApplicationUser user)
         {

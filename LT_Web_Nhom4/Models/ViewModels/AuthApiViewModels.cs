@@ -23,6 +23,22 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
         public bool SmtpConfigured { get; set; }
 
+        public bool EmailProviderReady { get; set; }
+
+        public string EmailProvider { get; set; } = string.Empty;
+
+        public string? EmailProviderProblem { get; set; }
+
+        public string? DeployCommit { get; set; }
+
+        public string? DeployCommitShort { get; set; }
+
+        public string DeployEnvironment { get; set; } = string.Empty;
+
+        public bool DeployIsRender { get; set; }
+
+        public string? DeployRenderServiceId { get; set; }
+
         public bool JwtConfigured { get; set; }
 
         public bool RegistrationConfirmationReady { get; set; }

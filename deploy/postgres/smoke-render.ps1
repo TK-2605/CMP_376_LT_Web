@@ -110,11 +110,11 @@ try {
         throw "Meilisearch is configured but unreachable: $($ready.meilisearch.message)"
     }
 
-    $smtpSmokeEnabled = -not [string]::IsNullOrWhiteSpace($AdminEmail) `
+    $emailSmokeEnabled = -not [string]::IsNullOrWhiteSpace($AdminEmail) `
         -and -not [string]::IsNullOrWhiteSpace($AdminPassword) `
         -and -not [string]::IsNullOrWhiteSpace($TestEmailTo)
 
-    if ($smtpSmokeEnabled) {
+    if ($emailSmokeEnabled) {
         $login = Invoke-SmokeJsonPost "/api/auth/login" @{
             email = $AdminEmail
             password = $AdminPassword
@@ -126,15 +126,15 @@ try {
 
         $emailResult = Invoke-SmokeJsonPost "/api/auth/test-email" @{
             toEmail = $TestEmailTo
-            subject = "QuizHub live smoke SMTP"
+            subject = "QuizHub live smoke email provider"
         } $login.accessToken
 
         if (-not $emailResult.sent) {
-            throw "SMTP smoke failed: $($emailResult.message)"
+            throw "Email provider smoke failed: $($emailResult.message)"
         }
     }
     else {
-        Write-Host "Skipping authenticated SMTP smoke. Set QUIZHUB_SMOKE_ADMIN_EMAIL, QUIZHUB_SMOKE_ADMIN_PASSWORD, and QUIZHUB_SMOKE_TEST_EMAIL_TO to enable it."
+        Write-Host "Skipping authenticated email provider smoke. Set QUIZHUB_SMOKE_ADMIN_EMAIL, QUIZHUB_SMOKE_ADMIN_PASSWORD, and QUIZHUB_SMOKE_TEST_EMAIL_TO to enable it."
     }
 
     Write-Host "Render smoke check passed for $base"

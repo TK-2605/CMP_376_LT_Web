@@ -60,16 +60,27 @@ namespace LT_Web_Nhom4.Controllers
         public IActionResult Status()
         {
             var googleConfigured = HasValues("Authentication:Google:ClientId", "Authentication:Google:ClientSecret");
-            var smtpConfigured = HasEmailProvider();
+            var emailProviderReady = HasEmailProvider();
+            var emailProvider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var emailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var deploy = DeployMetadataHelper.Get(_configuration, _environment);
             var jwtConfigured = _jwtTokenService.IsConfigured;
 
             return Ok(new AuthFeatureStatusResponse
             {
                 GoogleOAuthConfigured = googleConfigured,
-                SmtpConfigured = smtpConfigured,
+                SmtpConfigured = emailProviderReady,
+                EmailProviderReady = emailProviderReady,
+                EmailProvider = emailProvider,
+                EmailProviderProblem = emailProviderProblem,
+                DeployCommit = deploy.CommitSha,
+                DeployCommitShort = deploy.CommitShortSha,
+                DeployEnvironment = deploy.Environment,
+                DeployIsRender = deploy.IsRender,
+                DeployRenderServiceId = deploy.RenderServiceId,
                 JwtConfigured = jwtConfigured,
-                RegistrationConfirmationReady = smtpConfigured,
-                ForgotPasswordReady = smtpConfigured,
+                RegistrationConfirmationReady = emailProviderReady,
+                ForgotPasswordReady = emailProviderReady,
                 LoginUrl = Url.Action("Login", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/Login",
                 RegisterUrl = Url.Action("Register", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/Register",
                 ForgotPasswordUrl = Url.Action("ForgotPassword", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/ForgotPassword",
@@ -87,21 +98,21 @@ namespace LT_Web_Nhom4.Controllers
                     new AuthFeatureStatusItem
                     {
                         Name = "Email OTP",
-                        Configured = smtpConfigured,
-                        Detail = smtpConfigured
-                            ? $"Đã cấu hình provider {EmailConfigurationHelper.ProviderLabel(_configuration)} để gửi OTP."
-                            : EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Thiếu cấu hình Resend hoặc SMTP; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
+                        Configured = emailProviderReady,
+                        Detail = emailProviderReady
+                            ? $"Đã cấu hình provider {emailProvider} để gửi OTP."
+                            : emailProviderProblem ?? "Thiếu cấu hình email provider; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
                     },
                     new AuthFeatureStatusItem
                     {
                         Name = "Xác nhận đăng ký bằng mã hoặc link",
-                        Configured = smtpConfigured,
+                        Configured = emailProviderReady,
                         Detail = "Luồng đăng ký lưu PendingRegistration và xác nhận bằng mã 6 số hoặc token trong email."
                     },
                     new AuthFeatureStatusItem
                     {
                         Name = "OTP quên mật khẩu",
-                        Configured = smtpConfigured,
+                        Configured = emailProviderReady,
                         Detail = "Luồng gửi OTP và liên kết reset mật khẩu đã có trong AccountController."
                     },
                     new AuthFeatureStatusItem
@@ -180,9 +191,11 @@ namespace LT_Web_Nhom4.Controllers
                 cancellationToken);
 
             var emailSent = false;
+            string? emailError = null;
             if (HasEmailProvider())
             {
-                emailSent = await SendPendingRegistrationEmailAsync(pendingResult);
+                emailError = await SendPendingRegistrationEmailAsync(pendingResult);
+                emailSent = string.IsNullOrWhiteSpace(emailError);
             }
 
             if (!emailSent && !_environment.IsDevelopment())
@@ -191,7 +204,8 @@ namespace LT_Web_Nhom4.Controllers
                 {
                     PendingConfirmation = true,
                     Email = pendingResult.PendingRegistration.Email,
-                    Message = "Registration was saved, but the server could not send the confirmation email. Configure Resend on Render Free or verify SMTP credentials."
+                    Message = emailError
+                        ?? BuildEmailProviderFailureMessage("Registration was saved, but the server could not send the confirmation email.", null)
                 });
             }
 
@@ -296,19 +310,23 @@ namespace LT_Web_Nhom4.Controllers
 
             if (user is not null && user.IsActive)
             {
-                var code = await CreatePasswordResetOtpAsync(user, cancellationToken);
-                developmentCode = _environment.IsDevelopment() ? code : null;
+                var otpIssue = await CreatePasswordResetOtpAsync(user, cancellationToken);
+                developmentCode = _environment.IsDevelopment() ? otpIssue.Code : null;
 
                 if (HasEmailProvider())
                 {
-                    var sent = await TrySendPasswordResetOtpEmailAsync(email, code);
-                    if (!sent && !_environment.IsDevelopment())
+                    var sendError = await TrySendPasswordResetOtpEmailAsync(email, otpIssue.Code);
+                    if (!string.IsNullOrWhiteSpace(sendError))
                     {
-                        return StatusCode(StatusCodes.Status502BadGateway, new ForgotPasswordApiResponse
+                        if (!_environment.IsDevelopment())
                         {
-                            Message = "OTP was created, but the server could not send email. Configure Resend on Render Free or verify SMTP credentials.",
-                            DevelopmentCode = null
-                        });
+                            await DeactivatePasswordResetOtpAsync(otpIssue.OtpId, cancellationToken);
+                            return StatusCode(StatusCodes.Status502BadGateway, new ForgotPasswordApiResponse
+                            {
+                                Message = sendError,
+                                DevelopmentCode = null
+                            });
+                        }
                     }
                 }
             }
@@ -424,19 +442,19 @@ namespace LT_Web_Nhom4.Controllers
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new SendTestEmailResponse
                 {
                     Sent = false,
-                    Message = EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Chưa cấu hình đủ Resend hoặc SMTP để gửi email."
+                    Message = EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Chưa cấu hình đủ email provider để gửi email."
                 });
             }
 
             var subject = string.IsNullOrWhiteSpace(request.Subject)
-                ? "QuizHub SMTP test"
+                ? "QuizHub email provider test"
                 : request.Subject.Trim();
             try
             {
                 await _emailService.SendEmailAsync(
                 request.ToEmail.Trim(),
                 subject,
-                "<p>Đây là email kiểm thử Gmail SMTP từ QuizHub.</p><p>Nếu bạn nhận được email này, MailKit/MimeKit đã hoạt động.</p>");
+                "<p>Đây là email kiểm thử provider gửi mail từ QuizHub.</p><p>Nếu bạn nhận được email này, luồng OTP deploy đang gửi mail ra ngoài được.</p>");
 
             }
             catch (Exception exception)
@@ -444,7 +462,7 @@ namespace LT_Web_Nhom4.Controllers
                 return StatusCode(StatusCodes.Status502BadGateway, new SendTestEmailResponse
                 {
                     Sent = false,
-                    Message = $"SMTP failed: {exception.GetType().Name}: {exception.Message}"
+                    Message = BuildEmailProviderFailureMessage("Email provider test failed.", exception)
                 });
             }
 
@@ -474,7 +492,7 @@ namespace LT_Web_Nhom4.Controllers
             });
         }
 
-        private async Task<bool> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult)
+        private async Task<string?> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult)
         {
             try
             {
@@ -497,16 +515,16 @@ namespace LT_Web_Nhom4.Controllers
                     <p>Swagger confirm endpoint: <code>/api/auth/register/confirm</code></p>
                     <p>Optional confirmation URL: <a href="{confirmationUrl}">{confirmationUrl}</a></p>
                     """);
-                return true;
+                return null;
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send API registration confirmation email to {Email}.", pendingResult.PendingRegistration.Email);
-                return false;
+                return BuildEmailProviderFailureMessage("Registration was saved, but the server could not send the confirmation email.", exception);
             }
         }
 
-        private async Task<bool> TrySendPasswordResetOtpEmailAsync(string email, string code)
+        private async Task<string?> TrySendPasswordResetOtpEmailAsync(string email, string code)
         {
             try
             {
@@ -518,12 +536,12 @@ namespace LT_Web_Nhom4.Controllers
                     <p>The code is valid for 5 minutes and can be tried up to 5 times.</p>
                     <p>Swagger confirm endpoint: <code>/api/auth/forgot-password/confirm</code></p>
                     """);
-                return true;
+                return null;
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send API password reset OTP to {Email}.", email);
-                return false;
+                return BuildEmailProviderFailureMessage("OTP was created, but the server could not send email. The OTP has been invalidated.", exception);
             }
         }
 
@@ -559,7 +577,7 @@ namespace LT_Web_Nhom4.Controllers
             }
         }
 
-        private async Task<string> CreatePasswordResetOtpAsync(ApplicationUser user, CancellationToken cancellationToken)
+        private async Task<PasswordResetOtpIssue> CreatePasswordResetOtpAsync(ApplicationUser user, CancellationToken cancellationToken)
         {
             var now = DateTime.UtcNow;
             var activeOtps = await _context.EmailOtps
@@ -574,7 +592,7 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-            _context.EmailOtps.Add(new EmailOtp
+            var otp = new EmailOtp
             {
                 UserId = user.Id,
                 Email = user.Email ?? string.Empty,
@@ -582,10 +600,23 @@ namespace LT_Web_Nhom4.Controllers
                 CodeHash = HashOtp(code, user),
                 ExpiresAt = now.AddMinutes(5),
                 CreatedAt = now
-            });
+            };
+            _context.EmailOtps.Add(otp);
 
             await _context.SaveChangesAsync(cancellationToken);
-            return code;
+            return new PasswordResetOtpIssue(code, otp.Id);
+        }
+
+        private async Task DeactivatePasswordResetOtpAsync(int otpId, CancellationToken cancellationToken)
+        {
+            var otp = await _context.EmailOtps.FirstOrDefaultAsync(item => item.Id == otpId, cancellationToken);
+            if (otp is null || otp.UsedAt is not null)
+            {
+                return;
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         private IActionResult IdentityValidationProblem(IdentityResult result)
@@ -630,5 +661,21 @@ namespace LT_Web_Nhom4.Controllers
         {
             return EmailConfigurationHelper.HasEmailProvider(_configuration);
         }
+
+        private string BuildEmailProviderFailureMessage(string prefix, Exception? exception)
+        {
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var providerProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var problemText = string.IsNullOrWhiteSpace(providerProblem)
+                ? "Kiểm tra Render logs để xem phản hồi chi tiết từ provider."
+                : providerProblem;
+            var exceptionText = exception is null
+                ? string.Empty
+                : $" Lỗi: {exception.GetType().Name}: {exception.Message}";
+
+            return $"{prefix} Provider hiện tại: {provider}. {problemText}{exceptionText}";
+        }
+
+        private sealed record PasswordResetOtpIssue(string Code, int OtpId);
     }
 }
