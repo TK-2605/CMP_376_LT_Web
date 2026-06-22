@@ -63,7 +63,18 @@
         </nav>
     </header>
 
-    <main class="student-page-shell" role="main">@RenderBody()</main>
+    <main class="student-page-shell" role="main">
+        @if (TempData["AuthMessage"] is string authMessage)
+        {
+            <div class="container global-alert-container">
+                <div class="alert alert-success global-alert" role="status">
+                    <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                    <span>@authMessage</span>
+                </div>
+            </div>
+        }
+        @RenderBody()
+    </main>
 
     <footer class="scholar-footer">
         <div class="container scholar-footer-inner">
@@ -84,7 +95,9 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="google_translate_element" class="dynamic-translate-host" aria-hidden="true"></div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/dynamic-translate.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

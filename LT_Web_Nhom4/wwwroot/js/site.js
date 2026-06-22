@@ -172,6 +172,64 @@
     });
   });
 
+  document.querySelectorAll('[data-new-subject-toggle]').forEach((toggle) => {
+    const form = toggle.closest('form');
+    const fields = form?.querySelector('[data-new-subject-fields]');
+    const select = form?.querySelector('[data-existing-subject]');
+    const update = () => {
+      const enabled = toggle.checked;
+      if (fields) fields.hidden = !enabled;
+      if (select) select.disabled = enabled;
+      fields?.querySelectorAll('input, textarea').forEach((field) => {
+        if (field.name.includes('NewSubjectCode') || field.name.includes('NewSubjectName')) {
+          field.required = enabled;
+        }
+      });
+    };
+    toggle.addEventListener('change', update);
+    update();
+  });
+
+  document.querySelectorAll('[data-subject-code-input]').forEach((input) => {
+    const normalize = () => {
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 50);
+    };
+    input.addEventListener('input', normalize);
+    normalize();
+  });
+
+  document.querySelectorAll('[data-media-preview]').forEach((input) => {
+    const target = document.querySelector(input.dataset.mediaPreview);
+    if (!target) return;
+    input.addEventListener('change', () => {
+      target.innerHTML = '';
+      const files = Array.from(input.files || []);
+      target.hidden = files.length === 0;
+      files.forEach((file) => {
+        const item = document.createElement('div');
+        item.className = 'selected-media-item';
+        const objectUrl = URL.createObjectURL(file);
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = objectUrl;
+          img.alt = file.name;
+          img.onload = () => URL.revokeObjectURL(objectUrl);
+          item.append(img);
+        } else if (file.type.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.src = objectUrl;
+          video.controls = true;
+          video.preload = 'metadata';
+          item.append(video);
+        }
+        const label = document.createElement('span');
+        label.textContent = file.name;
+        item.append(label);
+        target.append(item);
+      });
+    });
+  });
+
   document.querySelectorAll('[data-ajax-form="remove-member"]').forEach((form) => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -196,12 +254,12 @@
 
         const heroCount = document.querySelector('.class-detail-meta .ri-group-line')?.closest('span');
         if (heroCount && !heroCount.querySelector('[data-member-count]')) {
-          heroCount.innerHTML = `<i class="ri-group-line"></i> ${count} hoc vien`;
+          heroCount.innerHTML = `<i class="ri-group-line"></i> ${count} học viên`;
         }
 
         const memberHeading = document.querySelector('aside .surface-heading h2');
         if (memberHeading && !memberHeading.querySelector('[data-member-count]')) {
-          memberHeading.textContent = `${count} hoc vien`;
+          memberHeading.textContent = `${count} học viên`;
         }
       };
 
@@ -212,13 +270,13 @@
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.ok === false) throw new Error(data.message || 'Khong the xoa hoc vien.');
+        if (!response.ok || data.ok === false) throw new Error(data.message || 'Không thể xóa học viên.');
 
         row?.remove();
         if (typeof data.memberCount === 'number') updateMemberCount(data.memberCount);
-        showMessage(data.message || 'Hoc vien da duoc xoa khoi lop.', false);
+        showMessage(data.message || 'Học viên đã được xóa khỏi lớp.', false);
       } catch (error) {
-        showMessage(error.message || 'Khong the xoa hoc vien. Vui long thu lai.', true);
+        showMessage(error.message || 'Không thể xóa học viên. Vui lòng thử lại.', true);
       } finally {
         button?.removeAttribute('disabled');
       }

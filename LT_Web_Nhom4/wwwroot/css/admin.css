@@ -484,6 +484,19 @@
   line-height: 1.55;
 }
 
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.admin-row-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 @media (max-width: 767px) {
   .technology-grid { grid-template-columns: 1fr; }
   .technology-card p { min-height: 0; }

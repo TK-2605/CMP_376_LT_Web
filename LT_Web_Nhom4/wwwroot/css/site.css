@@ -735,3 +735,32 @@ textarea.form-control {
   outline: 2px solid #7a6ad8;
   outline-offset: 3px;
 }
+
+.global-alert-container {
+  padding-top: 18px;
+}
+
+.global-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  border-radius: 8px;
+}
+
+.dynamic-translate-host {
+  position: fixed;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.goog-te-banner-frame,
+.skiptranslate iframe {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}

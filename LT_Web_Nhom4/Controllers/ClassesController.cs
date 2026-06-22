@@ -53,6 +53,11 @@ namespace LT_Web_Nhom4.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateClassViewModel model, CancellationToken cancellationToken)
         {
+            if (model.CreateNewSubject)
+            {
+                ModelState.Remove(nameof(model.SubjectId));
+            }
+
             await PopulateSubjectsAsync(model);
             ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
             var imageFiles = GetFiles(model.ImageFiles);
@@ -71,9 +76,15 @@ namespace LT_Web_Nhom4.Controllers
             var storedPaths = new List<string>();
             try
             {
+                var subject = await ResolveSubjectAsync(model, cancellationToken);
+                if (subject is null)
+                {
+                    return View(model);
+                }
+
                 var classRoom = new ClassEntity
                 {
-                    SubjectId = model.SubjectId,
+                    SubjectId = subject.Id,
                     TeacherId = CurrentUserId,
                     Code = await _codeGenerator.GenerateClassCodeAsync(cancellationToken),
                     Name = model.Name.Trim(),
@@ -82,6 +93,12 @@ namespace LT_Web_Nhom4.Controllers
                     AcademicYear = NormalizeOptional(model.AcademicYear),
                     IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl)
                 };
+
+                if (subject.Id == 0)
+                {
+                    _context.Subjects.Add(subject);
+                    classRoom.Subject = subject;
+                }
 
                 await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
                 classRoom.CoverImagePath = classRoom.MediaAssets
@@ -272,6 +289,11 @@ namespace LT_Web_Nhom4.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditClassViewModel model, CancellationToken cancellationToken)
         {
+            if (model.CreateNewSubject)
+            {
+                ModelState.Remove(nameof(model.SubjectId));
+            }
+
             if (!await _accessPolicy.IsClassOwnerAsync(model.Id, CurrentUserId, IsAdmin))
             {
                 return Forbid();
@@ -311,6 +333,12 @@ namespace LT_Web_Nhom4.Controllers
             var deletedPaths = new List<string>();
             try
             {
+                var subject = await ResolveSubjectAsync(model, cancellationToken);
+                if (subject is null)
+                {
+                    return View(model);
+                }
+
                 var removedMedia = classRoom.MediaAssets.Where(media => removeIds.Contains(media.Id)).ToList();
                 foreach (var media in removedMedia)
                 {
@@ -320,7 +348,13 @@ namespace LT_Web_Nhom4.Controllers
                 }
 
                 await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
-                classRoom.SubjectId = model.SubjectId;
+                classRoom.SubjectId = subject.Id;
+                if (subject.Id == 0)
+                {
+                    _context.Subjects.Add(subject);
+                    classRoom.Subject = subject;
+                }
+
                 classRoom.Name = model.Name.Trim();
                 classRoom.Description = NormalizeOptional(model.Description);
                 classRoom.Semester = NormalizeOptional(model.Semester);
@@ -415,7 +449,7 @@ namespace LT_Web_Nhom4.Controllers
             {
                 if (IsAjaxRequest())
                 {
-                    return NotFound(new { ok = false, message = "Khong tim thay hoc vien trong lop." });
+                    return NotFound(new { ok = false, message = "Không tìm thấy học viên trong lớp." });
                 }
 
                 return RedirectToAction(nameof(Details), new { id });
@@ -426,7 +460,7 @@ namespace LT_Web_Nhom4.Controllers
 
             var memberCount = await _context.ClassMembers
                 .CountAsync(item => item.ClassId == id && item.Status == ClassMemberStatus.Active);
-            var message = "Hoc vien da duoc xoa khoi lop.";
+            var message = "Học viên đã được xóa khỏi lớp.";
 
             if (IsAjaxRequest())
             {
@@ -562,13 +596,81 @@ namespace LT_Web_Nhom4.Controllers
 
         private async Task PopulateSubjectsAsync(CreateClassViewModel model)
         {
-            model.Subjects = await _context.Subjects.AsNoTracking().OrderBy(item => item.Name)
+            model.Subjects = await _context.Subjects.AsNoTracking()
+                .Where(item => item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin)
+                .OrderBy(item => item.Name)
                 .Select(item => new SubjectOptionViewModel { Id = item.Id, Label = item.Code + " - " + item.Name })
                 .ToListAsync();
             if (model.SubjectId == 0 && model.Subjects.Count > 0)
             {
                 model.SubjectId = model.Subjects[0].Id;
             }
+        }
+
+        private async Task<Subject?> ResolveSubjectAsync(CreateClassViewModel model, CancellationToken cancellationToken)
+        {
+            if (!model.CreateNewSubject)
+            {
+                var subjectExists = await _context.Subjects.AnyAsync(
+                    item => item.Id == model.SubjectId
+                        && (item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin),
+                    cancellationToken);
+                if (!subjectExists)
+                {
+                    ModelState.AddModelError(nameof(model.SubjectId), "Vui lòng chọn môn học hợp lệ hoặc tạo môn học riêng.");
+                    return null;
+                }
+
+                return new Subject { Id = model.SubjectId };
+            }
+
+            var code = NormalizeSubjectCode(model.NewSubjectCode);
+            var name = NormalizeOptional(model.NewSubjectName);
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectCode), "Vui lòng nhập mã môn học.");
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectName), "Vui lòng nhập tên môn học.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return null;
+            }
+
+            var duplicateCode = await _context.Subjects.AnyAsync(
+                item => item.Code.ToUpper() == code,
+                cancellationToken);
+            if (duplicateCode)
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectCode), "Mã môn học đã tồn tại. Vui lòng dùng mã khác.");
+            }
+
+            var normalizedName = name!.ToUpperInvariant();
+            var duplicateName = await _context.Subjects.AnyAsync(
+                item => item.Name.ToUpper() == normalizedName
+                    && (item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin),
+                cancellationToken);
+            if (duplicateName)
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectName), "Tên môn học đã tồn tại trong danh sách của bạn.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return null;
+            }
+
+            return new Subject
+            {
+                Code = code,
+                Name = name,
+                Description = NormalizeOptional(model.NewSubjectDescription),
+                OwnerId = CurrentUserId
+            };
         }
 
         private void ValidateVideoUrl(string? value, string key)
@@ -588,6 +690,16 @@ namespace LT_Web_Nhom4.Controllers
         {
             var normalized = value?.Trim();
             return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        }
+
+        private static string NormalizeSubjectCode(string? value)
+        {
+            var raw = new string((value ?? string.Empty)
+                .Trim()
+                .ToUpperInvariant()
+                .Where(character => char.IsLetterOrDigit(character) || character is '-' or '_')
+                .ToArray());
+            return raw.Length > 50 ? raw[..50] : raw;
         }
     }
 }

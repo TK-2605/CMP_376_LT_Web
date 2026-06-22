@@ -24,7 +24,14 @@
                 {
                     <i class="ri-timer-line waiting-icon"></i><h2>Đang chờ đến giờ</h2><p>Trang sẽ tự chuyển khi đề thi được mở.</p><div class="countdown-display" data-wait-countdown>--:--:--</div>
                 }
-                <a asp-action="Room" asp-route-id="@Model.Id" class="btn btn-primary w-100">Kiểm tra lại</a>
+                @if (Model.IsClosed)
+                {
+                    <button type="button" class="btn btn-light w-100" disabled>Đã kết thúc</button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-primary w-100" disabled title="Nút sẽ mở khi đến giờ bắt đầu">Bắt đầu</button>
+                }
                 <a asp-controller="Chat" asp-action="Room" asp-route-type="exam" asp-route-id="@Model.Id" class="btn btn-outline-primary w-100 mt-2"><i class="ri-chat-3-line"></i> Chat phòng thi</a>
             </aside>
         </div>

@@ -19,6 +19,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<Subject> Subjects { get; set; }
 
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         public DbSet<Class> Classes { get; set; }
 
         public DbSet<ClassMember> ClassMembers { get; set; }
@@ -103,7 +105,23 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(subject => subject.Code).HasMaxLength(50);
                 entity.Property(subject => subject.Name).HasMaxLength(200);
+                entity.Property(subject => subject.OwnerId).HasMaxLength(450);
                 entity.HasIndex(subject => subject.Code).IsUnique();
+                entity.HasIndex(subject => subject.OwnerId);
+
+                entity.HasOne(subject => subject.Owner)
+                    .WithMany()
+                    .HasForeignKey(subject => subject.OwnerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<ChatMessage>(entity =>
+            {
+                entity.Property(message => message.RoomType).HasMaxLength(20);
+                entity.Property(message => message.SenderId).HasMaxLength(450);
+                entity.Property(message => message.SenderName).HasMaxLength(150);
+                entity.Property(message => message.Message).HasMaxLength(500);
+                entity.HasIndex(message => new { message.RoomType, message.RoomId, message.SentAt });
             });
 
             builder.Entity<Class>(entity =>

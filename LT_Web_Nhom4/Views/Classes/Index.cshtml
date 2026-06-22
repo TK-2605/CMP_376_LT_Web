@@ -20,6 +20,14 @@
             <a asp-action="Create" class="btn btn-primary"><i class="ri-add-line" aria-hidden="true"></i> Tạo lớp</a>
         </header>
 
+        @if (Model.OwnedClasses.Count == 0 && Model.ParticipatingClasses.Count == 0)
+        {
+            <div class="alert alert-info workspace-alert class-empty-alert" role="status">
+                <i class="ri-information-line" aria-hidden="true"></i>
+                <span>Bạn chưa có lớp học nào. Hãy nhập mã lớp để tham gia, hoặc bấm <strong>Tạo lớp</strong> nếu bạn là chủ lớp.</span>
+            </div>
+        }
+
         <div class="workspace-tools" data-reveal>
             <form asp-action="Join" method="post" class="join-code-form">
                 <div>

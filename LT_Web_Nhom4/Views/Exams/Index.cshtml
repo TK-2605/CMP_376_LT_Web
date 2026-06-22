@@ -39,9 +39,17 @@
                         {
                             <a asp-action="Result" asp-route-attemptId="@exam.CurrentUserAttemptId" class="btn btn-outline-primary w-100">Xem kết quả</a>
                         }
+                        else if (state == "waiting")
+                        {
+                            <button type="button" class="btn btn-primary w-100" disabled title="Phòng thi chưa mở">Bắt đầu</button>
+                        }
+                        else if (state == "closed")
+                        {
+                            <button type="button" class="btn btn-light w-100" disabled>Đã kết thúc</button>
+                        }
                         else
                         {
-                            <a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">@(state == "open" ? "Vào làm bài" : "Mở phòng thi")</a>
+                            <a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">Bắt đầu</a>
                         }
                     </article>
                 }

@@ -147,18 +147,18 @@
     options.forEach((option) => option.classList.remove('is-invalid'));
 
     if (!content?.value.trim()) {
-      return { valid: false, message: 'Cau hoi can co noi dung truoc khi dang de.' };
+      return { valid: false, message: 'Câu hỏi cần có nội dung trước khi đăng đề.' };
     }
     if (filledOptions.length < 2) {
       options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
-      return { valid: false, message: 'Cau hoi can it nhat 2 dap an co noi dung.' };
+      return { valid: false, message: 'Câu hỏi cần ít nhất 2 đáp án có nội dung.' };
     }
     if (correctOptions.length !== 1) {
-      return { valid: false, message: 'Cau hoi phai co dung 1 dap an dung.' };
+      return { valid: false, message: 'Câu hỏi phải có đúng 1 đáp án đúng.' };
     }
     if (checkedContent.some((option) => !option.value.trim())) {
       checkedContent.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
-      return { valid: false, message: 'Dap an dung dang chon can co noi dung.' };
+      return { valid: false, message: 'Đáp án đúng đang chọn cần có nội dung.' };
     }
     return { valid: true, message: '' };
   };
@@ -176,7 +176,7 @@
       stage.querySelector('.question-stage-header').after(alert);
     }
     alert.textContent = 'Câu hỏi này cần có nội dung, ít nhất hai đáp án và đúng một đáp án đúng trước khi đăng đề.';
-    alert.textContent = message || 'Cau hoi nay can co noi dung, it nhat 2 dap an va dung 1 dap an dung truoc khi dang de.';
+    alert.textContent = message || 'Câu hỏi này cần có nội dung, ít nhất 2 đáp án và đúng 1 đáp án đúng trước khi đăng đề.';
     cards()[questionIndex]?.querySelector('textarea[name$=".Content"]')?.focus();
     stage.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   };
@@ -189,6 +189,39 @@
     input.setCustomValidity(options.message);
     input.reportValidity();
     input.setCustomValidity('');
+  };
+
+  const renderQuestionMediaPreview = (card) => {
+    const preview = card.querySelector('[data-question-media-preview]');
+    if (!preview) return;
+    preview.innerHTML = '';
+    const files = [
+      ...Array.from(card.querySelector('[data-question-images]')?.files || []),
+      ...Array.from(card.querySelector('[data-question-videos]')?.files || [])
+    ];
+    preview.hidden = files.length === 0;
+    files.forEach((file) => {
+      const item = document.createElement('div');
+      item.className = 'selected-media-item';
+      const objectUrl = URL.createObjectURL(file);
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = objectUrl;
+        img.alt = file.name;
+        img.onload = () => URL.revokeObjectURL(objectUrl);
+        item.append(img);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = objectUrl;
+        video.controls = true;
+        video.preload = 'metadata';
+        item.append(video);
+      }
+      const label = document.createElement('span');
+      label.textContent = file.name;
+      item.append(label);
+      preview.append(item);
+    });
   };
 
   root.addEventListener('click', (event) => {
@@ -223,6 +256,7 @@
         types: ['image/jpeg', 'image/png', 'image/webp'],
         message: 'Chỉ được chọn tối đa 5 ảnh JPG, PNG hoặc WebP, mỗi ảnh không vượt quá 5 MB.'
       });
+      renderQuestionMediaPreview(event.target.closest('[data-question-card]'));
     }
     if (event.target.matches('[data-question-videos]')) {
       validateFileInput(event.target, {
@@ -231,6 +265,7 @@
         types: ['video/mp4', 'video/webm', 'video/quicktime'],
         message: 'Chỉ được chọn tối đa 2 video MP4, WebM hoặc MOV, mỗi video không vượt quá 100 MB.'
       });
+      renderQuestionMediaPreview(event.target.closest('[data-question-card]'));
     }
     renderNavigation();
   });

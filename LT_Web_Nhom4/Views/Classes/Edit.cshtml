@@ -35,13 +35,37 @@
 
                 <div class="form-field">
                     <label asp-for="SubjectId" class="form-label"></label>
-                    <select asp-for="SubjectId" class="form-select">
+                    <select asp-for="SubjectId" class="form-select" data-existing-subject>
                         @foreach (var subject in Model.Subjects)
                         {
                             <option value="@subject.Id">@subject.Label</option>
                         }
                     </select>
                     <span asp-validation-for="SubjectId" class="text-danger"></span>
+                </div>
+
+                <div class="form-field span-2 subject-inline-panel">
+                    <label class="switch-row subject-create-toggle">
+                        <span><strong>Tạo môn học riêng mới</strong><small>Dùng khi lớp này cần môn khác với danh sách hiện tại. Mã và tên sẽ được kiểm tra trùng trước khi lưu.</small></span>
+                        <input asp-for="CreateNewSubject" class="form-check-input" type="checkbox" role="switch" data-new-subject-toggle />
+                    </label>
+                    <div class="subject-inline-fields" data-new-subject-fields>
+                        <div>
+                            <label asp-for="NewSubjectCode" class="form-label"></label>
+                            <input asp-for="NewSubjectCode" class="form-control" placeholder="Ví dụ: WEB-N4" data-subject-code-input />
+                            <span asp-validation-for="NewSubjectCode" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="NewSubjectName" class="form-label"></label>
+                            <input asp-for="NewSubjectName" class="form-control" placeholder="Ví dụ: Lập trình Web" />
+                            <span asp-validation-for="NewSubjectName" class="text-danger"></span>
+                        </div>
+                        <div class="span-2">
+                            <label asp-for="NewSubjectDescription" class="form-label"></label>
+                            <textarea asp-for="NewSubjectDescription" class="form-control" rows="2" placeholder="Ghi chú ngắn nếu cần"></textarea>
+                            <span asp-validation-for="NewSubjectDescription" class="text-danger"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-field">
@@ -96,8 +120,9 @@
                             <strong>Chọn thêm ảnh</strong>
                             <small>Tổng tối đa 5 ảnh. JPG, PNG hoặc WebP, mỗi ảnh tối đa 5 MB.</small>
                         </span>
-                        <input asp-for="ImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+                        <input asp-for="ImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple data-media-preview="#classImagePreview" data-media-preview-type="image" />
                     </label>
+                    <div id="classImagePreview" class="selected-media-preview" hidden></div>
                     <span asp-validation-for="ImageFiles" class="text-danger"></span>
                 </div>
 
@@ -109,8 +134,9 @@
                             <strong>Chọn thêm video</strong>
                             <small>Tổng tối đa 2 video. MP4, WebM hoặc MOV, mỗi video tối đa 100 MB.</small>
                         </span>
-                        <input asp-for="VideoFiles" type="file" accept="video/mp4,video/webm,video/quicktime" multiple />
+                        <input asp-for="VideoFiles" type="file" accept="video/mp4,video/webm,video/quicktime" multiple data-media-preview="#classVideoPreview" data-media-preview-type="video" />
                     </label>
+                    <div id="classVideoPreview" class="selected-media-preview" hidden></div>
                     <span asp-validation-for="VideoFiles" class="text-danger"></span>
                 </div>
             </div>

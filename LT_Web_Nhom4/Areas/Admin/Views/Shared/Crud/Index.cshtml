@@ -74,21 +74,34 @@
                                 </td>
                             }
                             <td class="text-end text-nowrap">
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary" title="Xem chi tiết">
-                                    <i class="icon-base ri ri-eye-line"></i>
-                                </a>
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sửa">
-                                    <i class="icon-base ri ri-edit-2-line"></i>
-                                </a>
                                 @if (string.Equals(Model.ControllerName, "Users", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@row.Key" class="btn btn-sm btn-outline-info" title="Phân quyền">
-                                        <i class="icon-base ri ri-shield-user-line"></i>
+                                    var isActive = row.Values.TryGetValue("IsActive", out var activeText) && string.Equals(activeText, "Đang hoạt động", StringComparison.OrdinalIgnoreCase);
+                                    <div class="admin-row-actions">
+                                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary"><i class="icon-base ri ri-eye-line"></i> Xem</a>
+                                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary"><i class="icon-base ri ri-edit-2-line"></i> Sửa</a>
+                                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ManageRoles" asp-route-id="@row.Key" class="btn btn-sm btn-outline-info"><i class="icon-base ri ri-shield-user-line"></i> Phân quyền</a>
+                                        <form asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="ToggleActive" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@row.Key" />
+                                            <button type="submit" class="btn btn-sm @(isActive ? "btn-outline-warning" : "btn-outline-success")" data-confirm="@(isActive ? "Khóa tài khoản này?" : "Mở khóa tài khoản này?")">
+                                                <i class="icon-base ri @(isActive ? "ri-lock-line" : "ri-lock-unlock-line")"></i> @(isActive ? "Khóa" : "Mở")
+                                            </button>
+                                        </form>
+                                        <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger"><i class="icon-base ri ri-delete-bin-6-line"></i> Xóa</a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Details" asp-route-id="@row.Key" class="btn btn-sm btn-outline-secondary" title="Xem chi tiết">
+                                        <i class="icon-base ri ri-eye-line"></i>
+                                    </a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Edit" asp-route-id="@row.Key" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                        <i class="icon-base ri ri-edit-2-line"></i>
+                                    </a>
+                                    <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoá">
+                                        <i class="icon-base ri ri-delete-bin-6-line"></i>
                                     </a>
                                 }
-                                <a asp-area="@Model.AreaName" asp-controller="@Model.ControllerName" asp-action="Delete" asp-route-id="@row.Key" class="btn btn-sm btn-outline-danger" title="Xoá">
-                                    <i class="icon-base ri ri-delete-bin-6-line"></i>
-                                </a>
                             </td>
                         </tr>
                     }

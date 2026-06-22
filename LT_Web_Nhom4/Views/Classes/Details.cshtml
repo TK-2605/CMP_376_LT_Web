@@ -33,14 +33,14 @@
                 <p>@(string.IsNullOrWhiteSpace(Model.Description) ? Model.SubjectName : Model.Description)</p>
                 <div class="class-detail-meta">
                     <span><i class="ri-book-open-line"></i> @Model.SubjectName</span>
-                    <span><i class="ri-group-line"></i> @Model.MemberCount học viên</span>
+                    <span><i class="ri-group-line"></i> <span data-member-count>@Model.MemberCount</span> học viên</span>
                     <span><i class="ri-file-list-3-line"></i> @Model.ExamCount đề thi</span>
                 </div>
             </div>
 
             <div class="class-detail-actions">
                 <a asp-action="Index" class="btn btn-light"><i class="ri-arrow-left-line"></i> Danh sách</a>
-                <a asp-controller="Chat" asp-action="Room" asp-route-type="class" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="ri-chat-3-line"></i> Chat lớp</a>
+                <a asp-controller="Chat" asp-action="Room" asp-route-type="class" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="ri-chat-3-line"></i> Thông báo lớp</a>
                 @if (Model.IsOwner)
                 {
                     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="ri-edit-line"></i> Chỉnh sửa lớp</a>
@@ -96,7 +96,7 @@
                                 var state = exam.HasCompletedAttempt ? "completed" : exam.Status == ExamStatus.Draft ? "draft" : now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
                                 var stateText = exam.HasCompletedAttempt ? "Đã hoàn thành" : exam.Status == ExamStatus.Draft ? "Bản nháp" : now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Chưa mở";
                                 var actionName = Model.IsOwner ? "Manage" : exam.HasCompletedAttempt ? "Result" : "Room";
-                                var buttonText = Model.IsOwner ? "Quản lý" : exam.HasCompletedAttempt ? "Xem kết quả" : "Vào phòng";
+                                var buttonText = Model.IsOwner ? "Quản lý" : exam.HasCompletedAttempt ? "Xem kết quả" : state == "open" ? "Bắt đầu" : state == "waiting" ? "Bắt đầu" : "Đã kết thúc";
                                 <article class="exam-row">
                                     <div class="exam-row-date"><strong>@exam.StartAt.ToString("dd")</strong><span>@exam.StartAt.ToString("MM/yyyy")</span></div>
                                     <div class="exam-row-content">
@@ -107,6 +107,14 @@
                                     @if (exam.HasCompletedAttempt && !Model.IsOwner)
                                     {
                                         <a asp-controller="Exams" asp-action="@actionName" asp-route-attemptId="@exam.CurrentUserAttemptId" class="btn btn-outline-primary">@buttonText</a>
+                                    }
+                                    else if (!Model.IsOwner && state == "waiting")
+                                    {
+                                        <button type="button" class="btn btn-primary" disabled title="Phòng thi chưa mở">@buttonText</button>
+                                    }
+                                    else if (!Model.IsOwner && state == "closed")
+                                    {
+                                        <button type="button" class="btn btn-light" disabled>@buttonText</button>
                                     }
                                     else
                                     {
@@ -134,7 +142,7 @@
                 </section>
 
                 <section class="surface-section">
-                    <div class="surface-heading"><div><span class="workspace-kicker">Thành viên</span><h2>@Model.MemberCount học viên</h2></div></div>
+                    <div class="surface-heading"><div><span class="workspace-kicker">Thành viên</span><h2><span data-member-count>@Model.MemberCount</span> học viên</h2></div></div>
                     @if (!Model.IsOwner)
                     {
                         <p class="muted-copy">Danh sách thành viên chỉ hiển thị với chủ lớp.</p>

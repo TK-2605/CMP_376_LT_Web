@@ -46,9 +46,10 @@ namespace LT_Web_Nhom4.Controllers
                 {
                     RoomType = "class",
                     RoomId = id,
-                    Title = classInfo.Name,
-                    Subtitle = $"Trao đổi trực tiếp · {classInfo.SubjectName}",
-                    BackUrl = Url.Action("Details", "Classes", new { id }) ?? "/"
+                    Title = $"Thông báo lớp · {classInfo.Name}",
+                    Subtitle = $"Trao đổi realtime có lưu lịch sử gần nhất · {classInfo.SubjectName}",
+                    BackUrl = Url.Action("Details", "Classes", new { id }) ?? "/",
+                    Messages = await LoadMessagesAsync("class", id)
                 });
             }
 
@@ -73,12 +74,31 @@ namespace LT_Web_Nhom4.Controllers
                     RoomType = "exam",
                     RoomId = id,
                     Title = examInfo.Title,
-                    Subtitle = $"Phòng trao đổi trực tiếp · {examInfo.ClassName}",
-                    BackUrl = Url.Action(canManage ? "Manage" : "Room", "Exams", new { id }) ?? "/"
+                    Subtitle = $"Phòng trao đổi realtime · {examInfo.ClassName}",
+                    BackUrl = Url.Action(canManage ? "Manage" : "Room", "Exams", new { id }) ?? "/",
+                    Messages = await LoadMessagesAsync("exam", id)
                 });
             }
 
             return BadRequest();
+        }
+
+        private async Task<IList<ChatMessageViewModel>> LoadMessagesAsync(string roomType, int roomId)
+        {
+            var messages = await _context.ChatMessages.AsNoTracking()
+                .Where(item => item.RoomType == roomType && item.RoomId == roomId)
+                .OrderByDescending(item => item.SentAt)
+                .Take(50)
+                .OrderBy(item => item.SentAt)
+                .Select(item => new ChatMessageViewModel
+                {
+                    Sender = item.SenderName,
+                    Message = item.Message,
+                    SentAt = item.SentAt
+                })
+                .ToListAsync();
+
+            return messages;
         }
     }
 }

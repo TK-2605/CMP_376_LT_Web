@@ -104,6 +104,21 @@ namespace LT_Web_Nhom4.Models.ViewModels
         public IFormFileCollection? VideoFiles { get; set; }
 
         public IList<SubjectOptionViewModel> Subjects { get; set; } = new List<SubjectOptionViewModel>();
+
+        [Display(Name = "Tạo môn học riêng")]
+        public bool CreateNewSubject { get; set; }
+
+        [StringLength(50, ErrorMessage = "Mã môn học không được vượt quá 50 ký tự.")]
+        [Display(Name = "Mã môn học")]
+        public string? NewSubjectCode { get; set; }
+
+        [StringLength(200, ErrorMessage = "Tên môn học không được vượt quá 200 ký tự.")]
+        [Display(Name = "Tên môn học")]
+        public string? NewSubjectName { get; set; }
+
+        [StringLength(1000, ErrorMessage = "Mô tả môn học không được vượt quá 1.000 ký tự.")]
+        [Display(Name = "Mô tả môn học")]
+        public string? NewSubjectDescription { get; set; }
     }
 
     public class EditClassViewModel : CreateClassViewModel

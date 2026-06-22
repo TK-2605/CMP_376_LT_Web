@@ -298,6 +298,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         public async Task<IActionResult> Logout(string? returnUrl = null)
         {
             await _signInManager.SignOutAsync();
+            TempData["AuthMessage"] = "Bạn đã đăng xuất khỏi hệ thống.";
             return LocalRedirect(GetSafeReturnUrl(returnUrl));
         }
 
@@ -327,7 +328,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var email = model.Email.Trim();
             var user = await _userManager.FindByEmailAsync(email);
             string? developmentMessage = null;
-            if (user is not null && user.IsActive && await _userManager.IsEmailConfirmedAsync(user))
+            if (user is not null && user.IsActive)
             {
                 var code = await CreatePasswordResetOtpAsync(user);
                 developmentMessage = await SendPasswordResetOtpEmailAsync(email, code);
@@ -830,6 +831,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
         {
+            TempData["AuthMessage"] = $"Đăng nhập thành công. Xin chào {GetDisplayName(user)}.";
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return LocalRedirect(returnUrl);
@@ -916,9 +918,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send password reset OTP to {Email}.", email);
-                return _environment.IsDevelopment()
-                    ? $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}"
-                    : null;
+                if (_environment.IsDevelopment())
+                {
+                    return $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}";
+                }
+
+                return "Chưa gửi được OTP qua email. Vui lòng kiểm tra cấu hình Resend hoặc SMTP trên môi trường deploy.";
             }
         }
 
@@ -939,6 +944,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             var normalized = value?.Trim();
             return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        }
+
+        private static string GetDisplayName(ApplicationUser user)
+        {
+            return string.IsNullOrWhiteSpace(user.FullName)
+                ? user.Email ?? user.UserName ?? "bạn"
+                : user.FullName;
         }
     }
 }

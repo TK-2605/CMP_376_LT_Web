@@ -52,12 +52,24 @@ namespace LT_Web_Nhom4.Hubs
                 .Select(item => new { item.FullName, item.Email })
                 .FirstOrDefaultAsync();
             var sender = string.IsNullOrWhiteSpace(user?.FullName) ? user?.Email ?? "Thành viên" : user.FullName;
+            var room = NormalizeRoomType(roomType);
+            var savedMessage = new ChatMessage
+            {
+                RoomType = room,
+                RoomId = roomId,
+                SenderId = userId,
+                SenderName = sender,
+                Message = normalizedMessage,
+                SentAt = DateTime.UtcNow
+            };
+            _context.ChatMessages.Add(savedMessage);
+            await _context.SaveChangesAsync();
 
             await Clients.Group(groupName).SendAsync("ReceiveMessage", new
             {
                 sender,
                 message = normalizedMessage,
-                sentAt = DateTimeOffset.UtcNow
+                sentAt = savedMessage.SentAt
             });
         }
 
@@ -92,6 +104,12 @@ namespace LT_Web_Nhom4.Hubs
             }
 
             throw new HubException("Bạn không có quyền tham gia phòng chat này.");
+        }
+
+        private static string NormalizeRoomType(string roomType)
+        {
+            var normalized = roomType?.Trim().ToLowerInvariant();
+            return normalized == "exam" ? "exam" : "class";
         }
     }
 }

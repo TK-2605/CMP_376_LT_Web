@@ -38,6 +38,11 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
             var signalRClientPath = Path.Combine(_environment.WebRootPath, "vendor", "signalr", "signalr.min.js");
             var signalRReady = System.IO.File.Exists(signalRClientPath);
             var warningCount = await _context.AntiCheatEvents.CountAsync(cancellationToken);
+            var mediaStorage = _configuration["Media:StorageProvider"] ?? "FileSystem";
+            var databaseMediaReady = string.Equals(mediaStorage, "Database", StringComparison.OrdinalIgnoreCase)
+                ? await _context.Database.CanConnectAsync(cancellationToken)
+                : Directory.Exists(Path.Combine(_environment.ContentRootPath, "App_Data"));
+            var dynamicTranslateScript = System.IO.File.Exists(Path.Combine(_environment.WebRootPath, "js", "dynamic-translate.js"));
 
             return View(new AdminTechnologyViewModel
             {
@@ -65,8 +70,13 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                         State = meilisearch.Reachable ? TechnologyState.Ready : TechnologyState.Fallback
                     },
                     Item("SignalR chat socket", "Thời gian thực", "Chat theo nhóm lớp/phòng thi, kiểm tra thành viên và không lưu lịch sử.",
-                        signalRReady ? "Hub và browser client đã sẵn sàng." : "Thiếu browser client SignalR trong wwwroot/vendor.",
+                        signalRReady ? "Hub, browser client và lịch sử thông báo gần nhất đã sẵn sàng." : "Thiếu browser client SignalR trong wwwroot/vendor.",
                         "ri-chat-3-line", signalRReady),
+                    Item("Media lưu trữ riêng", "Tệp upload", "Ảnh lớp và ảnh câu hỏi được lưu qua private storage, production dùng DB để sống qua redeploy.",
+                        string.Equals(mediaStorage, "Database", StringComparison.OrdinalIgnoreCase)
+                            ? "Production đang cấu hình lưu media trong database."
+                            : "Local đang dùng file system private.",
+                        "ri-image-line", databaseMediaReady),
                     new AdminTechnologyItemViewModel
                     {
                         Name = "Chống gian lận",
@@ -82,10 +92,12 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                     {
                         Name = "Chuyển đổi ngôn ngữ",
                         Category = "Giao diện",
-                        Description = "Request Localization bằng cookie, hỗ trợ tiếng Việt, Anh, Nhật, Hàn và Trung.",
-                        Detail = "Header và màn hình xác thực đã dùng tài nguyên ngôn ngữ chung.",
+                        Description = "Request Localization bằng cookie và máy dịch client-side cho dữ liệu người dùng nhập.",
+                        Detail = dynamicTranslateScript
+                            ? "Text hệ thống dùng tài nguyên .resx; dữ liệu động được gửi qua lớp dịch DOM khi chọn ngôn ngữ khác tiếng Việt."
+                            : "Thiếu script dịch dữ liệu động.",
                         Icon = "ri-translate-2",
-                        State = TechnologyState.Ready
+                        State = dynamicTranslateScript ? TechnologyState.Ready : TechnologyState.NeedsConfiguration
                     }
                 ]
             });
