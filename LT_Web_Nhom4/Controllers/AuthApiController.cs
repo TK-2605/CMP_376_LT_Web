@@ -90,7 +90,7 @@ namespace LT_Web_Nhom4.Controllers
                         Configured = smtpConfigured,
                         Detail = smtpConfigured
                             ? $"Đã cấu hình provider {EmailConfigurationHelper.ProviderLabel(_configuration)} để gửi OTP."
-                            : "Thiếu cấu hình Resend hoặc SMTP; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
+                            : EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Thiếu cấu hình Resend hoặc SMTP; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
                     },
                     new AuthFeatureStatusItem
                     {
@@ -424,7 +424,7 @@ namespace LT_Web_Nhom4.Controllers
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new SendTestEmailResponse
                 {
                     Sent = false,
-                    Message = "Chưa cấu hình đủ Resend hoặc SMTP để gửi email."
+                    Message = EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Chưa cấu hình đủ Resend hoặc SMTP để gửi email."
                 });
             }
 

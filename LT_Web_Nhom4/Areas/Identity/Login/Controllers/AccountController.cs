@@ -311,7 +311,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View(new ForgotPasswordViewModel { SmtpConfigured = CanUsePasswordResetOtp() });
+            return View(new ForgotPasswordViewModel
+            {
+                SmtpConfigured = CanUsePasswordResetOtp(),
+                EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+            });
         }
 
         [HttpPost]
@@ -319,6 +323,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
             model.SmtpConfigured = CanUsePasswordResetOtp();
+            model.EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
             if (!model.SmtpConfigured)
             {
                 ModelState.AddModelError(string.Empty,
@@ -706,6 +711,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
             model.ShowGoogleOAuthHint = !model.GoogleOAuthConfigured;
             model.SmtpConfigured = IsSmtpConfigured();
+            model.EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
         }
 
         private bool IsSmtpConfigured()

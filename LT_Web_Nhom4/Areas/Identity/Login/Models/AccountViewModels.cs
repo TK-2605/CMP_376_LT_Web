@@ -64,6 +64,8 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Models
         public bool ShowGoogleOAuthHint { get; set; }
 
         public bool SmtpConfigured { get; set; }
+
+        public string? EmailProviderProblem { get; set; }
     }
 
     public class ForgotPasswordViewModel
@@ -74,6 +76,8 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Models
         public string Email { get; set; } = string.Empty;
 
         public bool SmtpConfigured { get; set; }
+
+        public string? EmailProviderProblem { get; set; }
     }
 
     public class ConfirmRegistrationViewModel

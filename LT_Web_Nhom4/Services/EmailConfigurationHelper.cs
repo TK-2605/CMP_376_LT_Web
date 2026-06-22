@@ -109,12 +109,12 @@ namespace LT_Web_Nhom4.Services
         {
             if (IsSmtpBlockedByRuntime(configuration))
             {
-                return "SMTP is configured, but Render Free blocks outbound SMTP ports. Configure Resend/Brevo/SendGrid over HTTPS or upgrade Render.";
+                return "SMTP da cau hinh, nhung Render Free chan SMTP outbound. Hay cau hinh Resend/Brevo/SendGrid qua HTTPS hoac nang goi Render.";
             }
 
             return HasEmailProvider(configuration)
                 ? null
-                : "No usable email provider is configured.";
+                : "Chua co email provider kha dung.";
         }
 
         private static bool IsRenderRuntime(IConfiguration configuration)

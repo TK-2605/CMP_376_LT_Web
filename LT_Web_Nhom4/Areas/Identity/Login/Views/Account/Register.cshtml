@@ -58,7 +58,11 @@
                             @if (!Model.SmtpConfigured)
                             {
                                 <div class="alert alert-warning mb-3" role="alert">
-                                    Đăng ký đang tạm dừng vì dịch vụ email xác nhận chưa được cấu hình.
+                                    Đăng ký đang tạm dừng vì dịch vụ email xác nhận chưa sẵn sàng.
+                                    @if (!string.IsNullOrWhiteSpace(Model.EmailProviderProblem))
+                                    {
+                                        <span>@Model.EmailProviderProblem</span>
+                                    }
                                 </div>
                             }
                             <button type="submit" class="btn btn-primary auth-submit mt-2" disabled="@(!Model.SmtpConfigured)">@Localizer["CreateAccount"]</button>
