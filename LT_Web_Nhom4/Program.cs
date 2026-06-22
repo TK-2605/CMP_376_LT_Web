@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -257,6 +259,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     }
     else if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
     {
+        await AdoptExistingSchemaMigrationsAsync(app);
         await ApplyDatabaseMigrationsAsync(app);
     }
 
@@ -438,6 +441,56 @@ static async Task EnsureDatabaseCreatedAsync(WebApplication app)
     }
 }
 
+static async Task AdoptExistingSchemaMigrationsAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseMigrationAdoption");
+
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        if (!context.Database.IsRelational())
+        {
+            return;
+        }
+
+        var migrations = context.Database.GetMigrations().ToArray();
+        if (migrations.Length == 0)
+        {
+            return;
+        }
+
+        var provider = context.Database.ProviderName ?? string.Empty;
+        var hasExistingCoreSchema = await TableExistsAsync(context, provider, "AspNetUsers")
+            && await TableExistsAsync(context, provider, "Exams");
+        if (!hasExistingCoreSchema)
+        {
+            return;
+        }
+
+        await EnsureMigrationsHistoryTableAsync(context, provider);
+        var appliedCount = Convert.ToInt32(await ExecuteScalarAsync(context, MigrationHistoryCountSql(provider)));
+        if (appliedCount > 0)
+        {
+            return;
+        }
+
+        var productVersion = typeof(DbContext).Assembly.GetName().Version?.ToString() ?? "9.0.0";
+        foreach (var migration in migrations)
+        {
+            await InsertMigrationHistoryAsync(context, provider, migration, productVersion);
+        }
+
+        logger.LogWarning(
+            "Adopted existing database schema by stamping {MigrationCount} EF migrations. This runs only when core tables exist and migration history is empty.",
+            migrations.Length);
+    }
+    catch (Exception exception)
+    {
+        logger.LogWarning(exception, "Could not adopt existing migration history. Normal migration flow will continue.");
+    }
+}
+
 static async Task ApplyDatabaseMigrationsAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
@@ -540,6 +593,142 @@ static async Task LogDatabaseStartupStateAsync(WebApplication app)
     {
         logger.LogWarning(exception, "Could not read database startup state.");
     }
+}
+
+static async Task<bool> TableExistsAsync(ApplicationDbContext context, string provider, string tableName)
+{
+    if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+    {
+        var result = await ExecuteScalarAsync(
+            context,
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = @tableName
+            )
+            """,
+            ("tableName", tableName));
+        return result is bool exists && exists;
+    }
+
+    var sqlServerResult = await ExecuteScalarAsync(
+        context,
+        "SELECT CASE WHEN OBJECT_ID(@tableName, N'U') IS NULL THEN 0 ELSE 1 END",
+        ("tableName", tableName));
+    return Convert.ToInt32(sqlServerResult) == 1;
+}
+
+static async Task EnsureMigrationsHistoryTableAsync(ApplicationDbContext context, string provider)
+{
+    if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+    {
+        await ExecuteNonQueryAsync(
+            context,
+            """
+            CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+                "MigrationId" character varying(150) NOT NULL,
+                "ProductVersion" character varying(32) NOT NULL,
+                CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+            )
+            """);
+        return;
+    }
+
+    await ExecuteNonQueryAsync(
+        context,
+        """
+        IF OBJECT_ID(N'[__EFMigrationsHistory]', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [__EFMigrationsHistory] (
+                [MigrationId] nvarchar(150) NOT NULL,
+                [ProductVersion] nvarchar(32) NOT NULL,
+                CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+            );
+        END
+        """);
+}
+
+static string MigrationHistoryCountSql(string provider)
+{
+    return provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase)
+        ? """SELECT COUNT(*) FROM "__EFMigrationsHistory" """
+        : "SELECT COUNT(*) FROM [__EFMigrationsHistory]";
+}
+
+static async Task InsertMigrationHistoryAsync(
+    ApplicationDbContext context,
+    string provider,
+    string migrationId,
+    string productVersion)
+{
+    if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+    {
+        await ExecuteNonQueryAsync(
+            context,
+            """
+            INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+            VALUES (@migrationId, @productVersion)
+            ON CONFLICT ("MigrationId") DO NOTHING
+            """,
+            ("migrationId", migrationId),
+            ("productVersion", productVersion));
+        return;
+    }
+
+    await ExecuteNonQueryAsync(
+        context,
+        """
+        IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = @migrationId)
+        BEGIN
+            INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+            VALUES (@migrationId, @productVersion);
+        END
+        """,
+        ("migrationId", migrationId),
+        ("productVersion", productVersion));
+}
+
+static async Task<object?> ExecuteScalarAsync(
+    ApplicationDbContext context,
+    string commandText,
+    params (string Name, object? Value)[] parameters)
+{
+    await using var command = await CreateCommandAsync(context, commandText, parameters);
+    return await command.ExecuteScalarAsync();
+}
+
+static async Task ExecuteNonQueryAsync(
+    ApplicationDbContext context,
+    string commandText,
+    params (string Name, object? Value)[] parameters)
+{
+    await using var command = await CreateCommandAsync(context, commandText, parameters);
+    await command.ExecuteNonQueryAsync();
+}
+
+static async Task<DbCommand> CreateCommandAsync(
+    ApplicationDbContext context,
+    string commandText,
+    params (string Name, object? Value)[] parameters)
+{
+    var connection = context.Database.GetDbConnection();
+    if (connection.State != ConnectionState.Open)
+    {
+        await connection.OpenAsync();
+    }
+
+    var command = connection.CreateCommand();
+    command.CommandText = commandText;
+    foreach (var (name, value) in parameters)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value ?? DBNull.Value;
+        command.Parameters.Add(parameter);
+    }
+
+    return command;
 }
 
 static async Task SeedDefaultDataAsync(WebApplication app)
