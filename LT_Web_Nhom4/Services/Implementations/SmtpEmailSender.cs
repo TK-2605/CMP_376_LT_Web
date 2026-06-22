@@ -28,45 +28,65 @@ namespace LT_Web_Nhom4.Services.Implementations
         {
             var provider = _configuration["Email:Provider"];
             var smtpConfigured = IsSmtpConfigured();
+            Exception? lastProviderException = null;
 
             foreach (var providerName in BuildProviderOrder(provider))
             {
-                if ((string.Equals(providerName, "GmailApi", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(providerName, "Gmail", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(providerName, "Google", StringComparison.OrdinalIgnoreCase))
-                    && IsGmailApiConfigured())
+                try
                 {
-                    await SendWithGmailApiAsync(email, subject, htmlMessage);
-                    return;
-                }
+                    if ((string.Equals(providerName, "GmailApi", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(providerName, "Gmail", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(providerName, "Google", StringComparison.OrdinalIgnoreCase))
+                        && IsGmailApiConfigured())
+                    {
+                        await SendWithGmailApiAsync(email, subject, htmlMessage);
+                        return;
+                    }
 
-                if (string.Equals(providerName, "Resend", StringComparison.OrdinalIgnoreCase)
-                    && IsResendConfigured())
-                {
-                    await SendWithResendAsync(email, subject, htmlMessage);
-                    return;
-                }
+                    if (string.Equals(providerName, "Resend", StringComparison.OrdinalIgnoreCase)
+                        && IsResendConfigured())
+                    {
+                        await SendWithResendAsync(email, subject, htmlMessage);
+                        return;
+                    }
 
-                if (string.Equals(providerName, "Brevo", StringComparison.OrdinalIgnoreCase)
-                    && IsBrevoConfigured())
-                {
-                    await SendWithBrevoAsync(email, subject, htmlMessage);
-                    return;
-                }
+                    if (string.Equals(providerName, "Brevo", StringComparison.OrdinalIgnoreCase)
+                        && IsBrevoConfigured())
+                    {
+                        await SendWithBrevoAsync(email, subject, htmlMessage);
+                        return;
+                    }
 
-                if (string.Equals(providerName, "SendGrid", StringComparison.OrdinalIgnoreCase)
-                    && IsSendGridConfigured())
-                {
-                    await SendWithSendGridAsync(email, subject, htmlMessage);
-                    return;
-                }
+                    if (string.Equals(providerName, "SendGrid", StringComparison.OrdinalIgnoreCase)
+                        && IsSendGridConfigured())
+                    {
+                        await SendWithSendGridAsync(email, subject, htmlMessage);
+                        return;
+                    }
 
-                if (string.Equals(providerName, "Smtp", StringComparison.OrdinalIgnoreCase)
-                    && smtpConfigured)
-                {
-                    await SendWithSmtpAsync(email, subject, htmlMessage);
-                    return;
+                    if (string.Equals(providerName, "Smtp", StringComparison.OrdinalIgnoreCase)
+                        && smtpConfigured)
+                    {
+                        await SendWithSmtpAsync(email, subject, htmlMessage);
+                        return;
+                    }
                 }
+                catch (Exception exception)
+                {
+                    lastProviderException = exception;
+                    _logger.LogWarning(
+                        exception,
+                        "Email provider {Provider} failed for {Email}. Trying next configured provider if available.",
+                        providerName,
+                        MaskEmail(email));
+                }
+            }
+
+            if (lastProviderException is not null)
+            {
+                throw new InvalidOperationException(
+                    $"All configured email providers failed. Last provider error: {lastProviderException.Message}",
+                    lastProviderException);
             }
 
             throw new InvalidOperationException(
