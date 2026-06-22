@@ -108,11 +108,6 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(subject => subject.OwnerId).HasMaxLength(450);
                 entity.HasIndex(subject => subject.Code).IsUnique();
                 entity.HasIndex(subject => subject.OwnerId);
-
-                entity.HasOne(subject => subject.Owner)
-                    .WithMany()
-                    .HasForeignKey(subject => subject.OwnerId)
-                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<ChatMessage>(entity =>

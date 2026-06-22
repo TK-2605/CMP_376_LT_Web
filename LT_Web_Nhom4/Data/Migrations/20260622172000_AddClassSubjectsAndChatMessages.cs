@@ -51,22 +51,11 @@ namespace LT_Web_Nhom4.Data.Migrations
                 table: "ChatMessages",
                 columns: new[] { "RoomType", "RoomId", "SentAt" });
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Subjects_AspNetUsers_OwnerId",
-                table: "Subjects",
-                column: "OwnerId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Subjects_AspNetUsers_OwnerId",
-                table: "Subjects");
-
             migrationBuilder.DropTable(
                 name: "ChatMessages");
 
