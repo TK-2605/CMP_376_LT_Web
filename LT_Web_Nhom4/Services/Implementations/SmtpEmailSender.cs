@@ -7,6 +7,8 @@ using MimeKit;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 
 namespace LT_Web_Nhom4.Services.Implementations
 {
@@ -28,6 +30,15 @@ namespace LT_Web_Nhom4.Services.Implementations
 
             foreach (var providerName in BuildProviderOrder(provider))
             {
+                if ((string.Equals(providerName, "GmailApi", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(providerName, "Gmail", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(providerName, "Google", StringComparison.OrdinalIgnoreCase))
+                    && IsGmailApiConfigured())
+                {
+                    await SendWithGmailApiAsync(email, subject, htmlMessage);
+                    return;
+                }
+
                 if (string.Equals(providerName, "Resend", StringComparison.OrdinalIgnoreCase)
                     && IsResendConfigured())
                 {
@@ -204,6 +215,104 @@ namespace LT_Web_Nhom4.Services.Implementations
             _logger.LogInformation("Resend email '{Subject}' sent to {Email}.", subject, email);
         }
 
+        private async Task SendWithGmailApiAsync(string email, string subject, string htmlMessage)
+        {
+            var clientId = EmailConfigurationHelper.GetGmailApiClientId(_configuration);
+            var clientSecret = EmailConfigurationHelper.GetGmailApiClientSecret(_configuration);
+            var refreshToken = _configuration["GmailApi:RefreshToken"];
+            var fromEmail = _configuration["GmailApi:FromEmail"];
+            var fromName = _configuration["GmailApi:FromName"] ?? _configuration["Smtp:FromName"] ?? "QuizHub";
+            var timeoutSeconds = GetHttpProviderTimeoutSeconds("GmailApi");
+
+            if (string.IsNullOrWhiteSpace(clientId)
+                || string.IsNullOrWhiteSpace(clientSecret)
+                || string.IsNullOrWhiteSpace(refreshToken)
+                || string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException("Gmail API email provider is not configured.");
+            }
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+            };
+
+            var accessToken = await GetGmailAccessTokenAsync(
+                httpClient,
+                clientId,
+                clientSecret,
+                refreshToken,
+                timeout.Token);
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromEmail));
+            message.To.Add(MailboxAddress.Parse(email));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = htmlMessage };
+
+            await using var stream = new MemoryStream();
+            await message.WriteToAsync(stream, timeout.Token);
+            var raw = Convert.ToBase64String(stream.ToArray())
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .TrimEnd('=');
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages/send");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = JsonContent.Create(new { raw });
+
+            using var response = await httpClient.SendAsync(request, timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(timeout.Token);
+                throw new InvalidOperationException($"Gmail API returned HTTP {(int)response.StatusCode}: {body}");
+            }
+
+            _logger.LogInformation("Gmail API email '{Subject}' sent to {Email}.", subject, email);
+        }
+
+        private static async Task<string> GetGmailAccessTokenAsync(
+            HttpClient httpClient,
+            string clientId,
+            string clientSecret,
+            string refreshToken,
+            CancellationToken cancellationToken)
+        {
+            using var tokenResponse = await httpClient.PostAsync(
+                "https://oauth2.googleapis.com/token",
+                new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["client_id"] = clientId,
+                    ["client_secret"] = clientSecret,
+                    ["refresh_token"] = refreshToken,
+                    ["grant_type"] = "refresh_token"
+                }),
+                cancellationToken);
+
+            var body = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
+            if (!tokenResponse.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException($"Gmail token endpoint returned HTTP {(int)tokenResponse.StatusCode}: {body}");
+            }
+
+            using var json = JsonDocument.Parse(body);
+            if (!json.RootElement.TryGetProperty("access_token", out var accessTokenElement))
+            {
+                throw new InvalidOperationException("Gmail token endpoint did not return access_token.");
+            }
+
+            var accessToken = accessTokenElement.GetString();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                throw new InvalidOperationException("Gmail token endpoint returned an empty access_token.");
+            }
+
+            return accessToken;
+        }
+
         private async Task SendWithBrevoAsync(string email, string subject, string htmlMessage)
         {
             var apiKey = _configuration["Brevo:ApiKey"];
@@ -357,6 +466,11 @@ namespace LT_Web_Nhom4.Services.Implementations
             return EmailConfigurationHelper.HasResendProvider(_configuration);
         }
 
+        private bool IsGmailApiConfigured()
+        {
+            return EmailConfigurationHelper.HasGmailApiProvider(_configuration);
+        }
+
         private bool IsBrevoConfigured()
         {
             return EmailConfigurationHelper.HasBrevoProvider(_configuration);
@@ -382,7 +496,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                 providers.Add(configuredProvider.Trim());
             }
 
-            providers.AddRange(["Resend", "Brevo", "SendGrid", "Smtp"]);
+            providers.AddRange(["GmailApi", "Resend", "Brevo", "SendGrid", "Smtp"]);
             return providers
                 .Where(provider => !string.IsNullOrWhiteSpace(provider))
                 .Distinct(StringComparer.OrdinalIgnoreCase)

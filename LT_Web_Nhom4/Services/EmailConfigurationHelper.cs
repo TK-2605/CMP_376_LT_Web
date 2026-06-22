@@ -11,9 +11,18 @@ namespace LT_Web_Nhom4.Services
 
         public static bool HasHttpsEmailProvider(IConfiguration configuration)
         {
-            return HasResendProvider(configuration)
+            return HasGmailApiProvider(configuration)
+                || HasResendProvider(configuration)
                 || HasBrevoProvider(configuration)
                 || HasSendGridProvider(configuration);
+        }
+
+        public static bool HasGmailApiProvider(IConfiguration configuration)
+        {
+            return HasValue(GetGmailApiClientId(configuration))
+                && HasValue(GetGmailApiClientSecret(configuration))
+                && HasValue(configuration["GmailApi:RefreshToken"])
+                && HasValue(configuration["GmailApi:FromEmail"]);
         }
 
         public static bool HasResendProvider(IConfiguration configuration)
@@ -64,6 +73,11 @@ namespace LT_Web_Nhom4.Services
 
         public static string ProviderLabel(IConfiguration configuration)
         {
+            if (HasGmailApiProvider(configuration))
+            {
+                return "Gmail API HTTPS";
+            }
+
             if (HasResendProvider(configuration))
             {
                 return "Resend HTTPS";
@@ -134,6 +148,16 @@ namespace LT_Web_Nhom4.Services
             return int.TryParse(value, out var seconds) ? Math.Clamp(seconds, 5, 60) : 20;
         }
 
+        public static string? GetGmailApiClientId(IConfiguration configuration)
+        {
+            return FirstConfigured(configuration, "GmailApi:ClientId", "Authentication:Google:ClientId");
+        }
+
+        public static string? GetGmailApiClientSecret(IConfiguration configuration)
+        {
+            return FirstConfigured(configuration, "GmailApi:ClientSecret", "Authentication:Google:ClientSecret");
+        }
+
         public static string? GetEmailProviderProblem(IConfiguration configuration)
         {
             if (HasHttpsEmailProvider(configuration))
@@ -143,7 +167,12 @@ namespace LT_Web_Nhom4.Services
 
             if (IsSmtpBlockedByRuntime(configuration))
             {
-                return "SMTP da cau hinh, nhung Render Free chan SMTP outbound. Hay cau hinh Resend/Brevo/SendGrid qua HTTPS hoac nang goi Render.";
+                if (HasValue(GetGmailApiClientId(configuration)) && HasValue(GetGmailApiClientSecret(configuration)))
+                {
+                    return "Google API da co ClientId/ClientSecret, nhung Gmail API can them RefreshToken va FromEmail de gui OTP qua HTTPS.";
+                }
+
+                return "SMTP da cau hinh, nhung Render Free chan SMTP outbound. Hay cau hinh GmailApi/Resend/Brevo/SendGrid qua HTTPS hoac nang goi Render.";
             }
 
             return HasEmailProvider(configuration)

@@ -61,9 +61,21 @@ services:
       - key: Smtp__FromName
         value: QuizHub
       - key: Email__Provider
-        value: Smtp
+        value: GmailApi
       - key: Email__AllowSmtpOnRender
         value: false
+      - key: GmailApi__ClientId
+        sync: false
+      - key: GmailApi__ClientSecret
+        sync: false
+      - key: GmailApi__RefreshToken
+        sync: false
+      - key: GmailApi__FromEmail
+        sync: false
+      - key: GmailApi__FromName
+        value: QuizHub
+      - key: GmailApi__TimeoutSeconds
+        value: 20
       - key: Resend__ApiKey
         sync: false
       - key: Resend__FromEmail
