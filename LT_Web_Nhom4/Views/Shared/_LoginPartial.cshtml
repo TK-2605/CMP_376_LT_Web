@@ -14,7 +14,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><span class="dropdown-item-text small text-muted">@User.Identity?.Name</span></li>
                 <li><hr class="dropdown-divider" /></li>
-                <li><form asp-area="Identity" asp-controller="Account" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post"><button type="submit" class="dropdown-item"><i class="ri-logout-box-r-line me-2"></i>@Localizer["Logout"]</button></form></li>
+                <li><form asp-area="Identity" asp-controller="Account" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post"><button type="submit" class="dropdown-item" data-confirm="Bạn có chắc muốn đăng xuất khỏi hệ thống?"><i class="ri-logout-box-r-line me-2"></i>@Localizer["Logout"]</button></form></li>
             </ul>
         </li>
     }

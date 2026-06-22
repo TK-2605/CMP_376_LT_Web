@@ -11,6 +11,7 @@ using LT_Web_Nhom4.Repositories.Interfaces;
 using LT_Web_Nhom4.Services.Implementations;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -35,6 +36,12 @@ if (builder.Environment.IsDevelopment()
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+
+const long maxUploadBytes = 260L * 1024L * 1024L;
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = maxUploadBytes;
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -148,6 +155,12 @@ builder.Services.AddHttpClient<IMeilisearchService, MeilisearchService>(client =
     client.Timeout = TimeSpan.FromSeconds(2);
 });
 builder.Services.AddScoped<IPrivateMediaStorage, PrivateMediaStorage>();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = maxUploadBytes;
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = 64 * 1024;
+});
 builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = 8 * 1024;

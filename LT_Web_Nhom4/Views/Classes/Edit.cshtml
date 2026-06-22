@@ -18,6 +18,8 @@
             <input asp-for="Id" type="hidden" />
             <input asp-for="RowVersion" type="hidden" />
             <input asp-for="IntroVideoUrl" type="hidden" />
+            <input asp-for="CreateNewSubject" type="hidden" value="true" />
+            <input asp-for="SubjectId" type="hidden" />
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
             <div class="form-grid">
@@ -33,32 +35,17 @@
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
 
-                <div class="form-field">
-                    <label asp-for="SubjectId" class="form-label"></label>
-                    <select asp-for="SubjectId" class="form-select" data-existing-subject>
-                        @foreach (var subject in Model.Subjects)
-                        {
-                            <option value="@subject.Id">@subject.Label</option>
-                        }
-                    </select>
-                    <span asp-validation-for="SubjectId" class="text-danger"></span>
-                </div>
-
                 <div class="form-field span-2 subject-inline-panel">
-                    <label class="switch-row subject-create-toggle">
-                        <span><strong>Tạo môn học riêng mới</strong><small>Dùng khi lớp này cần môn khác với danh sách hiện tại. Mã và tên sẽ được kiểm tra trùng trước khi lưu.</small></span>
-                        <input asp-for="CreateNewSubject" class="form-check-input" type="checkbox" role="switch" data-new-subject-toggle />
-                    </label>
                     <div class="subject-inline-fields" data-new-subject-fields>
                         <div>
-                            <label asp-for="NewSubjectCode" class="form-label"></label>
-                            <input asp-for="NewSubjectCode" class="form-control" placeholder="Ví dụ: WEB-N4" data-subject-code-input />
-                            <span asp-validation-for="NewSubjectCode" class="text-danger"></span>
+                            <label asp-for="NewSubjectName" class="form-label">Tên môn học</label>
+                            <input asp-for="NewSubjectName" class="form-control" placeholder="Ví dụ: Lập trình Web" required />
+                            <span asp-validation-for="NewSubjectName" class="text-danger"></span>
                         </div>
                         <div>
-                            <label asp-for="NewSubjectName" class="form-label"></label>
-                            <input asp-for="NewSubjectName" class="form-control" placeholder="Ví dụ: Lập trình Web" />
-                            <span asp-validation-for="NewSubjectName" class="text-danger"></span>
+                            <label asp-for="NewSubjectCode" class="form-label">Mã môn học</label>
+                            <input asp-for="NewSubjectCode" class="form-control" placeholder="Ví dụ: WEB-N4" data-subject-code-input required />
+                            <span asp-validation-for="NewSubjectCode" class="text-danger"></span>
                         </div>
                         <div class="span-2">
                             <label asp-for="NewSubjectDescription" class="form-label"></label>

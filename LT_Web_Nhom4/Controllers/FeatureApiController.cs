@@ -3,6 +3,7 @@ using System.Text.Json;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -303,8 +304,7 @@ namespace LT_Web_Nhom4.Controllers
 
         private bool HasEmailProvider()
         {
-            return HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
-                || HasValues("Resend:ApiKey", "Resend:FromEmail");
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
         }
     }
 }

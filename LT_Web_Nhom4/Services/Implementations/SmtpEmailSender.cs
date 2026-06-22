@@ -1,4 +1,5 @@
 using LT_Web_Nhom4.Services.Interfaces;
+using LT_Web_Nhom4.Services;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -32,16 +33,16 @@ namespace LT_Web_Nhom4.Services.Implementations
 
         private async Task SendWithSmtpAsync(string email, string subject, string htmlMessage)
         {
-            var host = _configuration["Smtp:Host"];
-            var port = int.TryParse(_configuration["Smtp:Port"], out var configuredPort) ? configuredPort : 587;
-            var userName = _configuration["Smtp:UserName"];
-            var password = _configuration["Smtp:Password"];
-            var fromEmail = _configuration["Smtp:FromEmail"];
-            var fromName = _configuration["Smtp:FromName"] ?? "QuizHub";
-            var timeoutSeconds = int.TryParse(_configuration["Smtp:TimeoutSeconds"], out var configuredTimeout)
-                ? Math.Clamp(configuredTimeout, 5, 60)
-                : 20;
-            var secureSocketOptions = ResolveSecureSocketOptions(_configuration["Smtp:SecureSocketOptions"], port);
+            var host = EmailConfigurationHelper.GetSmtpHost(_configuration);
+            var port = EmailConfigurationHelper.GetSmtpPort(_configuration);
+            var userName = EmailConfigurationHelper.GetSmtpUserName(_configuration);
+            var password = EmailConfigurationHelper.GetSmtpPassword(_configuration);
+            var fromEmail = EmailConfigurationHelper.GetSmtpFromEmail(_configuration);
+            var fromName = EmailConfigurationHelper.GetSmtpFromName(_configuration);
+            var timeoutSeconds = EmailConfigurationHelper.GetSmtpTimeoutSeconds(_configuration);
+            var secureSocketOptions = ResolveSecureSocketOptions(
+                EmailConfigurationHelper.GetSmtpSecureSocketOptions(_configuration),
+                port);
 
             if (string.IsNullOrWhiteSpace(host) ||
                 string.IsNullOrWhiteSpace(userName) ||
@@ -138,8 +139,7 @@ namespace LT_Web_Nhom4.Services.Implementations
 
         private bool IsResendConfigured()
         {
-            return !string.IsNullOrWhiteSpace(_configuration["Resend:ApiKey"])
-                && !string.IsNullOrWhiteSpace(_configuration["Resend:FromEmail"]);
+            return EmailConfigurationHelper.HasResendProvider(_configuration);
         }
     }
 }

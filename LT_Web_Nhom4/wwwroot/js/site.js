@@ -15,6 +15,15 @@
     updateHeader();
   }
 
+  document.querySelectorAll('[data-auth-toast]').forEach((toast) => {
+    const delay = Number(toast.dataset.autoDismiss || 0);
+    if (!delay) return;
+    window.setTimeout(() => {
+      toast.classList.add('is-hiding');
+      window.setTimeout(() => toast.remove(), 250);
+    }, delay);
+  });
+
   document.querySelectorAll('[data-class-code]').forEach((input) => {
     const format = () => {
       const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
@@ -202,6 +211,8 @@
     const target = document.querySelector(input.dataset.mediaPreview);
     if (!target) return;
     input.addEventListener('change', () => {
+      (target._mediaPreviewUrls || []).forEach((url) => URL.revokeObjectURL(url));
+      target._mediaPreviewUrls = [];
       target.innerHTML = '';
       const files = Array.from(input.files || []);
       target.hidden = files.length === 0;
@@ -209,11 +220,12 @@
         const item = document.createElement('div');
         item.className = 'selected-media-item';
         const objectUrl = URL.createObjectURL(file);
+        target._mediaPreviewUrls.push(objectUrl);
         if (file.type.startsWith('image/')) {
           const img = document.createElement('img');
           img.src = objectUrl;
           img.alt = file.name;
-          img.onload = () => URL.revokeObjectURL(objectUrl);
+          img.loading = 'lazy';
           item.append(img);
         } else if (file.type.startsWith('video/')) {
           const video = document.createElement('video');
@@ -227,6 +239,13 @@
         item.append(label);
         target.append(item);
       });
+    });
+  });
+
+  window.addEventListener('pagehide', () => {
+    document.querySelectorAll('[data-media-preview]').forEach((input) => {
+      const target = document.querySelector(input.dataset.mediaPreview);
+      (target?._mediaPreviewUrls || []).forEach((url) => URL.revokeObjectURL(url));
     });
   });
 

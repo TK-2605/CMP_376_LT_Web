@@ -4,6 +4,7 @@ using System.Text;
 using LT_Web_Nhom4.Areas.Identity.Login.Models;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -60,6 +61,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (oauthUnavailable)
             {
                 TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình trên môi trường deploy.";
+                TempData["AuthMessageType"] = "danger";
             }
 
             return View(await BuildLoginViewModelAsync(returnUrl));
@@ -191,6 +193,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             TempData["AuthMessage"] = emailSent
                 ? "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác nhận."
                 : GetDevelopmentFallbackMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
+            TempData["AuthMessageType"] = emailSent ? "success" : "danger";
 
             return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl = model.ReturnUrl });
         }
@@ -273,6 +276,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (!IsSmtpConfigured())
             {
                 TempData["AuthMessage"] = "Dịch vụ email chưa được cấu hình nên chưa thể gửi lại mã xác nhận.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
             }
 
@@ -284,10 +288,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 TempData["AuthMessage"] = emailSent
                     ? "Hệ thống đã gửi lại mã xác nhận."
                     : GetDevelopmentFallbackMessage("Chưa gửi được email xác nhận.", resendResult.Code);
+                TempData["AuthMessageType"] = emailSent ? "success" : "danger";
             }
             else
             {
                 TempData["AuthMessage"] = "Không tìm thấy đăng ký đang chờ xác nhận.";
+                TempData["AuthMessageType"] = "danger";
             }
 
             return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
@@ -332,6 +338,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 var code = await CreatePasswordResetOtpAsync(user);
                 developmentMessage = await SendPasswordResetOtpEmailAsync(email, code);
+                if (!string.IsNullOrWhiteSpace(developmentMessage) && !_environment.IsDevelopment())
+                {
+                    ModelState.AddModelError(string.Empty, developmentMessage);
+                    return View(model);
+                }
             }
             else
             {
@@ -340,6 +351,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             TempData["AuthMessage"] = developmentMessage
                 ?? "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.";
+            TempData["AuthMessageType"] = string.IsNullOrWhiteSpace(developmentMessage) ? "success" : "danger";
             return RedirectToAction(nameof(ResetPasswordOtp), new { email });
         }
 
@@ -423,6 +435,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (user is null || !user.IsActive)
             {
                 TempData["AuthMessage"] = "Liên kết đặt lại mật khẩu không hợp lệ.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -461,6 +474,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (!externalLogins.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase)))
             {
                 TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình. Vui lòng thêm ClientId và ClientSecret trước khi đăng nhập bằng Google.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -475,6 +489,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (remoteError is not null)
             {
                 TempData["AuthMessage"] = $"Đăng nhập OAuth thất bại: {remoteError}";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -482,6 +497,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (info is null)
             {
                 TempData["AuthMessage"] = "Không đọc được thông tin đăng nhập từ nhà cung cấp OAuth.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -495,6 +511,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                     {
                         await _signInManager.SignOutAsync();
                         TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                        TempData["AuthMessageType"] = "danger";
                         return RedirectToAction(nameof(Login), new { returnUrl });
                     }
 
@@ -509,6 +526,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (string.IsNullOrWhiteSpace(email))
             {
                 TempData["AuthMessage"] = "Nhà cung cấp OAuth không trả về email.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -518,6 +536,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 if (!existingUser.IsActive)
                 {
                     TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                    TempData["AuthMessageType"] = "danger";
                     return RedirectToAction(nameof(Login), new { returnUrl });
                 }
 
@@ -528,6 +547,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                     if (!addLoginResult.Succeeded)
                     {
                         TempData["AuthMessage"] = string.Join(" ", addLoginResult.Errors.Select(error => error.Description));
+                        TempData["AuthMessageType"] = "danger";
                         return RedirectToAction(nameof(Login), new { returnUrl });
                     }
                 }
@@ -576,6 +596,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (info is null)
             {
                 TempData["AuthMessage"] = "Phiên đăng nhập OAuth đã hết hạn.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
             }
 
@@ -689,18 +710,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private bool IsSmtpConfigured()
         {
-            return HasConfigurationValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
-                || HasConfigurationValues("Resend:ApiKey", "Resend:FromEmail");
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
         }
 
         private bool CanUsePasswordResetOtp()
         {
             return IsSmtpConfigured() || _environment.IsDevelopment();
-        }
-
-        private bool HasConfigurationValues(params string[] keys)
-        {
-            return keys.All(key => !string.IsNullOrWhiteSpace(_configuration[key]));
         }
 
         private async Task<string?> SendPasswordResetEmailAsync(string email, string resetUrl)
@@ -923,7 +938,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                     return $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}";
                 }
 
-                return "Chưa gửi được OTP qua email. Vui lòng kiểm tra cấu hình Resend hoặc SMTP trên môi trường deploy.";
+                return "Chưa gửi được OTP qua email. Nếu đang chạy Render Free, Gmail SMTP qua cổng 587 thường không gửi ra ngoài; hãy cấu hình Resend hoặc kiểm tra lại SMTP/App Password.";
             }
         }
 

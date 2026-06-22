@@ -1,5 +1,6 @@
 using LT_Web_Nhom4.Areas.Admin.Models;
 using LT_Web_Nhom4.Data;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,11 +52,15 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                     Item("Google OAuth 2.0", "Xác thực", "Đăng nhập và liên kết tài khoản Google qua ASP.NET Core Identity.",
                         googleConfigured ? "Đã nạp Client ID và Client Secret." : "Thêm secret Google để nút đăng nhập xuất hiện.",
                         "ri-google-fill", googleConfigured),
-                    Item("OTP Gmail đăng ký", "Xác thực", "Xác nhận email bằng mã dùng một lần trước khi tạo tài khoản.",
-                        smtpConfigured ? "SMTP Gmail đã sẵn sàng gửi mã." : "Luồng OTP đã có; SMTP chưa đủ thông tin đăng nhập.",
+                    Item("OTP đăng ký", "Xác thực", "Xác nhận email bằng mã dùng một lần trước khi tạo tài khoản.",
+                        smtpConfigured
+                            ? $"Provider {EmailConfigurationHelper.ProviderLabel(_configuration)} đã sẵn sàng gửi mã."
+                            : "Luồng OTP đã có; cần cấu hình Resend hoặc SMTP để gửi email thật.",
                         "ri-mail-check-line", smtpConfigured, Url.Action("Register", "Account", new { area = "Identity" }), "Mở đăng ký"),
                     Item("OTP quên mật khẩu", "Bảo mật", "Mã OTP 6 số, hết hạn sau 5 phút và giới hạn 5 lần nhập.",
-                        smtpConfigured ? "Luồng gửi, xác minh và đổi mật khẩu đã sẵn sàng." : "Luồng đã có; môi trường phát triển sẽ hiển thị mã khi SMTP trống.",
+                        smtpConfigured
+                            ? "Luồng gửi, xác minh và đổi mật khẩu đã sẵn sàng."
+                            : "Luồng đã có; production phải cấu hình Resend/SMTP trước khi gửi OTP.",
                         "ri-key-2-line", smtpConfigured, Url.Action("ForgotPassword", "Account", new { area = "Identity" }), "Mở khôi phục"),
                     Item("JWT & Refresh Token", "API", "Access token ký HMAC, refresh token chỉ lưu bản băm và được xoay vòng.",
                         jwtConfigured ? "Khóa ký hợp lệ; API /api/auth đã sẵn sàng." : "Đặt Jwt:Key tối thiểu 32 ký tự trong User Secrets.",
@@ -110,8 +115,7 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
 
         private bool HasEmailProvider()
         {
-            return HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
-                || HasValues("Resend:ApiKey", "Resend:FromEmail");
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
         }
 
         private static AdminTechnologyItemViewModel Item(

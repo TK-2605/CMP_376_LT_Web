@@ -1113,8 +1113,9 @@ code {
 
 .selected-media-preview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 220px));
   gap: 12px;
+  align-items: start;
   margin-top: 12px;
 }
 
@@ -1133,7 +1134,7 @@ code {
   width: 100%;
   aspect-ratio: 16 / 10;
   border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
   background: #f1f0fe;
 }
 

@@ -3,6 +3,7 @@ using System.Text;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -85,11 +86,11 @@ namespace LT_Web_Nhom4.Controllers
                     },
                     new AuthFeatureStatusItem
                     {
-                        Name = "Gmail SMTP MailKit/MimeKit",
+                        Name = "Email OTP",
                         Configured = smtpConfigured,
                         Detail = smtpConfigured
-                            ? "SMTP đã đủ Host/UserName/Password/FromEmail để gửi email."
-                            : "Thiếu cấu hình Smtp; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
+                            ? $"Đã cấu hình provider {EmailConfigurationHelper.ProviderLabel(_configuration)} để gửi OTP."
+                            : "Thiếu cấu hình Resend hoặc SMTP; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
                     },
                     new AuthFeatureStatusItem
                     {
@@ -182,6 +183,16 @@ namespace LT_Web_Nhom4.Controllers
             if (HasEmailProvider())
             {
                 emailSent = await SendPendingRegistrationEmailAsync(pendingResult);
+            }
+
+            if (!emailSent && !_environment.IsDevelopment())
+            {
+                return StatusCode(StatusCodes.Status502BadGateway, new RegisterApiResponse
+                {
+                    PendingConfirmation = true,
+                    Email = pendingResult.PendingRegistration.Email,
+                    Message = "Registration was saved, but the server could not send the confirmation email. Configure Resend on Render Free or verify SMTP credentials."
+                });
             }
 
             return Ok(new RegisterApiResponse
@@ -283,14 +294,22 @@ namespace LT_Web_Nhom4.Controllers
             var user = await _userManager.FindByEmailAsync(email);
             string? developmentCode = null;
 
-            if (user is not null && user.IsActive && await _userManager.IsEmailConfirmedAsync(user))
+            if (user is not null && user.IsActive)
             {
                 var code = await CreatePasswordResetOtpAsync(user, cancellationToken);
                 developmentCode = _environment.IsDevelopment() ? code : null;
 
                 if (HasEmailProvider())
                 {
-                    await TrySendPasswordResetOtpEmailAsync(email, code);
+                    var sent = await TrySendPasswordResetOtpEmailAsync(email, code);
+                    if (!sent && !_environment.IsDevelopment())
+                    {
+                        return StatusCode(StatusCodes.Status502BadGateway, new ForgotPasswordApiResponse
+                        {
+                            Message = "OTP was created, but the server could not send email. Configure Resend on Render Free or verify SMTP credentials.",
+                            DevelopmentCode = null
+                        });
+                    }
                 }
             }
             else
@@ -405,7 +424,7 @@ namespace LT_Web_Nhom4.Controllers
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new SendTestEmailResponse
                 {
                     Sent = false,
-                    Message = "SMTP chưa được cấu hình đủ Host/UserName/Password/FromEmail."
+                    Message = "Chưa cấu hình đủ Resend hoặc SMTP để gửi email."
                 });
             }
 
@@ -487,7 +506,7 @@ namespace LT_Web_Nhom4.Controllers
             }
         }
 
-        private async Task TrySendPasswordResetOtpEmailAsync(string email, string code)
+        private async Task<bool> TrySendPasswordResetOtpEmailAsync(string email, string code)
         {
             try
             {
@@ -499,10 +518,12 @@ namespace LT_Web_Nhom4.Controllers
                     <p>The code is valid for 5 minutes and can be tried up to 5 times.</p>
                     <p>Swagger confirm endpoint: <code>/api/auth/forgot-password/confirm</code></p>
                     """);
+                return true;
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send API password reset OTP to {Email}.", email);
+                return false;
             }
         }
 
@@ -607,8 +628,7 @@ namespace LT_Web_Nhom4.Controllers
 
         private bool HasEmailProvider()
         {
-            return HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
-                || HasValues("Resend:ApiKey", "Resend:FromEmail");
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
         }
     }
 }
