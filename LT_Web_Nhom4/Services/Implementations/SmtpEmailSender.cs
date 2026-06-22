@@ -54,11 +54,20 @@ namespace LT_Web_Nhom4.Services.Implementations
                 return;
             }
 
-            throw new InvalidOperationException("No email provider is configured.");
+            throw new InvalidOperationException(
+                EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+                ?? "No email provider is configured.");
         }
 
         private async Task SendWithSmtpAsync(string email, string subject, string htmlMessage)
         {
+            if (EmailConfigurationHelper.IsSmtpBlockedByRuntime(_configuration))
+            {
+                throw new InvalidOperationException(
+                    EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+                    ?? "SMTP is not usable in the current runtime.");
+            }
+
             var host = EmailConfigurationHelper.GetSmtpHost(_configuration);
             var port = EmailConfigurationHelper.GetSmtpPort(_configuration);
             var userName = EmailConfigurationHelper.GetSmtpUserName(_configuration);
@@ -255,10 +264,7 @@ namespace LT_Web_Nhom4.Services.Implementations
 
         private bool IsSmtpConfigured()
         {
-            return !string.IsNullOrWhiteSpace(_configuration["Smtp:Host"])
-                && !string.IsNullOrWhiteSpace(_configuration["Smtp:UserName"])
-                && !string.IsNullOrWhiteSpace(_configuration["Smtp:Password"])
-                && !string.IsNullOrWhiteSpace(_configuration["Smtp:FromEmail"]);
+            return EmailConfigurationHelper.HasUsableSmtpProvider(_configuration);
         }
 
         private bool IsResendConfigured()

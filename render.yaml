@@ -51,7 +51,7 @@ services:
       - key: Smtp__SecureSocketOptions
         value: StartTls
       - key: Smtp__TimeoutSeconds
-        value: 20
+        value: 5
       - key: Smtp__UserName
         sync: false
       - key: Smtp__Password
@@ -62,6 +62,8 @@ services:
         value: QuizHub
       - key: Email__Provider
         value: Smtp
+      - key: Email__AllowSmtpOnRender
+        value: false
       - key: Resend__ApiKey
         sync: false
       - key: Resend__FromEmail
