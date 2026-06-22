@@ -72,6 +72,22 @@ services:
         value: QuizHub
       - key: Resend__TimeoutSeconds
         value: 20
+      - key: Brevo__ApiKey
+        sync: false
+      - key: Brevo__FromEmail
+        sync: false
+      - key: Brevo__FromName
+        value: QuizHub
+      - key: Brevo__TimeoutSeconds
+        value: 20
+      - key: SendGrid__ApiKey
+        sync: false
+      - key: SendGrid__FromEmail
+        sync: false
+      - key: SendGrid__FromName
+        value: QuizHub
+      - key: SendGrid__TimeoutSeconds
+        value: 20
       - key: Meilisearch__Url
         sync: false
       - key: Meilisearch__ApiKey

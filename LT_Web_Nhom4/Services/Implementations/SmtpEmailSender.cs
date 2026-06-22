@@ -25,33 +25,36 @@ namespace LT_Web_Nhom4.Services.Implementations
         {
             var provider = _configuration["Email:Provider"];
             var smtpConfigured = IsSmtpConfigured();
-            var resendConfigured = IsResendConfigured();
 
-            if (string.Equals(provider, "Resend", StringComparison.OrdinalIgnoreCase) && resendConfigured)
+            foreach (var providerName in BuildProviderOrder(provider))
             {
-                try
+                if (string.Equals(providerName, "Resend", StringComparison.OrdinalIgnoreCase)
+                    && IsResendConfigured())
                 {
                     await SendWithResendAsync(email, subject, htmlMessage);
                     return;
                 }
-                catch (Exception exception) when (smtpConfigured)
+
+                if (string.Equals(providerName, "Brevo", StringComparison.OrdinalIgnoreCase)
+                    && IsBrevoConfigured())
                 {
-                    _logger.LogWarning(exception, "Resend failed for '{Subject}'. Falling back to SMTP.", subject);
+                    await SendWithBrevoAsync(email, subject, htmlMessage);
+                    return;
+                }
+
+                if (string.Equals(providerName, "SendGrid", StringComparison.OrdinalIgnoreCase)
+                    && IsSendGridConfigured())
+                {
+                    await SendWithSendGridAsync(email, subject, htmlMessage);
+                    return;
+                }
+
+                if (string.Equals(providerName, "Smtp", StringComparison.OrdinalIgnoreCase)
+                    && smtpConfigured)
+                {
                     await SendWithSmtpAsync(email, subject, htmlMessage);
                     return;
                 }
-            }
-
-            if (smtpConfigured)
-            {
-                await SendWithSmtpAsync(email, subject, htmlMessage);
-                return;
-            }
-
-            if (resendConfigured)
-            {
-                await SendWithResendAsync(email, subject, htmlMessage);
-                return;
             }
 
             throw new InvalidOperationException(
@@ -167,9 +170,7 @@ namespace LT_Web_Nhom4.Services.Implementations
             var apiKey = _configuration["Resend:ApiKey"];
             var fromEmail = _configuration["Resend:FromEmail"];
             var fromName = _configuration["Resend:FromName"] ?? _configuration["Smtp:FromName"] ?? "QuizHub";
-            var timeoutSeconds = int.TryParse(_configuration["Resend:TimeoutSeconds"], out var configuredTimeout)
-                ? Math.Clamp(configuredTimeout, 5, 60)
-                : 20;
+            var timeoutSeconds = GetHttpProviderTimeoutSeconds("Resend");
 
             if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(fromEmail))
             {
@@ -201,6 +202,90 @@ namespace LT_Web_Nhom4.Services.Implementations
             }
 
             _logger.LogInformation("Resend email '{Subject}' sent to {Email}.", subject, email);
+        }
+
+        private async Task SendWithBrevoAsync(string email, string subject, string htmlMessage)
+        {
+            var apiKey = _configuration["Brevo:ApiKey"];
+            var fromEmail = _configuration["Brevo:FromEmail"];
+            var fromName = _configuration["Brevo:FromName"] ?? _configuration["Smtp:FromName"] ?? "QuizHub";
+            var timeoutSeconds = GetHttpProviderTimeoutSeconds("Brevo");
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException("Brevo email provider is not configured.");
+            }
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+            };
+            httpClient.DefaultRequestHeaders.Add("api-key", apiKey);
+
+            using var response = await httpClient.PostAsJsonAsync(
+                "https://api.brevo.com/v3/smtp/email",
+                new
+                {
+                    sender = new { name = fromName, email = fromEmail },
+                    to = new[] { new { email } },
+                    subject,
+                    htmlContent = htmlMessage
+                },
+                timeout.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(timeout.Token);
+                throw new InvalidOperationException($"Brevo returned HTTP {(int)response.StatusCode}: {body}");
+            }
+
+            _logger.LogInformation("Brevo email '{Subject}' sent to {Email}.", subject, email);
+        }
+
+        private async Task SendWithSendGridAsync(string email, string subject, string htmlMessage)
+        {
+            var apiKey = _configuration["SendGrid:ApiKey"];
+            var fromEmail = _configuration["SendGrid:FromEmail"];
+            var fromName = _configuration["SendGrid:FromName"] ?? _configuration["Smtp:FromName"] ?? "QuizHub";
+            var timeoutSeconds = GetHttpProviderTimeoutSeconds("SendGrid");
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(fromEmail))
+            {
+                throw new InvalidOperationException("SendGrid email provider is not configured.");
+            }
+
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+            };
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            using var response = await httpClient.PostAsJsonAsync(
+                "https://api.sendgrid.com/v3/mail/send",
+                new
+                {
+                    personalizations = new[]
+                    {
+                        new { to = new[] { new { email } } }
+                    },
+                    from = new { email = fromEmail, name = fromName },
+                    subject,
+                    content = new[]
+                    {
+                        new { type = "text/html", value = htmlMessage }
+                    }
+                },
+                timeout.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(timeout.Token);
+                throw new InvalidOperationException($"SendGrid returned HTTP {(int)response.StatusCode}: {body}");
+            }
+
+            _logger.LogInformation("SendGrid email '{Subject}' sent to {Email}.", subject, email);
         }
 
         public Task SendOtpEmailAsync(string toEmail, string otp, string purpose)
@@ -270,6 +355,38 @@ namespace LT_Web_Nhom4.Services.Implementations
         private bool IsResendConfigured()
         {
             return EmailConfigurationHelper.HasResendProvider(_configuration);
+        }
+
+        private bool IsBrevoConfigured()
+        {
+            return EmailConfigurationHelper.HasBrevoProvider(_configuration);
+        }
+
+        private bool IsSendGridConfigured()
+        {
+            return EmailConfigurationHelper.HasSendGridProvider(_configuration);
+        }
+
+        private int GetHttpProviderTimeoutSeconds(string providerName)
+        {
+            return int.TryParse(_configuration[$"{providerName}:TimeoutSeconds"], out var configuredTimeout)
+                ? Math.Clamp(configuredTimeout, 5, 60)
+                : 20;
+        }
+
+        private static IReadOnlyList<string> BuildProviderOrder(string? configuredProvider)
+        {
+            var providers = new List<string>();
+            if (!string.IsNullOrWhiteSpace(configuredProvider))
+            {
+                providers.Add(configuredProvider.Trim());
+            }
+
+            providers.AddRange(["Resend", "Brevo", "SendGrid", "Smtp"]);
+            return providers
+                .Where(provider => !string.IsNullOrWhiteSpace(provider))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
     }
 }

@@ -6,13 +6,32 @@ namespace LT_Web_Nhom4.Services
     {
         public static bool HasEmailProvider(IConfiguration configuration)
         {
-            return HasResendProvider(configuration) || HasUsableSmtpProvider(configuration);
+            return HasHttpsEmailProvider(configuration) || HasUsableSmtpProvider(configuration);
+        }
+
+        public static bool HasHttpsEmailProvider(IConfiguration configuration)
+        {
+            return HasResendProvider(configuration)
+                || HasBrevoProvider(configuration)
+                || HasSendGridProvider(configuration);
         }
 
         public static bool HasResendProvider(IConfiguration configuration)
         {
             return HasValue(configuration["Resend:ApiKey"])
                 && HasValue(configuration["Resend:FromEmail"]);
+        }
+
+        public static bool HasBrevoProvider(IConfiguration configuration)
+        {
+            return HasValue(configuration["Brevo:ApiKey"])
+                && HasValue(configuration["Brevo:FromEmail"]);
+        }
+
+        public static bool HasSendGridProvider(IConfiguration configuration)
+        {
+            return HasValue(configuration["SendGrid:ApiKey"])
+                && HasValue(configuration["SendGrid:FromEmail"]);
         }
 
         public static bool HasSmtpProvider(IConfiguration configuration)
@@ -48,6 +67,16 @@ namespace LT_Web_Nhom4.Services
             if (HasResendProvider(configuration))
             {
                 return "Resend HTTPS";
+            }
+
+            if (HasBrevoProvider(configuration))
+            {
+                return "Brevo HTTPS";
+            }
+
+            if (HasSendGridProvider(configuration))
+            {
+                return "SendGrid HTTPS";
             }
 
             if (IsSmtpBlockedByRuntime(configuration))
@@ -107,6 +136,11 @@ namespace LT_Web_Nhom4.Services
 
         public static string? GetEmailProviderProblem(IConfiguration configuration)
         {
+            if (HasHttpsEmailProvider(configuration))
+            {
+                return null;
+            }
+
             if (IsSmtpBlockedByRuntime(configuration))
             {
                 return "SMTP da cau hinh, nhung Render Free chan SMTP outbound. Hay cau hinh Resend/Brevo/SendGrid qua HTTPS hoac nang goi Render.";

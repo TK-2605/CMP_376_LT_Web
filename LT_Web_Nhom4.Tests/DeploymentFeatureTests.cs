@@ -115,6 +115,26 @@ public sealed class DeploymentFeatureTests
         Assert.Contains("Chức năng quên mật khẩu đang tạm dừng", forgotHtml, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Render_https_email_provider_reports_email_otp_as_ready()
+    {
+        await using var factory = new QuizHubWebApplicationFactory(
+            configureExternalServices: true,
+            simulateRenderRuntime: true,
+            configureHttpsEmailProvider: true);
+        using var client = factory.CreateClient();
+
+        using var statusResponse = await client.GetAsync("/api/auth/status");
+        using var payload = JsonDocument.Parse(await statusResponse.Content.ReadAsStringAsync());
+        var registerHtml = await client.GetStringAsync("/Identity/Login/Account/Register");
+        var forgotHtml = await client.GetStringAsync("/Identity/Login/Account/ForgotPassword");
+
+        Assert.Equal(HttpStatusCode.OK, statusResponse.StatusCode);
+        Assert.True(payload.RootElement.GetProperty("smtpConfigured").GetBoolean());
+        Assert.DoesNotContain("Đăng ký đang tạm dừng", registerHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Chức năng quên mật khẩu đang tạm dừng", forgotHtml, StringComparison.Ordinal);
+    }
+
     private static HttpClient CreateClientWithoutRedirects(WebApplicationFactory<Program> factory)
     {
         return factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -128,11 +148,16 @@ internal sealed class QuizHubWebApplicationFactory : WebApplicationFactory<Progr
 {
     private readonly bool _configureExternalServices;
     private readonly bool _simulateRenderRuntime;
+    private readonly bool _configureHttpsEmailProvider;
 
-    public QuizHubWebApplicationFactory(bool configureExternalServices = false, bool simulateRenderRuntime = false)
+    public QuizHubWebApplicationFactory(
+        bool configureExternalServices = false,
+        bool simulateRenderRuntime = false,
+        bool configureHttpsEmailProvider = false)
     {
         _configureExternalServices = configureExternalServices;
         _simulateRenderRuntime = simulateRenderRuntime;
+        _configureHttpsEmailProvider = configureHttpsEmailProvider;
         Environment.SetEnvironmentVariable(
             "Authentication__Google__ClientId",
             configureExternalServices ? "test-client-id" : string.Empty);
@@ -179,6 +204,13 @@ internal sealed class QuizHubWebApplicationFactory : WebApplicationFactory<Progr
             {
                 values["RENDER"] = "true";
                 values["RENDER_SERVICE_ID"] = "srv-test";
+            }
+
+            if (_configureHttpsEmailProvider)
+            {
+                values["Email:Provider"] = "Brevo";
+                values["Brevo:ApiKey"] = "test-brevo-key";
+                values["Brevo:FromEmail"] = "noreply@example.test";
             }
 
             configuration.AddInMemoryCollection(values);
