@@ -60,6 +60,8 @@ services:
         sync: false
       - key: Smtp__FromName
         value: QuizHub
+      - key: Email__Provider
+        value: Smtp
       - key: Resend__ApiKey
         sync: false
       - key: Resend__FromEmail

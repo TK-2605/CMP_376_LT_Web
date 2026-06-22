@@ -181,6 +181,7 @@ $envVars = @(
     New-EnvVar 'Smtp__Password' (Get-Setting -Values $envValues -Name 'SMTP_PASSWORD')
     New-EnvVar 'Smtp__FromEmail' (Get-Setting -Values $envValues -Name 'SMTP_FROM_EMAIL')
     New-EnvVar 'Smtp__FromName' (Get-Setting -Values $envValues -Name 'SMTP_FROM_NAME' -Default 'QuizHub')
+    New-EnvVar 'Email__Provider' (Get-Setting -Values $envValues -Name 'EMAIL_PROVIDER' -Default 'Smtp')
     New-EnvVar 'Resend__ApiKey' (Get-Setting -Values $envValues -Name 'RESEND_API_KEY')
     New-EnvVar 'Resend__FromEmail' (Get-Setting -Values $envValues -Name 'RESEND_FROM_EMAIL')
     New-EnvVar 'Resend__FromName' (Get-Setting -Values $envValues -Name 'RESEND_FROM_NAME' -Default 'QuizHub')

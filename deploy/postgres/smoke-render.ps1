@@ -1,7 +1,10 @@
 param(
     [string]$BaseUrl = "https://quizhub-nhom4.onrender.com",
     [int]$Attempts = 5,
-    [int]$DelaySeconds = 20
+    [int]$DelaySeconds = 20,
+    [string]$AdminEmail = $env:QUIZHUB_SMOKE_ADMIN_EMAIL,
+    [string]$AdminPassword = $env:QUIZHUB_SMOKE_ADMIN_PASSWORD,
+    [string]$TestEmailTo = $env:QUIZHUB_SMOKE_TEST_EMAIL_TO
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,6 +55,38 @@ function Invoke-SmokeRequest {
     throw "Smoke check failed for $Path after $Attempts attempts: $lastError"
 }
 
+function Invoke-SmokeJsonPost {
+    param(
+        [string]$Path,
+        [object]$Body,
+        [string]$BearerToken = ""
+    )
+
+    $url = "$base$Path"
+    $json = $Body | ConvertTo-Json -Depth 8 -Compress
+    $content = [System.Net.Http.StringContent]::new($json, [System.Text.Encoding]::UTF8, "application/json")
+    $request = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Post, $url)
+    $request.Content = $content
+
+    if (-not [string]::IsNullOrWhiteSpace($BearerToken)) {
+        $request.Headers.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new("Bearer", $BearerToken)
+    }
+
+    $response = $client.SendAsync($request).GetAwaiter().GetResult()
+    $bodyText = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    $statusCode = [int]$response.StatusCode
+    if ($statusCode -lt 200 -or $statusCode -ge 300) {
+        throw "JSON POST $Path failed with HTTP ${statusCode}: $bodyText"
+    }
+
+    Write-Host "OK $statusCode $Path"
+    if ([string]::IsNullOrWhiteSpace($bodyText)) {
+        return $null
+    }
+
+    return $bodyText | ConvertFrom-Json
+}
+
 try {
     Invoke-SmokeRequest "/" | Out-Null
     Invoke-SmokeRequest "/health" | Out-Null
@@ -73,6 +108,33 @@ try {
 
     if ($ready.meilisearch.configured -and -not $ready.meilisearch.reachable) {
         throw "Meilisearch is configured but unreachable: $($ready.meilisearch.message)"
+    }
+
+    $smtpSmokeEnabled = -not [string]::IsNullOrWhiteSpace($AdminEmail) `
+        -and -not [string]::IsNullOrWhiteSpace($AdminPassword) `
+        -and -not [string]::IsNullOrWhiteSpace($TestEmailTo)
+
+    if ($smtpSmokeEnabled) {
+        $login = Invoke-SmokeJsonPost "/api/auth/login" @{
+            email = $AdminEmail
+            password = $AdminPassword
+        }
+
+        if ([string]::IsNullOrWhiteSpace($login.accessToken)) {
+            throw "JWT login did not return an access token."
+        }
+
+        $emailResult = Invoke-SmokeJsonPost "/api/auth/test-email" @{
+            toEmail = $TestEmailTo
+            subject = "QuizHub live smoke SMTP"
+        } $login.accessToken
+
+        if (-not $emailResult.sent) {
+            throw "SMTP smoke failed: $($emailResult.message)"
+        }
+    }
+    else {
+        Write-Host "Skipping authenticated SMTP smoke. Set QUIZHUB_SMOKE_ADMIN_EMAIL, QUIZHUB_SMOKE_ADMIN_PASSWORD, and QUIZHUB_SMOKE_TEST_EMAIL_TO to enable it."
     }
 
     Write-Host "Render smoke check passed for $base"
