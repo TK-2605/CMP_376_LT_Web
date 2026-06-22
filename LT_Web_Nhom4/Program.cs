@@ -21,6 +21,15 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment()
+    && string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Key"]))
+{
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Jwt:Key"] = "QuizHub_Localhost_Development_Jwt_Key_Only_For_Swagger_Testing_2026"
+    });
+}
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -131,11 +140,12 @@ builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IEmailService, SmtpEmailSender>();
 builder.Services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddSingleton<IAppClock, AppClock>();
 builder.Services.AddHttpClient<IMeilisearchService, MeilisearchService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(2);
 });
-builder.Services.AddSingleton<IPrivateMediaStorage, PrivateMediaStorage>();
+builder.Services.AddScoped<IPrivateMediaStorage, PrivateMediaStorage>();
 builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = 8 * 1024;
@@ -158,6 +168,37 @@ builder.Services.AddSwaggerGen(options =>
         Title = "QuizHub API",
         Version = "v1",
         Description = "API kiểm thử OAuth, SMTP, xác nhận email, quên mật khẩu và JWT cho hệ thống thi trắc nghiệm."
+    });
+
+    options.TagActionsBy(api =>
+    {
+        var path = "/" + (api.RelativePath ?? string.Empty).ToLowerInvariant();
+        if (path.StartsWith("/api/auth/register", StringComparison.Ordinal))
+        {
+            return ["Auth - Register"];
+        }
+
+        if (path.StartsWith("/api/auth/forgot-password", StringComparison.Ordinal))
+        {
+            return ["Auth - Forgot Password"];
+        }
+
+        if (path.StartsWith("/api/auth", StringComparison.Ordinal))
+        {
+            return ["Auth - Login JWT"];
+        }
+
+        if (path.StartsWith("/api/admin-data", StringComparison.Ordinal))
+        {
+            return ["CRUD - LocalDB"];
+        }
+
+        if (path.StartsWith("/api/features", StringComparison.Ordinal))
+        {
+            return ["Feature API Checks"];
+        }
+
+        return [api.ActionDescriptor.RouteValues["controller"] ?? "API"];
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -219,6 +260,8 @@ if (!app.Environment.IsEnvironment("Testing"))
         await ApplyDatabaseMigrationsAsync(app);
     }
 
+    await EnsureStoredMediaFilesTableAsync(app);
+    await LogDatabaseStartupStateAsync(app);
     await SeedDefaultDataAsync(app);
 }
 
@@ -299,29 +342,41 @@ if (!googleOAuthConfigured)
 app.MapGet("/health/ready", async (
     ApplicationDbContext context,
     IMeilisearchService meilisearch,
+    IConfiguration configuration,
     CancellationToken cancellationToken) =>
 {
     var databaseReady = false;
     var databaseMessage = "Database is not reachable.";
+    IReadOnlyList<string> pendingMigrations = Array.Empty<string>();
+    string? migrationMessage = null;
     try
     {
         databaseReady = await context.Database.CanConnectAsync(cancellationToken);
         databaseMessage = databaseReady ? "Database is reachable." : databaseMessage;
+        if (databaseReady)
+        {
+            pendingMigrations = (await context.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
+        }
     }
     catch (Exception exception)
     {
         databaseMessage = exception.Message;
+        migrationMessage = exception.GetType().Name;
     }
 
     var searchHealth = await meilisearch.GetHealthAsync(cancellationToken);
-    var ready = databaseReady && (!searchHealth.Configured || searchHealth.Reachable);
+    var ready = databaseReady;
     var payload = new
     {
         Status = ready ? "Ready" : "Degraded",
         Database = new
         {
             Ready = databaseReady,
-            Message = databaseMessage
+            Provider = context.Database.ProviderName,
+            ConfiguredProvider = configuration["Database:Provider"] ?? "SqlServer",
+            Message = databaseMessage,
+            PendingMigrations = pendingMigrations,
+            MigrationMessage = migrationMessage
         },
         Meilisearch = new
         {
@@ -396,7 +451,94 @@ static async Task ApplyDatabaseMigrationsAsync(WebApplication app)
     catch (Exception exception)
     {
         logger.LogError(exception, "Database migration failed.");
+        if (app.Configuration.GetValue<bool>("Database:ContinueOnMigrationFailure"))
+        {
+            logger.LogWarning("Continuing startup because Database:ContinueOnMigrationFailure is enabled.");
+            return;
+        }
+
         throw;
+    }
+}
+
+static async Task EnsureStoredMediaFilesTableAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseMediaSchema");
+
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var provider = context.Database.ProviderName ?? string.Empty;
+        if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+        {
+            await context.Database.ExecuteSqlRawAsync("""
+                CREATE TABLE IF NOT EXISTS "StoredMediaFiles" (
+                    "Id" uuid NOT NULL,
+                    "Category" character varying(100) NOT NULL,
+                    "OriginalFileName" character varying(255) NOT NULL,
+                    "ContentType" character varying(100) NOT NULL,
+                    "Length" bigint NOT NULL,
+                    "Content" bytea NOT NULL,
+                    "CreatedAt" timestamp without time zone NOT NULL,
+                    CONSTRAINT "PK_StoredMediaFiles" PRIMARY KEY ("Id")
+                );
+                CREATE INDEX IF NOT EXISTS "IX_StoredMediaFiles_Category_CreatedAt"
+                    ON "StoredMediaFiles" ("Category", "CreatedAt");
+                """);
+            return;
+        }
+
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[StoredMediaFiles]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [StoredMediaFiles] (
+                    [Id] uniqueidentifier NOT NULL,
+                    [Category] nvarchar(100) NOT NULL,
+                    [OriginalFileName] nvarchar(255) NOT NULL,
+                    [ContentType] nvarchar(100) NOT NULL,
+                    [Length] bigint NOT NULL,
+                    [Content] varbinary(max) NOT NULL,
+                    [CreatedAt] datetime2 NOT NULL,
+                    CONSTRAINT [PK_StoredMediaFiles] PRIMARY KEY ([Id])
+                );
+            END;
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_StoredMediaFiles_Category_CreatedAt' AND object_id = OBJECT_ID(N'[StoredMediaFiles]'))
+            BEGIN
+                CREATE INDEX [IX_StoredMediaFiles_Category_CreatedAt] ON [StoredMediaFiles] ([Category], [CreatedAt]);
+            END;
+            """);
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(exception, "Stored media schema check failed.");
+        throw;
+    }
+}
+
+static async Task LogDatabaseStartupStateAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
+
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var canConnect = await context.Database.CanConnectAsync();
+        var pending = canConnect
+            ? (await context.Database.GetPendingMigrationsAsync()).ToArray()
+            : Array.Empty<string>();
+        logger.LogInformation(
+            "Database startup state: provider={Provider}, configuredProvider={ConfiguredProvider}, canConnect={CanConnect}, pendingMigrations={PendingCount}, mediaStorage={MediaStorageProvider}.",
+            context.Database.ProviderName,
+            app.Configuration["Database:Provider"] ?? "SqlServer",
+            canConnect,
+            pending.Length,
+            app.Configuration["Media:StorageProvider"] ?? "FileSystem");
+    }
+    catch (Exception exception)
+    {
+        logger.LogWarning(exception, "Could not read database startup state.");
     }
 }
 

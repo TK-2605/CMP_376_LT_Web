@@ -17,17 +17,20 @@ namespace LT_Web_Nhom4.Controllers
         private readonly IUniqueCodeGenerator _codeGenerator;
         private readonly IAccessPolicy _accessPolicy;
         private readonly IPrivateMediaStorage _mediaStorage;
+        private readonly IAppClock _clock;
 
         public ClassesController(
             ApplicationDbContext context,
             IUniqueCodeGenerator codeGenerator,
             IAccessPolicy accessPolicy,
-            IPrivateMediaStorage mediaStorage)
+            IPrivateMediaStorage mediaStorage,
+            IAppClock clock)
         {
             _context = context;
             _codeGenerator = codeGenerator;
             _accessPolicy = accessPolicy;
             _mediaStorage = mediaStorage;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -40,7 +43,7 @@ namespace LT_Web_Nhom4.Controllers
         {
             var model = new CreateClassViewModel
             {
-                AcademicYear = $"{DateTime.Now.Year}-{DateTime.Now.Year + 1}"
+                AcademicYear = $"{_clock.Now.Year}-{_clock.Now.Year + 1}"
             };
             await PopulateSubjectsAsync(model);
             return View(model);
@@ -143,7 +146,7 @@ namespace LT_Web_Nhom4.Controllers
             else
             {
                 existingMember.Status = ClassMemberStatus.Active;
-                existingMember.JoinedAt = DateTime.UtcNow;
+                existingMember.JoinedAt = _clock.UtcNow;
             }
 
             await _context.SaveChangesAsync();
@@ -192,6 +195,7 @@ namespace LT_Web_Nhom4.Controllers
                 AcademicYear = classRoom.AcademicYear,
                 ExamCount = visibleExams.Count(),
                 MemberCount = classRoom.Members.Count(member => member.Status == ClassMemberStatus.Active),
+                Now = _clock.Now,
                 IsOwner = isOwner,
                 Members = isOwner
                     ? classRoom.Members.Where(member => member.Status == ClassMemberStatus.Active).Select(member => new ClassMemberItemViewModel
@@ -407,6 +411,30 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var member = await _context.ClassMembers.FindAsync(id, userId);
+            if (member is null)
+            {
+                if (IsAjaxRequest())
+                {
+                    return NotFound(new { ok = false, message = "Khong tim thay hoc vien trong lop." });
+                }
+
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            member.Status = ClassMemberStatus.Removed;
+            await _context.SaveChangesAsync();
+
+            var memberCount = await _context.ClassMembers
+                .CountAsync(item => item.ClassId == id && item.Status == ClassMemberStatus.Active);
+            var message = "Hoc vien da duoc xoa khoi lop.";
+
+            if (IsAjaxRequest())
+            {
+                return Json(new { ok = true, message, memberCount });
+            }
+
+            TempData["ClassMessage"] = message;
+            member = null;
             if (member is not null)
             {
                 member.Status = ClassMemberStatus.Removed;
@@ -415,6 +443,11 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private bool IsAjaxRequest()
+        {
+            return string.Equals(Request.Headers.XRequestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<ClassListViewModel> BuildListModelAsync()

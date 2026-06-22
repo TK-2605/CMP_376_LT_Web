@@ -137,14 +137,33 @@
   const validateQuestion = (card) => {
     const content = card.querySelector('textarea[name$=".Content"]');
     const options = Array.from(card.querySelectorAll('[data-answer-row] input[name$=".Content"]'));
-    const correctOptions = card.querySelectorAll('[data-correct-option]:checked');
-    const valid = Boolean(content?.value.trim()) && options.filter((option) => option.value.trim()).length >= 2 && correctOptions.length === 1;
+    const correctOptions = Array.from(card.querySelectorAll('[data-correct-option]:checked'));
+    const filledOptions = options.filter((option) => option.value.trim());
+    const checkedContent = correctOptions
+      .map((input) => input.closest('[data-answer-row]')?.querySelector('input[name$=".Content"]'))
+      .filter(Boolean);
+
     content?.classList.toggle('is-invalid', !content.value.trim());
-    options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
-    return valid;
+    options.forEach((option) => option.classList.remove('is-invalid'));
+
+    if (!content?.value.trim()) {
+      return { valid: false, message: 'Cau hoi can co noi dung truoc khi dang de.' };
+    }
+    if (filledOptions.length < 2) {
+      options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
+      return { valid: false, message: 'Cau hoi can it nhat 2 dap an co noi dung.' };
+    }
+    if (correctOptions.length !== 1) {
+      return { valid: false, message: 'Cau hoi phai co dung 1 dap an dung.' };
+    }
+    if (checkedContent.some((option) => !option.value.trim())) {
+      checkedContent.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
+      return { valid: false, message: 'Dap an dung dang chon can co noi dung.' };
+    }
+    return { valid: true, message: '' };
   };
 
-  const showPublishError = (questionIndex) => {
+  const showPublishError = (questionIndex, message) => {
     currentQuestion = questionIndex;
     setPanel('questions');
     renderNavigation();
@@ -157,6 +176,7 @@
       stage.querySelector('.question-stage-header').after(alert);
     }
     alert.textContent = 'Câu hỏi này cần có nội dung, ít nhất hai đáp án và đúng một đáp án đúng trước khi đăng đề.';
+    alert.textContent = message || 'Cau hoi nay can co noi dung, it nhat 2 dap an va dung 1 dap an dung truoc khi dang de.';
     cards()[questionIndex]?.querySelector('textarea[name$=".Content"]')?.focus();
     stage.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   };
@@ -246,10 +266,11 @@
       return;
     }
     if (event.submitter?.value !== 'publish') return;
-    const invalidIndex = cards().findIndex((card) => !validateQuestion(card));
+    const validations = cards().map((card) => validateQuestion(card));
+    const invalidIndex = validations.findIndex((item) => !item.valid);
     if (invalidIndex >= 0) {
       event.preventDefault();
-      showPublishError(invalidIndex);
+      showPublishError(invalidIndex, validations[invalidIndex].message);
     }
   });
 

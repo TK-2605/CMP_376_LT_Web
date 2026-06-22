@@ -3,13 +3,17 @@
   if (waitingRoom) {
     const startAt = new Date(waitingRoom.dataset.startAt).getTime();
     const countdown = waitingRoom.querySelector('[data-wait-countdown]');
+    let redirected = false;
     const updateWaiting = () => {
       const remaining = Math.max(Math.floor((startAt - Date.now()) / 1000), 0);
       const hours = String(Math.floor(remaining / 3600)).padStart(2, '0');
       const minutes = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
       const seconds = String(remaining % 60).padStart(2, '0');
       if (countdown) countdown.textContent = hours + ':' + minutes + ':' + seconds;
-      if (remaining === 0) window.location.assign(waitingRoom.dataset.refreshUrl);
+      if (remaining === 0 && !redirected) {
+        redirected = true;
+        window.location.assign(waitingRoom.dataset.refreshUrl);
+      }
     };
     updateWaiting();
     window.setInterval(updateWaiting, 1000);

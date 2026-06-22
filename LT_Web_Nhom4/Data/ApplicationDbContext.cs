@@ -43,6 +43,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<AntiCheatEvent> AntiCheatEvents { get; set; }
 
+        public DbSet<StoredMediaFile> StoredMediaFiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -295,6 +297,15 @@ namespace LT_Web_Nhom4.Data
                     .WithMany(attempt => attempt.AntiCheatEvents)
                     .HasForeignKey(antiCheatEvent => antiCheatEvent.ExamAttemptId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<StoredMediaFile>(entity =>
+            {
+                entity.Property(media => media.Category).HasMaxLength(100);
+                entity.Property(media => media.OriginalFileName).HasMaxLength(255);
+                entity.Property(media => media.ContentType).HasMaxLength(100);
+                entity.Property(media => media.Content).IsRequired();
+                entity.HasIndex(media => new { media.Category, media.CreatedAt });
             });
         }
 

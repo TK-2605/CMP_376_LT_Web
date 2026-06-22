@@ -38,6 +38,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
 
     public class ClassDetailsViewModel : ClassCardViewModel
     {
+        public DateTime Now { get; set; } = DateTime.Now;
+
         public bool IsOwner { get; set; }
 
         public string? IntroVideoUrl { get; set; }

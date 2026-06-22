@@ -18,17 +18,20 @@ namespace LT_Web_Nhom4.Controllers
         private readonly IAccessPolicy _accessPolicy;
         private readonly IUniqueCodeGenerator _codeGenerator;
         private readonly IPrivateMediaStorage _mediaStorage;
+        private readonly IAppClock _clock;
 
         public ExamsController(
             ApplicationDbContext context,
             IAccessPolicy accessPolicy,
             IUniqueCodeGenerator codeGenerator,
-            IPrivateMediaStorage mediaStorage)
+            IPrivateMediaStorage mediaStorage,
+            IAppClock clock)
         {
             _context = context;
             _accessPolicy = accessPolicy;
             _codeGenerator = codeGenerator;
             _mediaStorage = mediaStorage;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -45,6 +48,7 @@ namespace LT_Web_Nhom4.Controllers
 
             return View(new ExamListViewModel
             {
+                Now = _clock.Now,
                 Exams = exams.Select(ToExamCard).ToList()
             });
         }
@@ -74,8 +78,8 @@ namespace LT_Web_Nhom4.Controllers
                 ClassId = classRoom.Id,
                 ClassCode = classRoom.Code,
                 ClassName = classRoom.Name,
-                StartAt = DateTime.Now.AddHours(1),
-                EndAt = DateTime.Now.AddHours(2),
+                StartAt = _clock.Now.AddHours(1),
+                EndAt = _clock.Now.AddHours(2),
                 DurationMinutes = 45,
                 MaxScore = 10,
                 PassingScore = 5,
@@ -195,7 +199,6 @@ namespace LT_Web_Nhom4.Controllers
 
             var storedImages = new List<string>();
             var imagesToDelete = new List<string>();
-            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 _context.Entry(exam).Property(item => item.RowVersion).OriginalValue = model.RowVersion;
@@ -203,7 +206,6 @@ namespace LT_Web_Nhom4.Controllers
                 exam.Status = publish ? ExamStatus.Published : ExamStatus.Draft;
                 await ReplaceQuestionsAsync(exam, model, publish, storedImages, imagesToDelete, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
 
                 foreach (var path in imagesToDelete.Distinct())
                 {
@@ -217,7 +219,6 @@ namespace LT_Web_Nhom4.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 foreach (var path in storedImages)
                 {
                     await _mediaStorage.DeleteAsync(path, cancellationToken);
@@ -228,7 +229,6 @@ namespace LT_Web_Nhom4.Controllers
             }
             catch (InvalidOperationException exception)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 foreach (var path in storedImages)
                 {
                     await _mediaStorage.DeleteAsync(path, cancellationToken);
@@ -372,7 +372,8 @@ namespace LT_Web_Nhom4.Controllers
                 return NotFound();
             }
 
-            if (DateTime.Now < exam.StartAt || DateTime.Now > exam.EndAt)
+            var now = _clock.Now;
+            if (now < exam.StartAt || now > exam.EndAt)
             {
                 return RedirectToAction(nameof(Room), new { id });
             }
@@ -389,7 +390,7 @@ namespace LT_Web_Nhom4.Controllers
                 {
                     ExamId = id,
                     UserId = CurrentUserId,
-                    StartedAt = DateTime.UtcNow,
+                    StartedAt = _clock.UtcNow,
                     IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
                     UserAgent = Request.Headers.UserAgent.ToString()
                 };
@@ -489,11 +490,11 @@ namespace LT_Web_Nhom4.Controllers
                 answer.Selections.Add(new AttemptAnswerSelection { QuestionOptionId = selectedId });
             }
 
-            answer.LastSavedAt = DateTime.UtcNow;
+            answer.LastSavedAt = _clock.UtcNow;
             answer.IsCorrect = null;
             answer.AwardedScore = null;
             await _context.SaveChangesAsync();
-            return Ok(new { ok = true, savedAt = DateTime.Now.ToString("HH:mm:ss") });
+            return Ok(new { ok = true, savedAt = _clock.Now.ToString("HH:mm:ss") });
         }
 
         [HttpPost]
@@ -534,7 +535,7 @@ namespace LT_Web_Nhom4.Controllers
                 return Conflict(new { locked = true });
             }
 
-            var duplicateSince = DateTime.UtcNow.AddSeconds(-3);
+            var duplicateSince = _clock.UtcNow.AddSeconds(-3);
             if (!attempt.AntiCheatEvents.Any(item => item.EventType == model.EventType && item.OccurredAt >= duplicateSince))
             {
                 attempt.AntiCheatEvents.Add(new AntiCheatEvent
@@ -572,7 +573,7 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var released = canManage || attempt.Exam.ResultReleaseMode == ResultReleaseMode.Immediately
-                || (attempt.Exam.ResultReleaseMode == ResultReleaseMode.AfterExamClosed && DateTime.Now > attempt.Exam.EndAt)
+                || (attempt.Exam.ResultReleaseMode == ResultReleaseMode.AfterExamClosed && _clock.Now > attempt.Exam.EndAt)
                 || (attempt.Exam.ResultReleaseMode == ResultReleaseMode.Manual && attempt.Exam.ResultsReleasedAt.HasValue);
 
             return View(new ExamResultViewModel
@@ -606,7 +607,7 @@ namespace LT_Web_Nhom4.Controllers
                 return NotFound();
             }
 
-            exam.ResultsReleasedAt = DateTime.UtcNow;
+            exam.ResultsReleasedAt = _clock.UtcNow;
             await _context.SaveChangesAsync();
             TempData["ExamMessage"] = "Kết quả đã được công bố cho học viên.";
             return RedirectToAction(nameof(Manage), new { id });
@@ -1104,7 +1105,7 @@ namespace LT_Web_Nhom4.Controllers
                 MaxScore = exam.MaxScore,
                 RequireFullscreen = exam.RequireFullscreen,
                 MaxWarningCount = exam.MaxWarningCount,
-                Now = DateTime.Now
+                Now = _clock.Now
             };
         }
 
@@ -1201,7 +1202,7 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             attempt.Score = total;
-            attempt.SubmittedAt = DateTime.UtcNow;
+            attempt.SubmittedAt = _clock.UtcNow;
             attempt.IsAutoSubmitted = automatic;
             attempt.Status = automatic ? ExamAttemptStatus.AutoSubmitted : ExamAttemptStatus.Submitted;
             await _context.SaveChangesAsync();
@@ -1234,13 +1235,13 @@ namespace LT_Web_Nhom4.Controllers
             };
         }
 
-        private static DateTime GetExpiresAt(ExamAttempt attempt)
+        private DateTime GetExpiresAt(ExamAttempt attempt)
         {
-            var durationEnd = attempt.StartedAt.ToLocalTime().AddMinutes(attempt.Exam.DurationMinutes);
+            var durationEnd = _clock.ToAppLocalTime(attempt.StartedAt).AddMinutes(attempt.Exam.DurationMinutes);
             return durationEnd < attempt.Exam.EndAt ? durationEnd : attempt.Exam.EndAt;
         }
 
-        private static bool HasExpired(ExamAttempt attempt) => DateTime.Now >= GetExpiresAt(attempt);
+        private bool HasExpired(ExamAttempt attempt) => _clock.Now >= GetExpiresAt(attempt);
 
         private static string StableOrder(int attemptId, int entityId, string scope)
         {

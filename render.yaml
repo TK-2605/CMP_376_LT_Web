@@ -23,9 +23,11 @@ services:
       - key: Database__Provider
         value: PostgreSql
       - key: Database__EnsureCreatedOnStartup
-        value: true
-      - key: Database__ApplyMigrationsOnStartup
         value: false
+      - key: Database__ApplyMigrationsOnStartup
+        value: true
+      - key: Database__ContinueOnMigrationFailure
+        value: true
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: Authentication__Google__ClientId
@@ -72,8 +74,10 @@ services:
         sync: false
       - key: Meilisearch__IndexName
         value: quizhub-private-search
-      - key: PrivateMediaRoot
-        value: /tmp/quizhub-uploads
+      - key: Media__StorageProvider
+        value: Database
+      - key: AppTimeZone
+        value: Asia/Ho_Chi_Minh
       - key: ForwardedHeaders__Enabled
         value: true
       - key: Swagger__Enabled

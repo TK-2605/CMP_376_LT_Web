@@ -172,6 +172,59 @@
     });
   });
 
+  document.querySelectorAll('[data-ajax-form="remove-member"]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const row = form.closest('[data-member-row]');
+      const button = form.querySelector('button[type="submit"]');
+      const messageBox = document.querySelector('[data-class-ajax-message]');
+      button?.setAttribute('disabled', 'disabled');
+
+      const showMessage = (message, isError) => {
+        if (!messageBox) return;
+        messageBox.textContent = message;
+        messageBox.classList.toggle('d-none', false);
+        messageBox.classList.toggle('alert-success', !isError);
+        messageBox.classList.toggle('alert-danger', Boolean(isError));
+      };
+
+      const updateMemberCount = (count) => {
+        document.querySelectorAll('[data-member-count]').forEach((item) => {
+          item.textContent = String(count);
+        });
+
+        const heroCount = document.querySelector('.class-detail-meta .ri-group-line')?.closest('span');
+        if (heroCount && !heroCount.querySelector('[data-member-count]')) {
+          heroCount.innerHTML = `<i class="ri-group-line"></i> ${count} hoc vien`;
+        }
+
+        const memberHeading = document.querySelector('aside .surface-heading h2');
+        if (memberHeading && !memberHeading.querySelector('[data-member-count]')) {
+          memberHeading.textContent = `${count} hoc vien`;
+        }
+      };
+
+      try {
+        const response = await fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.message || 'Khong the xoa hoc vien.');
+
+        row?.remove();
+        if (typeof data.memberCount === 'number') updateMemberCount(data.memberCount);
+        showMessage(data.message || 'Hoc vien da duoc xoa khoi lop.', false);
+      } catch (error) {
+        showMessage(error.message || 'Khong the xoa hoc vien. Vui long thu lai.', true);
+      } finally {
+        button?.removeAttribute('disabled');
+      }
+    });
+  });
+
   document.querySelectorAll('[data-tabs]').forEach((tabs) => {
     const buttons = Array.from(tabs.querySelectorAll('[data-tab-target]'));
     const panels = Array.from(document.querySelectorAll('[data-tab-panel]'));

@@ -162,8 +162,9 @@ if ([string]::IsNullOrWhiteSpace($ownerId)) {
 $envVars = @(
     New-EnvVar 'ASPNETCORE_ENVIRONMENT' 'Production'
     New-EnvVar 'Database__Provider' 'PostgreSql'
-    New-EnvVar 'Database__EnsureCreatedOnStartup' 'true'
-    New-EnvVar 'Database__ApplyMigrationsOnStartup' 'false'
+    New-EnvVar 'Database__EnsureCreatedOnStartup' 'false'
+    New-EnvVar 'Database__ApplyMigrationsOnStartup' 'true'
+    New-EnvVar 'Database__ContinueOnMigrationFailure' 'true'
     New-EnvVar 'ConnectionStrings__DefaultConnection' $postgres
     New-EnvVar 'Authentication__Google__ClientId' (Get-Setting -Values $envValues -Name 'GOOGLE_CLIENT_ID')
     New-EnvVar 'Authentication__Google__ClientSecret' (Get-Setting -Values $envValues -Name 'GOOGLE_CLIENT_SECRET')
@@ -187,7 +188,8 @@ $envVars = @(
     New-EnvVar 'Meilisearch__Url' (Get-Setting -Values $envValues -Name 'MEILI_URL')
     New-EnvVar 'Meilisearch__ApiKey' (Get-Setting -Values $envValues -Name 'MEILI_API_KEY')
     New-EnvVar 'Meilisearch__IndexName' (Get-Setting -Values $envValues -Name 'MEILI_INDEX_NAME' -Default 'quizhub-private-search')
-    New-EnvVar 'PrivateMediaRoot' (Get-Setting -Values $envValues -Name 'PRIVATE_MEDIA_ROOT' -Default '/tmp/quizhub-uploads')
+    New-EnvVar 'Media__StorageProvider' (Get-Setting -Values $envValues -Name 'MEDIA_STORAGE_PROVIDER' -Default 'Database')
+    New-EnvVar 'AppTimeZone' (Get-Setting -Values $envValues -Name 'APP_TIME_ZONE' -Default 'Asia/Ho_Chi_Minh')
     New-EnvVar 'ForwardedHeaders__Enabled' 'true'
     New-EnvVar 'Swagger__Enabled' (Get-Setting -Values $envValues -Name 'SWAGGER_ENABLED' -Default 'true')
 )

@@ -11,7 +11,7 @@
                 <img src="@(string.IsNullOrWhiteSpace(Model.CoverImageUrl) ? Url.Content("~/img/student/event-02.jpg") : Model.CoverImageUrl)" class="waiting-cover" alt="Ảnh lớp @Model.ClassName" />
                 <div class="waiting-copy">
                     <div class="manage-labels"><span class="status-chip open">Đang mở</span><code>@Model.Code</code></div>
-                    <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
+                    <h1>@Model.Title</h1><p>@Model.ClassName &middot; @Model.SubjectName</p>
                     <div class="room-facts"><div><span>Thời lượng</span><strong>@Model.DurationMinutes phút</strong></div><div><span>Số câu</span><strong>@Model.QuestionCount câu</strong></div><div><span>Điểm tối đa</span><strong>@Model.MaxScore.ToString("0.##")</strong></div><div><span>Cảnh báo tối đa</span><strong>@(Model.MaxWarningCount?.ToString() ?? "Không giới hạn")</strong></div></div>
                     <section class="exam-instructions"><h2>Hướng dẫn trước khi làm bài</h2><p>@(string.IsNullOrWhiteSpace(Model.Instructions) ? "Đọc kỹ từng câu hỏi, kiểm tra đáp án và thời gian còn lại trước khi nộp bài." : Model.Instructions)</p><ul><li>Mỗi học viên chỉ có một lượt làm bài.</li><li>Đáp án được tự động lưu sau mỗi thay đổi.</li><li>Đạt giới hạn cảnh báo sẽ tự động nộp bài.</li></ul></section>
                 </div>

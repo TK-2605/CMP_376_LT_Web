@@ -5,6 +5,8 @@ namespace LT_Web_Nhom4.Models.ViewModels
 {
     public class ExamListViewModel
     {
+        public DateTime Now { get; set; } = DateTime.Now;
+
         public IList<ExamCardViewModel> Exams { get; set; } = new List<ExamCardViewModel>();
 
         public IList<ExamCardViewModel> OwnedExams => Exams.Where(item => item.IsOwnedByCurrentUser).ToList();

@@ -3,7 +3,7 @@
 @{ ViewData["Title"] = "Phòng chờ"; }
 @section Styles { <link rel="stylesheet" href="~/css/exam.css" asp-append-version="true" /> }
 
-<section class="waiting-page" data-waiting-room data-start-at="@Model.StartAt.ToString("O")" data-refresh-url="@Url.Action("Room", new { id = Model.Id })">
+<section class="waiting-page" data-waiting-room data-start-at="@($"{Model.StartAt:yyyy-MM-ddTHH:mm:ss}+07:00")" data-refresh-url="@Url.Action("Room", new { id = Model.Id })">
     <div class="container waiting-container">
         <a asp-controller="Classes" asp-action="Index" class="back-link"><i class="ri-arrow-left-line"></i> Lớp học của tôi</a>
         <div class="waiting-layout" data-reveal>
@@ -11,7 +11,7 @@
                 <img src="@(string.IsNullOrWhiteSpace(Model.CoverImageUrl) ? Url.Content("~/img/student/event-01.jpg") : Model.CoverImageUrl)" class="waiting-cover" alt="Ảnh lớp @Model.ClassName" />
                 <div class="waiting-copy">
                     <div class="manage-labels"><span class="status-chip @(Model.IsClosed ? "closed" : "waiting")">@(Model.IsClosed ? "Đã kết thúc" : "Chưa mở")</span><code>@Model.Code</code></div>
-                    <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
+                    <h1>@Model.Title</h1><p>@Model.ClassName &middot; @Model.SubjectName</p>
                     <div class="room-facts"><div><span>Bắt đầu</span><strong>@Model.StartAt.ToString("dd/MM/yyyy HH:mm")</strong></div><div><span>Kết thúc</span><strong>@Model.EndAt.ToString("dd/MM/yyyy HH:mm")</strong></div><div><span>Thời lượng</span><strong>@Model.DurationMinutes phút</strong></div><div><span>Số câu</span><strong>@Model.QuestionCount câu</strong></div></div>
                 </div>
             </main>

@@ -304,14 +304,14 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View(new ForgotPasswordViewModel { SmtpConfigured = IsSmtpConfigured() });
+            return View(new ForgotPasswordViewModel { SmtpConfigured = CanUsePasswordResetOtp() });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            model.SmtpConfigured = IsSmtpConfigured();
+            model.SmtpConfigured = CanUsePasswordResetOtp();
             if (!model.SmtpConfigured)
             {
                 ModelState.AddModelError(string.Empty,
@@ -690,6 +690,11 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             return HasConfigurationValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail")
                 || HasConfigurationValues("Resend:ApiKey", "Resend:FromEmail");
+        }
+
+        private bool CanUsePasswordResetOtp()
+        {
+            return IsSmtpConfigured() || _environment.IsDevelopment();
         }
 
         private bool HasConfigurationValues(params string[] keys)

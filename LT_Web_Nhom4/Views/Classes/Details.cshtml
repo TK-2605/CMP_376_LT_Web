@@ -10,6 +10,7 @@
         {
             <div class="alert alert-success workspace-alert">@message</div>
         }
+        <div class="alert workspace-alert d-none" data-class-ajax-message></div>
 
         <header class="class-detail-hero" data-reveal>
             <div class="class-detail-cover">
@@ -91,7 +92,7 @@
                         <div class="exam-row-list">
                             @foreach (var exam in Model.Exams)
                             {
-                                var now = DateTime.Now;
+                                var now = Model.Now;
                                 var state = exam.HasCompletedAttempt ? "completed" : exam.Status == ExamStatus.Draft ? "draft" : now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
                                 var stateText = exam.HasCompletedAttempt ? "Đã hoàn thành" : exam.Status == ExamStatus.Draft ? "Bản nháp" : now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Chưa mở";
                                 var actionName = Model.IsOwner ? "Manage" : exam.HasCompletedAttempt ? "Result" : "Room";
@@ -101,7 +102,7 @@
                                     <div class="exam-row-content">
                                         <div><span class="status-chip @state">@stateText</span><code>@exam.Code</code></div>
                                         <h3>@exam.Title</h3>
-                                        <p>@exam.QuestionCount câu · @exam.DurationMinutes phút · @exam.StartAt.ToString("HH:mm")</p>
+                                        <p>@exam.QuestionCount câu &middot; @exam.DurationMinutes phút &middot; @exam.StartAt.ToString("HH:mm")</p>
                                     </div>
                                     @if (exam.HasCompletedAttempt && !Model.IsOwner)
                                     {
@@ -152,10 +153,10 @@
                             @foreach (var member in Model.Members)
                             {
                                 var initial = string.IsNullOrWhiteSpace(member.DisplayName) ? "?" : member.DisplayName.Trim()[0].ToString().ToUpperInvariant();
-                                <div class="member-row">
+                                <div class="member-row" data-member-row>
                                     <span class="member-avatar">@initial</span>
                                     <span><strong>@member.DisplayName</strong><small>@member.Email</small></span>
-                                    <form asp-action="RemoveMember" method="post">
+                                    <form asp-action="RemoveMember" method="post" data-ajax-form="remove-member">
                                         <input type="hidden" name="id" value="@Model.Id" />
                                         <input type="hidden" name="userId" value="@member.UserId" />
                                         <button type="submit" class="icon-button danger" title="Xóa khỏi lớp" data-confirm="Xóa học viên này khỏi lớp?"><i class="ri-user-unfollow-line"></i></button>
