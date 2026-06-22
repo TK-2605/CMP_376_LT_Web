@@ -83,6 +83,15 @@ namespace LT_Web_Nhom4.Services.Implementations
                 return null;
             }
 
+            var restoreState = new PendingRegistrationRestoreState(
+                pendingRegistration.Email,
+                pendingRegistration.TokenSalt,
+                pendingRegistration.ConfirmationCodeHash,
+                pendingRegistration.ConfirmationTokenHash,
+                pendingRegistration.ExpiresAtUtc,
+                pendingRegistration.UpdatedAtUtc,
+                pendingRegistration.AttemptCount,
+                pendingRegistration.LastSentAtUtc);
             var now = DateTime.UtcNow;
             var secrets = CreateSecrets();
             var salt = CreateSalt();
@@ -96,7 +105,43 @@ namespace LT_Web_Nhom4.Services.Implementations
             pendingRegistration.LastSentAtUtc = now;
 
             await _context.SaveChangesAsync(cancellationToken);
-            return new PendingRegistrationCreateResult(pendingRegistration, secrets.Code, secrets.Token);
+            return new PendingRegistrationCreateResult(pendingRegistration, secrets.Code, secrets.Token, restoreState);
+        }
+
+        public async Task RestoreAsync(
+            PendingRegistrationCreateResult pendingResult,
+            CancellationToken cancellationToken = default)
+        {
+            if (pendingResult.RestoreState is null)
+            {
+                return;
+            }
+
+            var pendingRegistration = await _context.PendingRegistrations
+                .FirstOrDefaultAsync(item => item.Id == pendingResult.PendingRegistration.Id, cancellationToken);
+            if (pendingRegistration is null)
+            {
+                return;
+            }
+
+            var currentCodeHash = HashSecret(pendingResult.Code, pendingRegistration.TokenSalt);
+            var currentTokenHash = HashSecret(pendingResult.Token, pendingRegistration.TokenSalt);
+            if (!FixedTimeEquals(currentCodeHash, pendingRegistration.ConfirmationCodeHash)
+                || !FixedTimeEquals(currentTokenHash, pendingRegistration.ConfirmationTokenHash))
+            {
+                return;
+            }
+
+            pendingRegistration.Email = pendingResult.RestoreState.Email;
+            pendingRegistration.TokenSalt = pendingResult.RestoreState.TokenSalt;
+            pendingRegistration.ConfirmationCodeHash = pendingResult.RestoreState.ConfirmationCodeHash;
+            pendingRegistration.ConfirmationTokenHash = pendingResult.RestoreState.ConfirmationTokenHash;
+            pendingRegistration.ExpiresAtUtc = pendingResult.RestoreState.ExpiresAtUtc;
+            pendingRegistration.UpdatedAtUtc = pendingResult.RestoreState.UpdatedAtUtc;
+            pendingRegistration.AttemptCount = pendingResult.RestoreState.AttemptCount;
+            pendingRegistration.LastSentAtUtc = pendingResult.RestoreState.LastSentAtUtc;
+
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<PendingRegistrationValidationResult> ValidateAsync(

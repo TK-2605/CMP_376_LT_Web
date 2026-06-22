@@ -287,9 +287,16 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 var emailError = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
                 var emailSent = string.IsNullOrWhiteSpace(emailError);
+                if (!emailSent)
+                {
+                    await _pendingRegistrationService.RestoreAsync(resendResult);
+                }
+
                 TempData["AuthMessage"] = emailSent
                     ? "Hệ thống đã gửi lại mã xác nhận."
-                    : GetDevelopmentFallbackMessage(emailError ?? "Chưa gửi được email xác nhận.", resendResult.Code);
+                    : GetDevelopmentFallbackMessage(
+                        $"{emailError ?? "Chưa gửi được email xác nhận."} Mã xác nhận cũ vẫn còn hiệu lực nếu chưa hết hạn.",
+                        resendResult.Code);
                 TempData["AuthMessageType"] = emailSent ? "success" : "danger";
             }
             else
@@ -819,7 +826,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 PendingRegistrationValidationStatus.Expired => "Mã xác nhận đã hết hạn. Vui lòng gửi lại mã hoặc đăng ký lại.",
                 PendingRegistrationValidationStatus.TooManyAttempts => "Bạn đã nhập sai quá số lần cho phép. Vui lòng đăng ký lại.",
-                PendingRegistrationValidationStatus.InvalidCodeOrToken => "Mã xác nhận không đúng.",
+                PendingRegistrationValidationStatus.InvalidCodeOrToken => "Mã xác nhận không đúng. Nếu bạn đã bấm gửi lại mã, hãy dùng mã mới nhất trong email.",
                 _ => "Không tìm thấy đăng ký đang chờ xác nhận."
             };
 
