@@ -192,7 +192,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var emailError = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
             var emailSent = string.IsNullOrWhiteSpace(emailError);
             TempData["AuthMessage"] = emailSent
-                ? "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác nhận."
+                ? $"Đăng ký thành công. Mã xác nhận đã được gửi đến {email}."
                 : GetDevelopmentFallbackMessage(emailError ?? "Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
             TempData["AuthMessageType"] = emailSent ? "success" : "danger";
 
@@ -293,7 +293,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 }
 
                 TempData["AuthMessage"] = emailSent
-                    ? "Hệ thống đã gửi lại mã xác nhận."
+                    ? $"Hệ thống đã gửi lại mã xác nhận đến {email.Trim()}."
                     : GetDevelopmentFallbackMessage(
                         $"{emailError ?? "Chưa gửi được email xác nhận."} Mã xác nhận cũ vẫn còn hiệu lực nếu chưa hết hạn.",
                         resendResult.Code);

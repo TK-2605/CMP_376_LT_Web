@@ -9,7 +9,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Net;
 
 namespace LT_Web_Nhom4.Services.Implementations
 {
@@ -181,7 +183,7 @@ namespace LT_Web_Nhom4.Services.Implementations
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(MailboxAddress.Parse(email));
             message.Subject = subject;
-            message.Body = new TextPart("html") { Text = htmlMessage };
+            message.Body = BuildMimeBody(htmlMessage);
 
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             using var client = new SmtpClient
@@ -223,7 +225,8 @@ namespace LT_Web_Nhom4.Services.Implementations
                     from = $"{fromName} <{fromEmail}>",
                     to = new[] { email },
                     subject,
-                    html = htmlMessage
+                    html = htmlMessage,
+                    text = ConvertHtmlToPlainText(htmlMessage)
                 },
                 timeout.Token);
 
@@ -284,7 +287,7 @@ namespace LT_Web_Nhom4.Services.Implementations
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(MailboxAddress.Parse(email));
             message.Subject = subject;
-            message.Body = new TextPart("html") { Text = htmlMessage };
+            message.Body = BuildMimeBody(htmlMessage);
 
             await using var stream = new MemoryStream();
             await message.WriteToAsync(stream, timeout.Token);
@@ -300,9 +303,10 @@ namespace LT_Web_Nhom4.Services.Implementations
             request.Content = JsonContent.Create(new { raw });
 
             using var response = await httpClient.SendAsync(request, timeout.Token);
+            var responseBody = await response.Content.ReadAsStringAsync(timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
-                var body = SanitizeProviderBody(await response.Content.ReadAsStringAsync(timeout.Token));
+                var body = SanitizeProviderBody(responseBody);
                 _logger.LogError(
                     "Gmail API send failed. CorrelationId {CorrelationId}, From {FromEmail}, To {ToEmail}, HTTP {StatusCode}, Body {Body}",
                     correlationId,
@@ -320,6 +324,10 @@ namespace LT_Web_Nhom4.Services.Implementations
                 MaskEmail(fromEmail),
                 MaskEmail(email),
                 (int)response.StatusCode);
+            _logger.LogInformation(
+                "Gmail API response. CorrelationId {CorrelationId}, Body {Body}.",
+                correlationId,
+                SanitizeProviderBody(responseBody));
         }
 
         private async Task<string> GetGmailAccessTokenAsync(
@@ -399,7 +407,8 @@ namespace LT_Web_Nhom4.Services.Implementations
                     sender = new { name = fromName, email = fromEmail },
                     to = new[] { new { email } },
                     subject,
-                    htmlContent = htmlMessage
+                    htmlContent = htmlMessage,
+                    textContent = ConvertHtmlToPlainText(htmlMessage)
                 },
                 timeout.Token);
 
@@ -449,6 +458,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                     subject,
                     content = new[]
                     {
+                        new { type = "text/plain", value = ConvertHtmlToPlainText(htmlMessage) },
                         new { type = "text/html", value = htmlMessage }
                     }
                 },
@@ -617,6 +627,32 @@ namespace LT_Web_Nhom4.Services.Implementations
 
             const int maxLength = 1000;
             return normalized.Length <= maxLength ? normalized : normalized[..maxLength] + "...";
+        }
+
+        private static MimeEntity BuildMimeBody(string htmlMessage)
+        {
+            var builder = new BodyBuilder
+            {
+                HtmlBody = htmlMessage,
+                TextBody = ConvertHtmlToPlainText(htmlMessage)
+            };
+
+            return builder.ToMessageBody();
+        }
+
+        private static string ConvertHtmlToPlainText(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var withBreaks = Regex.Replace(html, "</(p|div|br|li|h[1-6])>", "\n", RegexOptions.IgnoreCase);
+            var withoutTags = Regex.Replace(withBreaks, "<[^>]+>", " ");
+            var decoded = WebUtility.HtmlDecode(withoutTags);
+            return Regex.Replace(decoded, @"[ \t]+", " ")
+                .Replace("\n ", "\n")
+                .Trim();
         }
     }
 }
