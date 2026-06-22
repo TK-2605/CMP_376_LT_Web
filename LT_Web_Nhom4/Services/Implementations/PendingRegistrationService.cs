@@ -59,10 +59,6 @@ namespace LT_Web_Nhom4.Services.Implementations
             pendingRegistration.TokenSalt = salt;
             pendingRegistration.ConfirmationCodeHash = HashSecret(secrets.Code, salt);
             pendingRegistration.ConfirmationTokenHash = HashSecret(secrets.Token, salt);
-            pendingRegistration.PreviousTokenSalt = null;
-            pendingRegistration.PreviousConfirmationCodeHash = null;
-            pendingRegistration.PreviousConfirmationTokenHash = null;
-            pendingRegistration.PreviousExpiresAtUtc = null;
             pendingRegistration.ExpiresAtUtc = now.AddMinutes(ExpirationMinutes);
             pendingRegistration.UpdatedAtUtc = now;
             pendingRegistration.AttemptCount = 0;
@@ -93,10 +89,6 @@ namespace LT_Web_Nhom4.Services.Implementations
                 pendingRegistration.ConfirmationCodeHash,
                 pendingRegistration.ConfirmationTokenHash,
                 pendingRegistration.ExpiresAtUtc,
-                pendingRegistration.PreviousTokenSalt,
-                pendingRegistration.PreviousConfirmationCodeHash,
-                pendingRegistration.PreviousConfirmationTokenHash,
-                pendingRegistration.PreviousExpiresAtUtc,
                 pendingRegistration.UpdatedAtUtc,
                 pendingRegistration.AttemptCount,
                 pendingRegistration.LastSentAtUtc);
@@ -104,10 +96,6 @@ namespace LT_Web_Nhom4.Services.Implementations
             var secrets = CreateSecrets();
             var salt = CreateSalt();
             pendingRegistration.Email = email;
-            pendingRegistration.PreviousTokenSalt = pendingRegistration.TokenSalt;
-            pendingRegistration.PreviousConfirmationCodeHash = pendingRegistration.ConfirmationCodeHash;
-            pendingRegistration.PreviousConfirmationTokenHash = pendingRegistration.ConfirmationTokenHash;
-            pendingRegistration.PreviousExpiresAtUtc = pendingRegistration.ExpiresAtUtc;
             pendingRegistration.TokenSalt = salt;
             pendingRegistration.ConfirmationCodeHash = HashSecret(secrets.Code, salt);
             pendingRegistration.ConfirmationTokenHash = HashSecret(secrets.Token, salt);
@@ -149,10 +137,6 @@ namespace LT_Web_Nhom4.Services.Implementations
             pendingRegistration.ConfirmationCodeHash = pendingResult.RestoreState.ConfirmationCodeHash;
             pendingRegistration.ConfirmationTokenHash = pendingResult.RestoreState.ConfirmationTokenHash;
             pendingRegistration.ExpiresAtUtc = pendingResult.RestoreState.ExpiresAtUtc;
-            pendingRegistration.PreviousTokenSalt = pendingResult.RestoreState.PreviousTokenSalt;
-            pendingRegistration.PreviousConfirmationCodeHash = pendingResult.RestoreState.PreviousConfirmationCodeHash;
-            pendingRegistration.PreviousConfirmationTokenHash = pendingResult.RestoreState.PreviousConfirmationTokenHash;
-            pendingRegistration.PreviousExpiresAtUtc = pendingResult.RestoreState.PreviousExpiresAtUtc;
             pendingRegistration.UpdatedAtUtc = pendingResult.RestoreState.UpdatedAtUtc;
             pendingRegistration.AttemptCount = pendingResult.RestoreState.AttemptCount;
             pendingRegistration.LastSentAtUtc = pendingResult.RestoreState.LastSentAtUtc;
@@ -174,8 +158,7 @@ namespace LT_Web_Nhom4.Services.Implementations
                 return new PendingRegistrationValidationResult(PendingRegistrationValidationStatus.NotFound, null);
             }
 
-            var now = DateTime.UtcNow;
-            if (pendingRegistration.ExpiresAtUtc <= now)
+            if (pendingRegistration.ExpiresAtUtc <= DateTime.UtcNow)
             {
                 _context.PendingRegistrations.Remove(pendingRegistration);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -191,18 +174,8 @@ namespace LT_Web_Nhom4.Services.Implementations
                 && FixedTimeEquals(HashSecret(code.Trim(), pendingRegistration.TokenSalt), pendingRegistration.ConfirmationCodeHash);
             var hasValidToken = !string.IsNullOrWhiteSpace(token)
                 && FixedTimeEquals(HashSecret(token.Trim(), pendingRegistration.TokenSalt), pendingRegistration.ConfirmationTokenHash);
-            var hasValidPreviousCode = !string.IsNullOrWhiteSpace(code)
-                && HasUsablePreviousSecret(pendingRegistration, now)
-                && FixedTimeEquals(
-                    HashSecret(code.Trim(), pendingRegistration.PreviousTokenSalt!),
-                    pendingRegistration.PreviousConfirmationCodeHash!);
-            var hasValidPreviousToken = !string.IsNullOrWhiteSpace(token)
-                && HasUsablePreviousSecret(pendingRegistration, now)
-                && FixedTimeEquals(
-                    HashSecret(token.Trim(), pendingRegistration.PreviousTokenSalt!),
-                    pendingRegistration.PreviousConfirmationTokenHash!);
 
-            if (!hasValidCode && !hasValidToken && !hasValidPreviousCode && !hasValidPreviousToken)
+            if (!hasValidCode && !hasValidToken)
             {
                 pendingRegistration.AttemptCount++;
                 pendingRegistration.UpdatedAtUtc = DateTime.UtcNow;
@@ -258,14 +231,6 @@ namespace LT_Web_Nhom4.Services.Implementations
             var leftBytes = Encoding.UTF8.GetBytes(left);
             var rightBytes = Encoding.UTF8.GetBytes(right);
             return leftBytes.Length == rightBytes.Length && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
-        }
-
-        private static bool HasUsablePreviousSecret(PendingRegistration pendingRegistration, DateTime now)
-        {
-            return pendingRegistration.PreviousExpiresAtUtc > now
-                && !string.IsNullOrWhiteSpace(pendingRegistration.PreviousTokenSalt)
-                && !string.IsNullOrWhiteSpace(pendingRegistration.PreviousConfirmationCodeHash)
-                && !string.IsNullOrWhiteSpace(pendingRegistration.PreviousConfirmationTokenHash);
         }
     }
 }

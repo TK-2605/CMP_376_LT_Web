@@ -26,14 +26,6 @@ namespace LT_Web_Nhom4.Models
 
         public string TokenSalt { get; set; } = string.Empty;
 
-        public string? PreviousConfirmationCodeHash { get; set; }
-
-        public string? PreviousConfirmationTokenHash { get; set; }
-
-        public string? PreviousTokenSalt { get; set; }
-
-        public DateTime? PreviousExpiresAtUtc { get; set; }
-
         public DateTime ExpiresAtUtc { get; set; }
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

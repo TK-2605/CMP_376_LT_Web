@@ -10,10 +10,6 @@ namespace LT_Web_Nhom4.Services.Interfaces
         string ConfirmationCodeHash,
         string ConfirmationTokenHash,
         DateTime ExpiresAtUtc,
-        string? PreviousTokenSalt,
-        string? PreviousConfirmationCodeHash,
-        string? PreviousConfirmationTokenHash,
-        DateTime? PreviousExpiresAtUtc,
         DateTime UpdatedAtUtc,
         int AttemptCount,
         DateTime? LastSentAtUtc);
