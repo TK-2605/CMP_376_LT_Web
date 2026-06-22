@@ -98,6 +98,9 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(pending => pending.ConfirmationCodeHash).HasMaxLength(256);
                 entity.Property(pending => pending.ConfirmationTokenHash).HasMaxLength(256);
                 entity.Property(pending => pending.TokenSalt).HasMaxLength(256);
+                entity.Property(pending => pending.PreviousConfirmationCodeHash).HasMaxLength(256);
+                entity.Property(pending => pending.PreviousConfirmationTokenHash).HasMaxLength(256);
+                entity.Property(pending => pending.PreviousTokenSalt).HasMaxLength(256);
                 entity.HasIndex(pending => pending.NormalizedEmail).IsUnique();
             });
 

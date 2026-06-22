@@ -593,6 +593,21 @@ namespace LT_Web_Nhom4.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("PreviousConfirmationCodeHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PreviousConfirmationTokenHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("PreviousExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PreviousTokenSalt")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("RoleName")
                         .IsRequired()
                         .HasMaxLength(100)
