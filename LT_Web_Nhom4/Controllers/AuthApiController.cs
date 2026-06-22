@@ -100,7 +100,7 @@ namespace LT_Web_Nhom4.Controllers
                     },
                     new AuthFeatureStatusItem
                     {
-                        Name = "Quên mật khẩu qua Gmail",
+                        Name = "OTP quên mật khẩu",
                         Configured = smtpConfigured,
                         Detail = "Luồng gửi OTP và liên kết reset mật khẩu đã có trong AccountController."
                     },
