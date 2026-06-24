@@ -31,7 +31,8 @@
 
                             @if (TempData["AuthMessage"] is string message)
                             {
-                                <div class="alert alert-info">@message</div>
+                                var alertType = TempData["AuthMessageType"]?.ToString() == "danger" ? "danger" : "info";
+                                <div class="alert alert-@alertType">@message</div>
                             }
 
                             <form asp-area="Identity" asp-controller="Account" asp-action="Login" method="post" class="auth-form">

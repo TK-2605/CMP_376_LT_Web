@@ -13,7 +13,7 @@
                 @if (Model.OwnedExams.Count == 0) { <div class="empty-state"><i class="ri-file-add-line"></i><strong>Chưa tạo đề thi</strong><span>Hãy mở một lớp học để tạo đề.</span></div> }
                 @foreach (var exam in Model.OwnedExams)
                 {
-                    <article class="exam-tile" data-reveal><div class="exam-tile-heading"><span class="status-chip owner">Chủ phòng</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName · @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div></dl><a asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary w-100">Quản lý đề thi</a></article>
+                    <article class="exam-tile" data-reveal><div class="exam-tile-heading"><span class="status-chip owner">Chủ phòng</span><code>@exam.Code</code></div><h3>@exam.Title</h3><p>@exam.ClassName &middot; @exam.SubjectName</p><dl><div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Nội dung</dt><dd>@exam.QuestionCount câu &middot; @exam.DurationMinutes phút</dd></div></dl><a asp-action="Manage" asp-route-id="@exam.Id" class="btn btn-primary w-100">Quản lý đề thi</a></article>
                 }
             </div>
         </section>
@@ -24,24 +24,32 @@
                 @if (Model.ParticipatingExams.Count == 0) { <div class="empty-state"><i class="ri-calendar-check-line"></i><strong>Chưa có đề thi</strong><span>Các đề được công bố trong lớp của bạn sẽ xuất hiện tại đây.</span></div> }
                 @foreach (var exam in Model.ParticipatingExams)
                 {
-                    var now = DateTime.Now;
+                    var now = Model.Now;
                     var state = exam.HasCompletedAttempt ? "completed" : now > exam.EndAt ? "closed" : now >= exam.StartAt ? "open" : "waiting";
                     var stateText = exam.HasCompletedAttempt ? "Đã hoàn thành" : now > exam.EndAt ? "Đã kết thúc" : now >= exam.StartAt ? "Đang mở" : "Phòng chờ";
                     <article class="exam-tile" data-reveal>
                         <div class="exam-tile-heading"><span class="status-chip @state">@stateText</span><code>@exam.Code</code></div>
                         <h3>@exam.Title</h3>
-                        <p>@exam.ClassName · @exam.SubjectName</p>
+                        <p>@exam.ClassName &middot; @exam.SubjectName</p>
                         <dl>
                             <div><dt>Bắt đầu</dt><dd>@exam.StartAt.ToString("dd/MM/yyyy HH:mm")</dd></div>
-                            <div><dt>Nội dung</dt><dd>@exam.QuestionCount câu · @exam.DurationMinutes phút</dd></div>
+                            <div><dt>Nội dung</dt><dd>@exam.QuestionCount câu &middot; @exam.DurationMinutes phút</dd></div>
                         </dl>
                         @if (exam.HasCompletedAttempt)
                         {
                             <a asp-action="Result" asp-route-attemptId="@exam.CurrentUserAttemptId" class="btn btn-outline-primary w-100">Xem kết quả</a>
                         }
+                        else if (state == "waiting")
+                        {
+                            <button type="button" class="btn btn-primary w-100" disabled title="Phòng thi chưa mở">Bắt đầu</button>
+                        }
+                        else if (state == "closed")
+                        {
+                            <button type="button" class="btn btn-light w-100" disabled>Đã kết thúc</button>
+                        }
                         else
                         {
-                            <a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">@(state == "open" ? "Vào làm bài" : "Mở phòng thi")</a>
+                            <a asp-action="Room" asp-route-id="@exam.Id" class="btn btn-primary w-100">Bắt đầu</a>
                         }
                     </article>
                 }

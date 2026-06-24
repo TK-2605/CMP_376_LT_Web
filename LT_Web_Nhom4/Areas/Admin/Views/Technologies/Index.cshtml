@@ -8,10 +8,10 @@
     <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
         <div>
             <span class="text-uppercase text-primary fw-semibold small">Kiểm tra tích hợp</span>
-            <h1 class="h3 mt-1 mb-2">8 công nghệ chính</h1>
+            <h1 class="h3 mt-1 mb-2">@Model.Items.Count công nghệ chính</h1>
             <p class="text-muted mb-0">Trạng thái được đọc từ cấu hình, dịch vụ và dữ liệu đang chạy; không hiển thị khóa bí mật.</p>
         </div>
-        <div class="technology-summary"><strong>@Model.ReadyCount/8</strong><span>sẵn sàng đầy đủ</span></div>
+        <div class="technology-summary"><strong>@Model.ReadyCount/@Model.Items.Count</strong><span>sẵn sàng đầy đủ</span></div>
     </div>
 
     <div class="technology-grid">

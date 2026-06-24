@@ -1,10 +1,15 @@
+using System.Security.Cryptography;
+using System.Text;
+using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LT_Web_Nhom4.Controllers
 {
@@ -17,19 +22,37 @@ namespace LT_Web_Nhom4.Controllers
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationDbContext _context;
+        private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
+        private readonly IPendingRegistrationService _pendingRegistrationService;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<AuthApiController> _logger;
 
         public AuthApiController(
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
             IConfiguration configuration,
             SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context,
+            IPasswordHasher<ApplicationUser> passwordHasher,
+            IPendingRegistrationService pendingRegistrationService,
+            IWebHostEnvironment environment,
+            ILogger<AuthApiController> logger)
         {
             _jwtTokenService = jwtTokenService;
             _emailService = emailService;
             _configuration = configuration;
             _signInManager = signInManager;
             _userManager = userManager;
+            _roleManager = roleManager;
+            _context = context;
+            _passwordHasher = passwordHasher;
+            _pendingRegistrationService = pendingRegistrationService;
+            _environment = environment;
+            _logger = logger;
         }
 
         [HttpGet("status")]
@@ -37,16 +60,27 @@ namespace LT_Web_Nhom4.Controllers
         public IActionResult Status()
         {
             var googleConfigured = HasValues("Authentication:Google:ClientId", "Authentication:Google:ClientSecret");
-            var smtpConfigured = HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail");
+            var emailProviderReady = HasEmailProvider();
+            var emailProvider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var emailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var deploy = DeployMetadataHelper.Get(_configuration, _environment);
             var jwtConfigured = _jwtTokenService.IsConfigured;
 
             return Ok(new AuthFeatureStatusResponse
             {
                 GoogleOAuthConfigured = googleConfigured,
-                SmtpConfigured = smtpConfigured,
+                SmtpConfigured = emailProviderReady,
+                EmailProviderReady = emailProviderReady,
+                EmailProvider = emailProvider,
+                EmailProviderProblem = emailProviderProblem,
+                DeployCommit = deploy.CommitSha,
+                DeployCommitShort = deploy.CommitShortSha,
+                DeployEnvironment = deploy.Environment,
+                DeployIsRender = deploy.IsRender,
+                DeployRenderServiceId = deploy.RenderServiceId,
                 JwtConfigured = jwtConfigured,
-                RegistrationConfirmationReady = smtpConfigured,
-                ForgotPasswordReady = smtpConfigured,
+                RegistrationConfirmationReady = emailProviderReady,
+                ForgotPasswordReady = emailProviderReady,
                 LoginUrl = Url.Action("Login", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/Login",
                 RegisterUrl = Url.Action("Register", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/Register",
                 ForgotPasswordUrl = Url.Action("ForgotPassword", "Account", new { area = "Identity" }) ?? "/Identity/Login/Account/ForgotPassword",
@@ -63,22 +97,22 @@ namespace LT_Web_Nhom4.Controllers
                     },
                     new AuthFeatureStatusItem
                     {
-                        Name = "Gmail SMTP MailKit/MimeKit",
-                        Configured = smtpConfigured,
-                        Detail = smtpConfigured
-                            ? "SMTP đã đủ Host/UserName/Password/FromEmail để gửi email."
-                            : "Thiếu cấu hình Smtp; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
+                        Name = "Email OTP",
+                        Configured = emailProviderReady,
+                        Detail = emailProviderReady
+                            ? $"Đã cấu hình provider {emailProvider} để gửi OTP."
+                            : emailProviderProblem ?? "Thiếu cấu hình email provider; có thể test bằng endpoint /api/auth/test-email sau khi đăng nhập Admin."
                     },
                     new AuthFeatureStatusItem
                     {
                         Name = "Xác nhận đăng ký bằng mã hoặc link",
-                        Configured = smtpConfigured,
+                        Configured = emailProviderReady,
                         Detail = "Luồng đăng ký lưu PendingRegistration và xác nhận bằng mã 6 số hoặc token trong email."
                     },
                     new AuthFeatureStatusItem
                     {
-                        Name = "Quên mật khẩu qua Gmail",
-                        Configured = smtpConfigured,
+                        Name = "OTP quên mật khẩu",
+                        Configured = emailProviderReady,
                         Detail = "Luồng gửi OTP và liên kết reset mật khẩu đã có trong AccountController."
                     },
                     new AuthFeatureStatusItem
@@ -91,6 +125,263 @@ namespace LT_Web_Nhom4.Controllers
                     }
                 }
             });
+        }
+
+        [HttpPost("register")]
+        [AllowAnonymous]
+        [ApiTestOnly]
+        public async Task<IActionResult> Register(RegisterApiRequest request, CancellationToken cancellationToken)
+        {
+            if (!HasEmailProvider() && !_environment.IsDevelopment())
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    message = "Email provider is required for API registration outside localhost Development."
+                });
+            }
+
+            var email = request.Email.Trim();
+            var normalizedEmail = _userManager.NormalizeEmail(email);
+            var fullName = request.FullName.Trim();
+            var studentCode = NormalizeOptional(request.StudentCode);
+
+            if (await _userManager.FindByEmailAsync(email) is not null
+                || await _userManager.FindByNameAsync(email) is not null)
+            {
+                return Conflict(new { message = "Email already exists." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(studentCode))
+            {
+                var studentCodeUsed = await _userManager.Users.AnyAsync(user => user.StudentCode == studentCode, cancellationToken)
+                    || await _context.PendingRegistrations.AnyAsync(item =>
+                        item.StudentCode == studentCode && item.NormalizedEmail != normalizedEmail,
+                        cancellationToken);
+
+                if (studentCodeUsed)
+                {
+                    return Conflict(new { message = "Student code already exists or is pending confirmation." });
+                }
+            }
+
+            var pendingUser = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                FullName = fullName,
+                StudentCode = studentCode,
+                IsActive = true
+            };
+
+            var passwordValidationResult = await ValidatePasswordForPendingUserAsync(pendingUser, request.Password);
+            if (!passwordValidationResult.Succeeded)
+            {
+                return IdentityValidationProblem(passwordValidationResult);
+            }
+
+            var pendingResult = await _pendingRegistrationService.CreateOrUpdateAsync(
+                email,
+                normalizedEmail,
+                email,
+                _userManager.NormalizeName(email),
+                fullName,
+                studentCode,
+                "Student",
+                _passwordHasher.HashPassword(pendingUser, request.Password),
+                cancellationToken);
+
+            var emailSent = false;
+            string? emailError = null;
+            if (HasEmailProvider())
+            {
+                emailError = await SendPendingRegistrationEmailAsync(pendingResult);
+                emailSent = string.IsNullOrWhiteSpace(emailError);
+            }
+
+            if (!emailSent && !_environment.IsDevelopment())
+            {
+                return StatusCode(StatusCodes.Status502BadGateway, new RegisterApiResponse
+                {
+                    PendingConfirmation = true,
+                    Email = pendingResult.PendingRegistration.Email,
+                    Message = emailError
+                        ?? BuildEmailProviderFailureMessage("Registration was saved, but the server could not send the confirmation email.", null)
+                });
+            }
+
+            return Ok(new RegisterApiResponse
+            {
+                PendingConfirmation = true,
+                Email = pendingResult.PendingRegistration.Email,
+                Message = emailSent
+                    ? "Registration is pending. Check email for confirmation code."
+                    : "Registration is pending. In Development, use developmentCode or developmentToken to confirm.",
+                DevelopmentCode = _environment.IsDevelopment() ? pendingResult.Code : null,
+                DevelopmentToken = _environment.IsDevelopment() ? pendingResult.Token : null
+            });
+        }
+
+        [HttpPost("register/confirm")]
+        [AllowAnonymous]
+        [ApiTestOnly]
+        public async Task<IActionResult> ConfirmRegistration(ConfirmRegistrationApiRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.Code) && string.IsNullOrWhiteSpace(request.Token))
+            {
+                return BadRequest(new { message = "Code or token is required." });
+            }
+
+            var email = request.Email.Trim();
+            var normalizedEmail = _userManager.NormalizeEmail(email);
+            var validation = await _pendingRegistrationService.ValidateAsync(
+                normalizedEmail,
+                request.Code,
+                request.Token,
+                cancellationToken);
+
+            if (validation.Status != PendingRegistrationValidationStatus.Valid
+                || validation.PendingRegistration is null)
+            {
+                return BadRequest(new
+                {
+                    message = "Registration confirmation failed.",
+                    status = validation.Status.ToString()
+                });
+            }
+
+            var pendingRegistration = validation.PendingRegistration;
+            if (await _userManager.FindByEmailAsync(pendingRegistration.Email) is not null
+                || await _userManager.FindByNameAsync(pendingRegistration.UserName) is not null)
+            {
+                return Conflict(new { message = "Email already exists." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(pendingRegistration.StudentCode)
+                && await _userManager.Users.AnyAsync(user => user.StudentCode == pendingRegistration.StudentCode, cancellationToken))
+            {
+                return Conflict(new { message = "Student code already exists." });
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = pendingRegistration.UserName,
+                Email = pendingRegistration.Email,
+                EmailConfirmed = true,
+                FullName = pendingRegistration.FullName,
+                StudentCode = pendingRegistration.StudentCode,
+                IsActive = true,
+                PasswordHash = pendingRegistration.PasswordHash
+            };
+
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+            {
+                return IdentityValidationProblem(createResult);
+            }
+
+            await AddRoleAsync(user, pendingRegistration.RoleName);
+            await _pendingRegistrationService.RemoveAsync(pendingRegistration, cancellationToken);
+
+            return Ok(new
+            {
+                message = "Registration confirmed. You can login with /api/auth/login.",
+                user.Id,
+                user.Email,
+                user.FullName
+            });
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [ApiTestOnly]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordApiRequest request, CancellationToken cancellationToken)
+        {
+            if (!HasEmailProvider() && !_environment.IsDevelopment())
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    message = "Email provider is required for password reset outside localhost Development."
+                });
+            }
+
+            var email = request.Email.Trim();
+            var user = await _userManager.FindByEmailAsync(email);
+            string? developmentCode = null;
+
+            if (user is not null && user.IsActive)
+            {
+                var otpIssue = await CreatePasswordResetOtpAsync(user, cancellationToken);
+                developmentCode = _environment.IsDevelopment() ? otpIssue.Code : null;
+
+                if (HasEmailProvider())
+                {
+                    var sendError = await TrySendPasswordResetOtpEmailAsync(email, otpIssue.Code);
+                    if (!string.IsNullOrWhiteSpace(sendError))
+                    {
+                        if (!_environment.IsDevelopment())
+                        {
+                            await DeactivatePasswordResetOtpAsync(otpIssue.OtpId, cancellationToken);
+                            return StatusCode(StatusCodes.Status502BadGateway, new ForgotPasswordApiResponse
+                            {
+                                Message = sendError,
+                                DevelopmentCode = null
+                            });
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _logger.LogInformation("API password reset requested for a missing, inactive, or unconfirmed account: {Email}.", email);
+            }
+
+            return Ok(new ForgotPasswordApiResponse
+            {
+                Message = "If the email exists, an OTP was created/sent.",
+                DevelopmentCode = developmentCode
+            });
+        }
+
+        [HttpPost("forgot-password/confirm")]
+        [AllowAnonymous]
+        [ApiTestOnly]
+        public async Task<IActionResult> ConfirmForgotPassword(ResetPasswordOtpApiRequest request, CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user is null || !user.IsActive)
+            {
+                return BadRequest(new { message = "OTP is invalid or expired." });
+            }
+
+            var otp = await _context.EmailOtps
+                .Where(item => item.UserId == user.Id
+                    && item.Purpose == OtpPurpose.ForgotPassword
+                    && item.UsedAt == null)
+                .OrderByDescending(item => item.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (otp is null || otp.ExpiresAt <= DateTime.UtcNow || otp.AttemptCount >= 5)
+            {
+                return BadRequest(new { message = "OTP is invalid or expired." });
+            }
+
+            if (!VerifyOtp(request.Code, otp.CodeHash, user))
+            {
+                otp.AttemptCount++;
+                await _context.SaveChangesAsync(cancellationToken);
+                return BadRequest(new { message = "OTP is invalid." });
+            }
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                return IdentityValidationProblem(result);
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+            return Ok(new { message = "Password reset succeeded. You can login again." });
         }
 
         [HttpPost("login")]
@@ -146,22 +437,34 @@ namespace LT_Web_Nhom4.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         public async Task<IActionResult> SendTestEmail(SendTestEmailRequest request)
         {
-            if (!HasValues("Smtp:Host", "Smtp:UserName", "Smtp:Password", "Smtp:FromEmail"))
+            if (!HasEmailProvider())
             {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new SendTestEmailResponse
                 {
                     Sent = false,
-                    Message = "SMTP chưa được cấu hình đủ Host/UserName/Password/FromEmail."
+                    Message = EmailConfigurationHelper.GetEmailProviderProblem(_configuration) ?? "Chưa cấu hình đủ email provider để gửi email."
                 });
             }
 
             var subject = string.IsNullOrWhiteSpace(request.Subject)
-                ? "QuizHub SMTP test"
+                ? "QuizHub email provider test"
                 : request.Subject.Trim();
-            await _emailService.SendEmailAsync(
+            try
+            {
+                await _emailService.SendEmailAsync(
                 request.ToEmail.Trim(),
                 subject,
-                "<p>Đây là email kiểm thử Gmail SMTP từ QuizHub.</p><p>Nếu bạn nhận được email này, MailKit/MimeKit đã hoạt động.</p>");
+                "<p>Đây là email kiểm thử provider gửi mail từ QuizHub.</p><p>Nếu bạn nhận được email này, luồng OTP deploy đang gửi mail ra ngoài được.</p>");
+
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status502BadGateway, new SendTestEmailResponse
+                {
+                    Sent = false,
+                    Message = BuildEmailProviderFailureMessage("Email provider test failed.", exception)
+                });
+            }
 
             return Ok(new SendTestEmailResponse
             {
@@ -189,6 +492,162 @@ namespace LT_Web_Nhom4.Controllers
             });
         }
 
+        private async Task<string?> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult)
+        {
+            try
+            {
+                var confirmationUrl = Url.Action(
+                    nameof(ConfirmRegistration),
+                    "AuthApi",
+                    new
+                    {
+                        email = pendingResult.PendingRegistration.Email,
+                        token = pendingResult.Token
+                    },
+                    Request.Scheme);
+
+                await _emailService.SendEmailAsync(
+                    pendingResult.PendingRegistration.Email,
+                    "QuizHub registration confirmation",
+                    $"""
+                    <p>Your QuizHub confirmation code is: <strong>{pendingResult.Code}</strong></p>
+                    <p>The code is valid for 15 minutes.</p>
+                    <p>Swagger confirm endpoint: <code>/api/auth/register/confirm</code></p>
+                    <p>Optional confirmation URL: <a href="{confirmationUrl}">{confirmationUrl}</a></p>
+                    """);
+                return null;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Could not send API registration confirmation email to {Email}.", pendingResult.PendingRegistration.Email);
+                return BuildEmailProviderFailureMessage("Registration was saved, but the server could not send the confirmation email.", exception);
+            }
+        }
+
+        private async Task<string?> TrySendPasswordResetOtpEmailAsync(string email, string code)
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(
+                    email,
+                    "QuizHub password reset OTP",
+                    $"""
+                    <p>Your password reset OTP is: <strong>{code}</strong></p>
+                    <p>The code is valid for 5 minutes and can be tried up to 5 times.</p>
+                    <p>Swagger confirm endpoint: <code>/api/auth/forgot-password/confirm</code></p>
+                    """);
+                return null;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "Could not send API password reset OTP to {Email}.", email);
+                return BuildEmailProviderFailureMessage("OTP was created, but the server could not send email. The OTP has been invalidated.", exception);
+            }
+        }
+
+        private async Task<IdentityResult> ValidatePasswordForPendingUserAsync(ApplicationUser user, string password)
+        {
+            var errors = new List<IdentityError>();
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, user, password);
+                if (!result.Succeeded)
+                {
+                    errors.AddRange(result.Errors);
+                }
+            }
+
+            return errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray());
+        }
+
+        private async Task AddRoleAsync(ApplicationUser user, string roleName)
+        {
+            var safeRoleName = string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? "Admin"
+                : "Student";
+
+            if (!await _roleManager.RoleExistsAsync(safeRoleName))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(safeRoleName));
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, safeRoleName))
+            {
+                await _userManager.AddToRoleAsync(user, safeRoleName);
+            }
+        }
+
+        private async Task<PasswordResetOtpIssue> CreatePasswordResetOtpAsync(ApplicationUser user, CancellationToken cancellationToken)
+        {
+            var now = DateTime.UtcNow;
+            var activeOtps = await _context.EmailOtps
+                .Where(item => item.UserId == user.Id
+                    && item.Purpose == OtpPurpose.ForgotPassword
+                    && item.UsedAt == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var activeOtp in activeOtps)
+            {
+                activeOtp.UsedAt = now;
+            }
+
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            var otp = new EmailOtp
+            {
+                UserId = user.Id,
+                Email = user.Email ?? string.Empty,
+                Purpose = OtpPurpose.ForgotPassword,
+                CodeHash = HashOtp(code, user),
+                ExpiresAt = now.AddMinutes(5),
+                CreatedAt = now
+            };
+            _context.EmailOtps.Add(otp);
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return new PasswordResetOtpIssue(code, otp.Id);
+        }
+
+        private async Task DeactivatePasswordResetOtpAsync(int otpId, CancellationToken cancellationToken)
+        {
+            var otp = await _context.EmailOtps.FirstOrDefaultAsync(item => item.Id == otpId, cancellationToken);
+            if (otp is null || otp.UsedAt is not null)
+            {
+                return;
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        private IActionResult IdentityValidationProblem(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(error.Code, error.Description);
+            }
+
+            return ValidationProblem(ModelState);
+        }
+
+        private static string HashOtp(string code, ApplicationUser user)
+        {
+            return Convert.ToHexString(SHA256.HashData(
+                Encoding.UTF8.GetBytes($"{code}:{user.Id}:{user.SecurityStamp}")));
+        }
+
+        private static bool VerifyOtp(string code, string expectedHash, ApplicationUser user)
+        {
+            var actual = Convert.FromHexString(HashOtp(code, user));
+            var expected = Convert.FromHexString(expectedHash);
+            return CryptographicOperations.FixedTimeEquals(actual, expected);
+        }
+
+        private static string? NormalizeOptional(string? value)
+        {
+            var normalized = value?.Trim();
+            return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        }
+
         private string? GetIpAddress() => HttpContext.Connection.RemoteIpAddress?.ToString();
 
         private string? GetUserAgent() => Request.Headers.UserAgent.ToString();
@@ -197,5 +656,26 @@ namespace LT_Web_Nhom4.Controllers
         {
             return keys.All(key => !string.IsNullOrWhiteSpace(_configuration[key]));
         }
+
+        private bool HasEmailProvider()
+        {
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
+        }
+
+        private string BuildEmailProviderFailureMessage(string prefix, Exception? exception)
+        {
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var providerProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var problemText = string.IsNullOrWhiteSpace(providerProblem)
+                ? "Kiểm tra Render logs để xem phản hồi chi tiết từ provider."
+                : providerProblem;
+            var exceptionText = exception is null
+                ? string.Empty
+                : $" Lỗi: {exception.GetType().Name}: {exception.Message}";
+
+            return $"{prefix} Provider hiện tại: {provider}. {problemText}{exceptionText}";
+        }
+
+        private sealed record PasswordResetOtpIssue(string Code, int OtpId);
     }
 }

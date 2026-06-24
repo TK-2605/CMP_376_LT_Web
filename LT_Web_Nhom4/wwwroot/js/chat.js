@@ -11,6 +11,7 @@
   const error = app.querySelector('[data-chat-error]');
   const roomType = app.dataset.roomType;
   const roomId = Number(app.dataset.roomId);
+  messages.scrollTop = messages.scrollHeight;
 
   const setConnected = (connected, label) => {
     status.classList.toggle('is-online', connected);

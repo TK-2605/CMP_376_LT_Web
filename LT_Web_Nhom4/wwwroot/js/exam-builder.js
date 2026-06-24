@@ -137,14 +137,33 @@
   const validateQuestion = (card) => {
     const content = card.querySelector('textarea[name$=".Content"]');
     const options = Array.from(card.querySelectorAll('[data-answer-row] input[name$=".Content"]'));
-    const correctOptions = card.querySelectorAll('[data-correct-option]:checked');
-    const valid = Boolean(content?.value.trim()) && options.filter((option) => option.value.trim()).length >= 2 && correctOptions.length === 1;
+    const correctOptions = Array.from(card.querySelectorAll('[data-correct-option]:checked'));
+    const filledOptions = options.filter((option) => option.value.trim());
+    const checkedContent = correctOptions
+      .map((input) => input.closest('[data-answer-row]')?.querySelector('input[name$=".Content"]'))
+      .filter(Boolean);
+
     content?.classList.toggle('is-invalid', !content.value.trim());
-    options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
-    return valid;
+    options.forEach((option) => option.classList.remove('is-invalid'));
+
+    if (!content?.value.trim()) {
+      return { valid: false, message: 'Câu hỏi cần có nội dung trước khi đăng đề.' };
+    }
+    if (filledOptions.length < 2) {
+      options.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
+      return { valid: false, message: 'Câu hỏi cần ít nhất 2 đáp án có nội dung.' };
+    }
+    if (correctOptions.length !== 1) {
+      return { valid: false, message: 'Câu hỏi phải có đúng 1 đáp án đúng.' };
+    }
+    if (checkedContent.some((option) => !option.value.trim())) {
+      checkedContent.forEach((option) => option.classList.toggle('is-invalid', !option.value.trim()));
+      return { valid: false, message: 'Đáp án đúng đang chọn cần có nội dung.' };
+    }
+    return { valid: true, message: '' };
   };
 
-  const showPublishError = (questionIndex) => {
+  const showPublishError = (questionIndex, message) => {
     currentQuestion = questionIndex;
     setPanel('questions');
     renderNavigation();
@@ -157,6 +176,7 @@
       stage.querySelector('.question-stage-header').after(alert);
     }
     alert.textContent = 'Câu hỏi này cần có nội dung, ít nhất hai đáp án và đúng một đáp án đúng trước khi đăng đề.';
+    alert.textContent = message || 'Câu hỏi này cần có nội dung, ít nhất 2 đáp án và đúng 1 đáp án đúng trước khi đăng đề.';
     cards()[questionIndex]?.querySelector('textarea[name$=".Content"]')?.focus();
     stage.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   };
@@ -169,6 +189,39 @@
     input.setCustomValidity(options.message);
     input.reportValidity();
     input.setCustomValidity('');
+  };
+
+  const renderQuestionMediaPreview = (card) => {
+    const preview = card.querySelector('[data-question-media-preview]');
+    if (!preview) return;
+    preview.innerHTML = '';
+    const files = [
+      ...Array.from(card.querySelector('[data-question-images]')?.files || []),
+      ...Array.from(card.querySelector('[data-question-videos]')?.files || [])
+    ];
+    preview.hidden = files.length === 0;
+    files.forEach((file) => {
+      const item = document.createElement('div');
+      item.className = 'selected-media-item';
+      const objectUrl = URL.createObjectURL(file);
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = objectUrl;
+        img.alt = file.name;
+        img.onload = () => URL.revokeObjectURL(objectUrl);
+        item.append(img);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = objectUrl;
+        video.controls = true;
+        video.preload = 'metadata';
+        item.append(video);
+      }
+      const label = document.createElement('span');
+      label.textContent = file.name;
+      item.append(label);
+      preview.append(item);
+    });
   };
 
   root.addEventListener('click', (event) => {
@@ -203,6 +256,7 @@
         types: ['image/jpeg', 'image/png', 'image/webp'],
         message: 'Chỉ được chọn tối đa 5 ảnh JPG, PNG hoặc WebP, mỗi ảnh không vượt quá 5 MB.'
       });
+      renderQuestionMediaPreview(event.target.closest('[data-question-card]'));
     }
     if (event.target.matches('[data-question-videos]')) {
       validateFileInput(event.target, {
@@ -211,6 +265,7 @@
         types: ['video/mp4', 'video/webm', 'video/quicktime'],
         message: 'Chỉ được chọn tối đa 2 video MP4, WebM hoặc MOV, mỗi video không vượt quá 100 MB.'
       });
+      renderQuestionMediaPreview(event.target.closest('[data-question-card]'));
     }
     renderNavigation();
   });
@@ -246,10 +301,11 @@
       return;
     }
     if (event.submitter?.value !== 'publish') return;
-    const invalidIndex = cards().findIndex((card) => !validateQuestion(card));
+    const validations = cards().map((card) => validateQuestion(card));
+    const invalidIndex = validations.findIndex((item) => !item.valid);
     if (invalidIndex >= 0) {
       event.preventDefault();
-      showPublishError(invalidIndex);
+      showPublishError(invalidIndex, validations[invalidIndex].message);
     }
   });
 

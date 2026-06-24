@@ -40,7 +40,7 @@
   <data name="ConfirmPasswordPlaceholder" xml:space="preserve"><value>Nhập lại mật khẩu</value></data>
   <data name="ForgotPasswordTitle" xml:space="preserve"><value>Quên mật khẩu</value></data>
   <data name="ForgotPasswordDesc" xml:space="preserve"><value>Nhập email tài khoản để nhận mã OTP và liên kết đặt lại mật khẩu qua Gmail.</value></data>
-  <data name="ForgotPasswordHint" xml:space="preserve"><value>Mã OTP có hiệu lực trong 5 phút. Nếu SMTP chưa cấu hình, hệ thống vẫn giữ luồng xử lý nhưng email sẽ không gửi ra ngoài.</value></data>
+  <data name="ForgotPasswordHint" xml:space="preserve"><value>Mã OTP có hiệu lực trong 5 phút. Email sẽ được gửi qua provider đang cấu hình trên máy chủ.</value></data>
   <data name="SendOtp" xml:space="preserve"><value>Gửi mã OTP</value></data>
   <data name="BackToLogin" xml:space="preserve"><value>Quay lại đăng nhập</value></data>
   <data name="ConfirmRegistrationTitle" xml:space="preserve"><value>Xác nhận đăng ký</value></data>

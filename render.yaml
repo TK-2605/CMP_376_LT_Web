@@ -1,0 +1,116 @@
+services:
+  - type: web
+    name: quizhub-meili-nhom4
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/meilisearch/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MEILI_MASTER_KEY
+        sync: false
+      - key: MEILI_NO_ANALYTICS
+        value: true
+
+  - type: web
+    name: quizhub-nhom4
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__Provider
+        value: PostgreSql
+      - key: Database__EnsureCreatedOnStartup
+        value: false
+      - key: Database__ApplyMigrationsOnStartup
+        value: true
+      - key: Database__ContinueOnMigrationFailure
+        value: true
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Authentication__Google__ClientId
+        sync: false
+      - key: Authentication__Google__ClientSecret
+        sync: false
+      - key: Jwt__Issuer
+        value: QuizHub
+      - key: Jwt__Audience
+        value: QuizHub.Api
+      - key: Jwt__Key
+        sync: false
+      - key: Jwt__ExpireMinutes
+        value: 120
+      - key: Jwt__RefreshTokenDays
+        value: 7
+      - key: Smtp__Host
+        value: smtp.gmail.com
+      - key: Smtp__Port
+        value: 587
+      - key: Smtp__SecureSocketOptions
+        value: StartTls
+      - key: Smtp__TimeoutSeconds
+        value: 5
+      - key: Smtp__UserName
+        sync: false
+      - key: Smtp__Password
+        sync: false
+      - key: Smtp__FromEmail
+        sync: false
+      - key: Smtp__FromName
+        value: QuizHub
+      - key: Email__Provider
+        value: GmailApi
+      - key: Email__AllowSmtpOnRender
+        value: false
+      - key: GmailApi__ClientId
+        sync: false
+      - key: GmailApi__ClientSecret
+        sync: false
+      - key: GmailApi__RefreshToken
+        sync: false
+      - key: GmailApi__FromEmail
+        sync: false
+      - key: GmailApi__FromName
+        value: QuizHub
+      - key: GmailApi__TimeoutSeconds
+        value: 20
+      - key: Resend__ApiKey
+        sync: false
+      - key: Resend__FromEmail
+        sync: false
+      - key: Resend__FromName
+        value: QuizHub
+      - key: Resend__TimeoutSeconds
+        value: 20
+      - key: Brevo__ApiKey
+        sync: false
+      - key: Brevo__FromEmail
+        sync: false
+      - key: Brevo__FromName
+        value: QuizHub
+      - key: Brevo__TimeoutSeconds
+        value: 20
+      - key: SendGrid__ApiKey
+        sync: false
+      - key: SendGrid__FromEmail
+        sync: false
+      - key: SendGrid__FromName
+        value: QuizHub
+      - key: SendGrid__TimeoutSeconds
+        value: 20
+      - key: Meilisearch__Url
+        sync: false
+      - key: Meilisearch__ApiKey
+        sync: false
+      - key: Meilisearch__IndexName
+        value: quizhub-private-search
+      - key: Media__StorageProvider
+        value: Database
+      - key: AppTimeZone
+        value: Asia/Ho_Chi_Minh
+      - key: ForwardedHeaders__Enabled
+        value: true
+      - key: Swagger__Enabled
+        value: true

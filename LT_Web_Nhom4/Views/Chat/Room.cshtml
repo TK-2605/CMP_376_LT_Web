@@ -1,7 +1,7 @@
 @model ChatRoomViewModel
 
 @{
-    ViewData["Title"] = "Trao đổi trực tiếp";
+    ViewData["Title"] = Model.RoomType == "class" ? "Thông báo lớp" : "Trao đổi trực tiếp";
 }
 
 @section Styles {
@@ -14,7 +14,7 @@
 
         <header class="chat-header">
             <div>
-                <span class="workspace-kicker">SignalR · Không lưu lịch sử</span>
+                <span class="workspace-kicker">SignalR · Realtime</span>
                 <h1>@Model.Title</h1>
                 <p>@Model.Subtitle</p>
             </div>
@@ -23,15 +23,25 @@
 
         <div class="chat-surface">
             <div class="chat-messages" data-chat-messages role="log" aria-live="polite">
-                <div class="chat-empty" data-chat-empty>
-                    <i class="ri-chat-3-line"></i>
-                    <strong>Bắt đầu cuộc trao đổi</strong>
-                    <span>Tin nhắn chỉ xuất hiện với thành viên đang trực tuyến và sẽ mất khi tải lại trang.</span>
-                </div>
+                @if (Model.Messages.Count == 0)
+                {
+                    <div class="chat-empty" data-chat-empty>
+                        <i class="ri-chat-3-line"></i>
+                        <strong>Bắt đầu cuộc trao đổi</strong>
+                        <span>Tin nhắn mới sẽ được gửi realtime và lưu lại để thành viên mở sau vẫn đọc được.</span>
+                    </div>
+                }
+                @foreach (var message in Model.Messages)
+                {
+                    <article class="chat-message">
+                        <div><strong>@message.Sender</strong><time>@message.SentAt.ToLocalTime().ToString("HH:mm")</time></div>
+                        <p>@message.Message</p>
+                    </article>
+                }
             </div>
             <form class="chat-composer" data-chat-form>
                 <label for="chatMessage" class="visually-hidden">Tin nhắn</label>
-                <textarea id="chatMessage" maxlength="500" rows="2" placeholder="Nhập tin nhắn..." data-chat-input disabled></textarea>
+                <textarea id="chatMessage" maxlength="500" rows="2" placeholder="Nhập thông báo hoặc tin nhắn..." data-chat-input disabled></textarea>
                 <button type="submit" class="btn btn-primary" disabled data-chat-send>
                     <i class="ri-send-plane-2-line"></i><span>Gửi</span>
                 </button>

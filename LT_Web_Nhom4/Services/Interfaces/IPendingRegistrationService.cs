@@ -4,7 +4,21 @@ namespace LT_Web_Nhom4.Services.Interfaces
 {
     public record PendingRegistrationSecrets(string Code, string Token);
 
-    public record PendingRegistrationCreateResult(PendingRegistration PendingRegistration, string Code, string Token);
+    public record PendingRegistrationRestoreState(
+        string Email,
+        string TokenSalt,
+        string ConfirmationCodeHash,
+        string ConfirmationTokenHash,
+        DateTime ExpiresAtUtc,
+        DateTime UpdatedAtUtc,
+        int AttemptCount,
+        DateTime? LastSentAtUtc);
+
+    public record PendingRegistrationCreateResult(
+        PendingRegistration PendingRegistration,
+        string Code,
+        string Token,
+        PendingRegistrationRestoreState? RestoreState = null);
 
     public enum PendingRegistrationValidationStatus
     {
@@ -35,6 +49,10 @@ namespace LT_Web_Nhom4.Services.Interfaces
         Task<PendingRegistrationCreateResult?> ResendAsync(
             string email,
             string normalizedEmail,
+            CancellationToken cancellationToken = default);
+
+        Task RestoreAsync(
+            PendingRegistrationCreateResult pendingResult,
             CancellationToken cancellationToken = default);
 
         Task<PendingRegistrationValidationResult> ValidateAsync(

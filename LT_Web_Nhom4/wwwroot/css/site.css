@@ -735,3 +735,47 @@ textarea.form-control {
   outline: 2px solid #7a6ad8;
   outline-offset: 3px;
 }
+
+.global-alert-container {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  z-index: 1100;
+  width: min(720px, calc(100% - 32px));
+  padding: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.global-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgba(38, 31, 79, 0.18);
+  pointer-events: auto;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.global-alert.is-hiding {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.dynamic-translate-host {
+  position: fixed;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.goog-te-banner-frame,
+.skiptranslate iframe {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}

@@ -1,10 +1,12 @@
 using LT_Web_Nhom4.Areas.Admin.Models;
+using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace LT_Web_Nhom4.Areas.Admin.Controllers
 {
@@ -14,11 +16,16 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationDbContext _context;
 
-        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UsersController(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _context = context;
         }
 
         public async Task<IActionResult> Index()
@@ -212,12 +219,65 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
                 return NotFound();
             }
 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (user.Id == currentUserId)
+            {
+                TempData["AdminMessage"] = "Bạn không thể tự xóa tài khoản đang đăng nhập.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await IsLastAdminAsync(user))
+            {
+                TempData["AdminMessage"] = "Không thể xóa Admin cuối cùng của hệ thống.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (await HasUserOwnedDataAsync(user.Id))
+            {
+                user.IsActive = false;
+                await _userManager.UpdateAsync(user);
+                TempData["AdminMessage"] = "Tài khoản có dữ liệu lớp/thi liên quan nên đã được khóa thay vì xóa cứng.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {
                 AddErrors(result);
                 return await Delete(id);
             }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleActive(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user is null)
+            {
+                return NotFound();
+            }
+
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (user.Id == currentUserId)
+            {
+                TempData["AdminMessage"] = "Bạn không thể tự khóa tài khoản đang đăng nhập.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (user.IsActive && await IsLastAdminAsync(user))
+            {
+                TempData["AdminMessage"] = "Không thể khóa Admin cuối cùng của hệ thống.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            user.IsActive = !user.IsActive;
+            var result = await _userManager.UpdateAsync(user);
+            TempData["AdminMessage"] = result.Succeeded
+                ? user.IsActive ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản."
+                : string.Join(" ", result.Errors.Select(error => error.Description));
 
             return RedirectToAction(nameof(Index));
         }
@@ -356,6 +416,27 @@ namespace LT_Web_Nhom4.Areas.Admin.Controllers
         {
             var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
             return adminUsers.Any(user => user.Id != userId);
+        }
+
+        private async Task<bool> IsLastAdminAsync(ApplicationUser user)
+        {
+            if (!await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return false;
+            }
+
+            return !await CanRemoveAdminRoleAsync(user.Id);
+        }
+
+        private async Task<bool> HasUserOwnedDataAsync(string userId)
+        {
+            return await _context.Classes.AnyAsync(item => item.TeacherId == userId)
+                || await _context.ClassMembers.AnyAsync(item => item.UserId == userId)
+                || await _context.Questions.AnyAsync(item => item.CreatedById == userId)
+                || await _context.Exams.AnyAsync(item => item.CreatedById == userId)
+                || await _context.ExamAttempts.AnyAsync(item => item.UserId == userId)
+                || await _context.RefreshTokens.AnyAsync(item => item.UserId == userId)
+                || await _context.EmailOtps.AnyAsync(item => item.UserId == userId);
         }
 
         private static bool IsRoomTeacherRole(string role)

@@ -518,7 +518,7 @@ namespace LT_Web_Nhom4.Controllers
                 }
                 catch (Exception)
                 {
-                    ModelState.AddModelError(property.Name, $"{SplitPascalCase(property.Name)} khong hop le.");
+                    ModelState.AddModelError(property.Name, $"{SplitPascalCase(property.Name)} không hợp lệ.");
                 }
             }
         }

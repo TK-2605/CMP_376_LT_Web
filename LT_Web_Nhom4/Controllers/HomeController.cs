@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
 using LT_Web_Nhom4.Models.ViewModels;
+using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace LT_Web_Nhom4.Controllers
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAppClock _clock;
 
-        public HomeController(ApplicationDbContext context)
+        public HomeController(ApplicationDbContext context, IAppClock clock)
         {
             _context = context;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -41,7 +44,7 @@ namespace LT_Web_Nhom4.Controllers
             var upcoming = await _context.Exams.AsNoTracking()
                 .Include(item => item.Subject).Include(item => item.Class).Include(item => item.ExamQuestions)
                 .Where(item => item.Status == ExamStatus.Published
-                    && item.EndAt >= DateTime.Now
+                    && item.EndAt >= _clock.Now
                     && (isAdmin || item.CreatedById == userId || item.Class.TeacherId == userId
                         || item.Class.Members.Any(member => member.UserId == userId && member.Status == ClassMemberStatus.Active)))
                 .OrderBy(item => item.StartAt).Take(6).ToListAsync();

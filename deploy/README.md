@@ -1,5 +1,11 @@
 # QuizHub production deployment
 
+## PostgreSQL free hosted path
+
+The recommended free hosted path is Render Free Web Service plus Neon Free Postgres. See `deploy/postgres/README.md` for the setup that keeps the current ASP.NET Core MVC app, uses PostgreSQL, and imports the local SQL Server sample database into Neon.
+
+The Docker/VPS path below remains available when you have a Linux VPS and want to keep every service in Docker Compose.
+
 The production stack contains QuizHub (.NET 9), SQL Server 2022, Meilisearch, and Caddy with automatic HTTPS. Docker volumes persist the database, search index, Caddy state, and private uploads.
 
 ## VPS prerequisites

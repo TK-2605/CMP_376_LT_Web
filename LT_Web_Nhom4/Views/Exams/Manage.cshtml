@@ -9,7 +9,7 @@
         <header class="manage-header" data-reveal>
             <div class="manage-header-copy">
                 <div class="manage-labels"><span class="status-chip owner">Chủ phòng</span><span class="status-chip @Model.Status.ToString().ToLowerInvariant()">@Model.Status.ToVietnamese()</span><code>@Model.Code</code></div>
-                <h1>@Model.Title</h1><p>@Model.ClassName · @Model.SubjectName</p>
+                <h1>@Model.Title</h1><p>@Model.ClassName &middot; @Model.SubjectName</p>
             </div>
             <div class="manage-header-actions">
                 <a asp-controller="Chat" asp-action="Room" asp-route-type="exam" asp-route-id="@Model.Id" class="btn btn-outline-light"><i class="ri-chat-3-line"></i>Chat phòng thi</a>

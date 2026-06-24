@@ -4,6 +4,7 @@ using System.Text;
 using LT_Web_Nhom4.Areas.Identity.Login.Models;
 using LT_Web_Nhom4.Data;
 using LT_Web_Nhom4.Models;
+using LT_Web_Nhom4.Services;
 using LT_Web_Nhom4.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -26,6 +27,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
         private readonly IPendingRegistrationService _pendingRegistrationService;
+        private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AccountController> _logger;
 
@@ -37,6 +39,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             IEmailSender emailSender,
             IPasswordHasher<ApplicationUser> passwordHasher,
             IPendingRegistrationService pendingRegistrationService,
+            IConfiguration configuration,
             IWebHostEnvironment environment,
             ILogger<AccountController> logger)
         {
@@ -47,13 +50,20 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             _emailSender = emailSender;
             _passwordHasher = passwordHasher;
             _pendingRegistrationService = pendingRegistrationService;
+            _configuration = configuration;
             _environment = environment;
             _logger = logger;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Login(string? returnUrl = null)
+        public async Task<IActionResult> Login(string? returnUrl = null, bool oauthUnavailable = false)
         {
+            if (oauthUnavailable)
+            {
+                TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình trên môi trường deploy.";
+                TempData["AuthMessageType"] = "danger";
+            }
+
             return View(await BuildLoginViewModelAsync(returnUrl));
         }
 
@@ -122,6 +132,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             await PopulateExternalRegisterStateAsync(model);
 
+            if (!model.SmtpConfigured)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Dịch vụ email chưa được cấu hình. Hệ thống tạm dừng đăng ký để tránh tạo tài khoản không thể xác nhận.");
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -172,10 +189,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 "Student",
                 passwordHash);
 
-            var emailSent = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
+            var emailError = await SendPendingRegistrationEmailAsync(pendingResult, model.ReturnUrl);
+            var emailSent = string.IsNullOrWhiteSpace(emailError);
             TempData["AuthMessage"] = emailSent
-                ? "Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác nhận."
-                : GetDevelopmentFallbackMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
+                ? $"Đăng ký thành công. Mã xác nhận đã được gửi đến {email}."
+                : GetDevelopmentFallbackMessage(emailError ?? "Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", pendingResult.Code);
+            TempData["AuthMessageType"] = emailSent ? "success" : "danger";
 
             return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl = model.ReturnUrl });
         }
@@ -255,18 +274,35 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendRegistrationCode(string email, string? returnUrl = null)
         {
+            if (!IsSmtpConfigured())
+            {
+                TempData["AuthMessage"] = "Dịch vụ email chưa được cấu hình nên chưa thể gửi lại mã xác nhận.";
+                TempData["AuthMessageType"] = "danger";
+                return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
+            }
+
             var normalizedEmail = _userManager.NormalizeEmail(email.Trim());
             var resendResult = await _pendingRegistrationService.ResendAsync(email.Trim(), normalizedEmail);
             if (resendResult is not null)
             {
-                var emailSent = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
+                var emailError = await SendPendingRegistrationEmailAsync(resendResult, returnUrl);
+                var emailSent = string.IsNullOrWhiteSpace(emailError);
+                if (!emailSent)
+                {
+                    await _pendingRegistrationService.RestoreAsync(resendResult);
+                }
+
                 TempData["AuthMessage"] = emailSent
-                    ? "Hệ thống đã gửi lại mã xác nhận."
-                    : GetDevelopmentFallbackMessage("Chưa gửi được email xác nhận.", resendResult.Code);
+                    ? $"Hệ thống đã gửi lại mã xác nhận đến {email.Trim()}."
+                    : GetDevelopmentFallbackMessage(
+                        $"{emailError ?? "Chưa gửi được email xác nhận."} Mã xác nhận cũ vẫn còn hiệu lực nếu chưa hết hạn.",
+                        resendResult.Code);
+                TempData["AuthMessageType"] = emailSent ? "success" : "danger";
             }
             else
             {
                 TempData["AuthMessage"] = "Không tìm thấy đăng ký đang chờ xác nhận.";
+                TempData["AuthMessageType"] = "danger";
             }
 
             return RedirectToAction(nameof(ConfirmRegistration), new { email, returnUrl });
@@ -277,19 +313,33 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         public async Task<IActionResult> Logout(string? returnUrl = null)
         {
             await _signInManager.SignOutAsync();
+            TempData["AuthMessage"] = "Bạn đã đăng xuất khỏi hệ thống.";
             return LocalRedirect(GetSafeReturnUrl(returnUrl));
         }
 
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View(new ForgotPasswordViewModel());
+            return View(new ForgotPasswordViewModel
+            {
+                SmtpConfigured = CanUsePasswordResetOtp(),
+                EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
+            model.SmtpConfigured = CanUsePasswordResetOtp();
+            model.EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            if (!model.SmtpConfigured)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Dịch vụ email chưa được cấu hình nên chưa thể gửi mã đặt lại mật khẩu.");
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -298,10 +348,16 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             var email = model.Email.Trim();
             var user = await _userManager.FindByEmailAsync(email);
             string? developmentMessage = null;
-            if (user is not null && user.IsActive && await _userManager.IsEmailConfirmedAsync(user))
+            if (user is not null && user.IsActive)
             {
-                var code = await CreatePasswordResetOtpAsync(user);
-                developmentMessage = await SendPasswordResetOtpEmailAsync(email, code);
+                var otpIssue = await CreatePasswordResetOtpAsync(user);
+                developmentMessage = await SendPasswordResetOtpEmailAsync(email, otpIssue.Code);
+                if (!string.IsNullOrWhiteSpace(developmentMessage) && !_environment.IsDevelopment())
+                {
+                    await DeactivatePasswordResetOtpAsync(otpIssue.OtpId);
+                    ModelState.AddModelError(string.Empty, developmentMessage);
+                    return View(model);
+                }
             }
             else
             {
@@ -310,6 +366,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
             TempData["AuthMessage"] = developmentMessage
                 ?? "Nếu email tồn tại, hệ thống đã gửi mã OTP đặt lại mật khẩu.";
+            TempData["AuthMessageType"] = string.IsNullOrWhiteSpace(developmentMessage) ? "success" : "danger";
             return RedirectToAction(nameof(ResetPasswordOtp), new { email });
         }
 
@@ -393,6 +450,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (user is null || !user.IsActive)
             {
                 TempData["AuthMessage"] = "Liên kết đặt lại mật khẩu không hợp lệ.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login));
             }
 
@@ -431,6 +489,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (!externalLogins.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase)))
             {
                 TempData["AuthMessage"] = "Google OAuth 2.0 chưa được cấu hình. Vui lòng thêm ClientId và ClientSecret trước khi đăng nhập bằng Google.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -445,6 +504,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (remoteError is not null)
             {
                 TempData["AuthMessage"] = $"Đăng nhập OAuth thất bại: {remoteError}";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -452,6 +512,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (info is null)
             {
                 TempData["AuthMessage"] = "Không đọc được thông tin đăng nhập từ nhà cung cấp OAuth.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -465,6 +526,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                     {
                         await _signInManager.SignOutAsync();
                         TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                        TempData["AuthMessageType"] = "danger";
                         return RedirectToAction(nameof(Login), new { returnUrl });
                     }
 
@@ -479,6 +541,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (string.IsNullOrWhiteSpace(email))
             {
                 TempData["AuthMessage"] = "Nhà cung cấp OAuth không trả về email.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
@@ -488,6 +551,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 if (!existingUser.IsActive)
                 {
                     TempData["AuthMessage"] = "Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.";
+                    TempData["AuthMessageType"] = "danger";
                     return RedirectToAction(nameof(Login), new { returnUrl });
                 }
 
@@ -498,6 +562,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                     if (!addLoginResult.Succeeded)
                     {
                         TempData["AuthMessage"] = string.Join(" ", addLoginResult.Errors.Select(error => error.Description));
+                        TempData["AuthMessageType"] = "danger";
                         return RedirectToAction(nameof(Login), new { returnUrl });
                     }
                 }
@@ -546,6 +611,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             if (info is null)
             {
                 TempData["AuthMessage"] = "Phiên đăng nhập OAuth đã hết hạn.";
+                TempData["AuthMessageType"] = "danger";
                 return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
             }
 
@@ -593,7 +659,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             return View();
         }
 
-        private async Task<bool> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult, string? returnUrl)
+        private async Task<string?> SendPendingRegistrationEmailAsync(PendingRegistrationCreateResult pendingResult, string? returnUrl)
         {
             var confirmationUrl = Url.Action(
                 nameof(ConfirmRegistration),
@@ -617,12 +683,12 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             try
             {
                 await _emailSender.SendEmailAsync(pendingResult.PendingRegistration.Email, "Xác nhận đăng ký QuizHub", body);
-                return true;
+                return null;
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send pending registration confirmation email to {Email}.", pendingResult.PendingRegistration.Email);
-                return false;
+                return BuildEmailProviderFailureMessage("Đăng ký đã được lưu nhưng chưa gửi được email xác nhận.", exception);
             }
         }
 
@@ -638,7 +704,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
                 string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
-            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+            model.ShowGoogleOAuthHint = !model.GoogleOAuthConfigured;
         }
 
         private async Task<RegisterViewModel> BuildRegisterViewModelAsync(string? returnUrl)
@@ -653,7 +719,19 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             model.ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             model.GoogleOAuthConfigured = model.ExternalLogins.Any(scheme =>
                 string.Equals(scheme.Name, "Google", StringComparison.OrdinalIgnoreCase));
-            model.ShowGoogleOAuthHint = _environment.IsDevelopment() && !model.GoogleOAuthConfigured;
+            model.ShowGoogleOAuthHint = !model.GoogleOAuthConfigured;
+            model.SmtpConfigured = IsSmtpConfigured();
+            model.EmailProviderProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+        }
+
+        private bool IsSmtpConfigured()
+        {
+            return EmailConfigurationHelper.HasEmailProvider(_configuration);
+        }
+
+        private bool CanUsePasswordResetOtp()
+        {
+            return IsSmtpConfigured() || _environment.IsDevelopment();
         }
 
         private async Task<string?> SendPasswordResetEmailAsync(string email, string resetUrl)
@@ -675,7 +753,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 _logger.LogWarning(exception, "Could not send password reset email to {Email}.", email);
                 if (_environment.IsDevelopment())
                 {
-                    return $"SMTP chưa gửi được email. Liên kết đặt lại mật khẩu dev: {resetUrl}";
+                    return $"Email provider chưa gửi được email. Liên kết đặt lại mật khẩu dev: {resetUrl}";
                 }
 
                 return null;
@@ -748,7 +826,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             {
                 PendingRegistrationValidationStatus.Expired => "Mã xác nhận đã hết hạn. Vui lòng gửi lại mã hoặc đăng ký lại.",
                 PendingRegistrationValidationStatus.TooManyAttempts => "Bạn đã nhập sai quá số lần cho phép. Vui lòng đăng ký lại.",
-                PendingRegistrationValidationStatus.InvalidCodeOrToken => "Mã xác nhận không đúng.",
+                PendingRegistrationValidationStatus.InvalidCodeOrToken => "Mã xác nhận không đúng. Nếu bạn đã bấm gửi lại mã, hãy dùng mã mới nhất trong email.",
                 _ => "Không tìm thấy đăng ký đang chờ xác nhận."
             };
 
@@ -784,6 +862,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private async Task<IActionResult> RedirectAfterLoginAsync(ApplicationUser user, string? returnUrl)
         {
+            TempData["AuthMessage"] = $"Đăng nhập thành công. Xin chào {GetDisplayName(user)}.";
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return LocalRedirect(returnUrl);
@@ -825,12 +904,23 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
 
         private string GetDevelopmentFallbackMessage(string message, string code)
         {
-            return _environment.IsDevelopment()
-                ? $"{message} Mã xác nhận dev: {code}"
-                : $"{message} Vui lòng liên hệ quản trị viên hoặc thử gửi lại mã sau.";
+            if (_environment.IsDevelopment())
+            {
+                return $"{message} Mã xác nhận dev: {code}";
+            }
+
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var problem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration)
+                ?? "Vui lòng kiểm tra Render logs hoặc thử gửi lại mã sau.";
+            if (message.Contains("Provider hiện tại:", StringComparison.OrdinalIgnoreCase))
+            {
+                return message;
+            }
+
+            return $"{message} Provider hiện tại: {provider}. {problem}";
         }
 
-        private async Task<string> CreatePasswordResetOtpAsync(ApplicationUser user)
+        private async Task<PasswordResetOtpIssue> CreatePasswordResetOtpAsync(ApplicationUser user)
         {
             var now = DateTime.UtcNow;
             var activeOtps = await _context.EmailOtps
@@ -844,7 +934,7 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             }
 
             var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-            _context.EmailOtps.Add(new EmailOtp
+            var otp = new EmailOtp
             {
                 UserId = user.Id,
                 Email = user.Email ?? string.Empty,
@@ -852,9 +942,22 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
                 CodeHash = HashOtp(code, user),
                 ExpiresAt = now.AddMinutes(5),
                 CreatedAt = now
-            });
+            };
+            _context.EmailOtps.Add(otp);
             await _context.SaveChangesAsync();
-            return code;
+            return new PasswordResetOtpIssue(code, otp.Id);
+        }
+
+        private async Task DeactivatePasswordResetOtpAsync(int otpId)
+        {
+            var otp = await _context.EmailOtps.FirstOrDefaultAsync(item => item.Id == otpId);
+            if (otp is null || otp.UsedAt is not null)
+            {
+                return;
+            }
+
+            otp.UsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
         }
 
         private async Task<string?> SendPasswordResetOtpEmailAsync(string email, string code)
@@ -870,11 +973,30 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
             catch (Exception exception)
             {
                 _logger.LogWarning(exception, "Could not send password reset OTP to {Email}.", email);
-                return _environment.IsDevelopment()
-                    ? $"SMTP chưa được cấu hình. Mã OTP phát triển: {code}"
-                    : null;
+                if (_environment.IsDevelopment())
+                {
+                    return $"Email provider chưa gửi được OTP. Mã OTP phát triển: {code}";
+                }
+
+                return BuildEmailProviderFailureMessage("Chưa gửi được OTP qua email. OTP vừa tạo đã được vô hiệu hóa.", exception);
             }
         }
+
+        private string BuildEmailProviderFailureMessage(string prefix, Exception? exception)
+        {
+            var provider = EmailConfigurationHelper.ProviderLabel(_configuration);
+            var providerProblem = EmailConfigurationHelper.GetEmailProviderProblem(_configuration);
+            var problemText = string.IsNullOrWhiteSpace(providerProblem)
+                ? "Kiểm tra Render logs để xem phản hồi chi tiết từ provider."
+                : providerProblem;
+            var exceptionText = exception is null
+                ? string.Empty
+                : $" Lỗi: {exception.GetType().Name}: {exception.Message}";
+
+            return $"{prefix} Provider hiện tại: {provider}. {problemText}{exceptionText}";
+        }
+
+        private sealed record PasswordResetOtpIssue(string Code, int OtpId);
 
         private static string HashOtp(string code, ApplicationUser user)
         {
@@ -893,6 +1015,13 @@ namespace LT_Web_Nhom4.Areas.Identity.Login.Controllers
         {
             var normalized = value?.Trim();
             return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        }
+
+        private static string GetDisplayName(ApplicationUser user)
+        {
+            return string.IsNullOrWhiteSpace(user.FullName)
+                ? user.Email ?? user.UserName ?? "bạn"
+                : user.FullName;
         }
     }
 }

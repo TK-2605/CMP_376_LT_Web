@@ -19,6 +19,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<Subject> Subjects { get; set; }
 
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         public DbSet<Class> Classes { get; set; }
 
         public DbSet<ClassMember> ClassMembers { get; set; }
@@ -43,6 +45,8 @@ namespace LT_Web_Nhom4.Data
 
         public DbSet<AntiCheatEvent> AntiCheatEvents { get; set; }
 
+        public DbSet<StoredMediaFile> StoredMediaFiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -51,7 +55,9 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(user => user.FullName).HasMaxLength(150);
                 entity.Property(user => user.StudentCode).HasMaxLength(50);
-                entity.HasIndex(user => user.StudentCode).IsUnique().HasFilter("[StudentCode] IS NOT NULL");
+                entity.HasIndex(user => user.StudentCode)
+                    .IsUnique()
+                    .HasFilter(IsPostgreSqlProvider() ? "\"StudentCode\" IS NOT NULL" : "[StudentCode] IS NOT NULL");
             });
 
             builder.Entity<EmailOtp>(entity =>
@@ -99,7 +105,18 @@ namespace LT_Web_Nhom4.Data
             {
                 entity.Property(subject => subject.Code).HasMaxLength(50);
                 entity.Property(subject => subject.Name).HasMaxLength(200);
+                entity.Property(subject => subject.OwnerId).HasMaxLength(450);
                 entity.HasIndex(subject => subject.Code).IsUnique();
+                entity.HasIndex(subject => subject.OwnerId);
+            });
+
+            builder.Entity<ChatMessage>(entity =>
+            {
+                entity.Property(message => message.RoomType).HasMaxLength(20);
+                entity.Property(message => message.SenderId).HasMaxLength(450);
+                entity.Property(message => message.SenderName).HasMaxLength(150);
+                entity.Property(message => message.Message).HasMaxLength(500);
+                entity.HasIndex(message => new { message.RoomType, message.RoomId, message.SentAt });
             });
 
             builder.Entity<Class>(entity =>
@@ -109,7 +126,7 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(classRoom => classRoom.Description).HasMaxLength(2000);
                 entity.Property(classRoom => classRoom.CoverImagePath).HasMaxLength(500);
                 entity.Property(classRoom => classRoom.IntroVideoUrl).HasMaxLength(1000);
-                entity.Property(classRoom => classRoom.RowVersion).IsRowVersion();
+                ConfigureRowVersion(entity.Property(classRoom => classRoom.RowVersion));
                 entity.Property(classRoom => classRoom.Semester).HasMaxLength(50);
                 entity.Property(classRoom => classRoom.AcademicYear).HasMaxLength(50);
                 entity.HasIndex(classRoom => classRoom.Code).IsUnique();
@@ -199,7 +216,7 @@ namespace LT_Web_Nhom4.Data
                 entity.Property(exam => exam.Instructions).HasMaxLength(4000);
                 entity.Property(exam => exam.PassingScore).HasPrecision(6, 2);
                 entity.Property(exam => exam.MaxScore).HasPrecision(6, 2).HasDefaultValue(10);
-                entity.Property(exam => exam.RowVersion).IsRowVersion();
+                ConfigureRowVersion(entity.Property(exam => exam.RowVersion));
                 entity.HasIndex(exam => exam.Code).IsUnique();
 
                 entity.HasOne(exam => exam.Subject)
@@ -294,6 +311,31 @@ namespace LT_Web_Nhom4.Data
                     .HasForeignKey(antiCheatEvent => antiCheatEvent.ExamAttemptId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            builder.Entity<StoredMediaFile>(entity =>
+            {
+                entity.Property(media => media.Category).HasMaxLength(100);
+                entity.Property(media => media.OriginalFileName).HasMaxLength(255);
+                entity.Property(media => media.ContentType).HasMaxLength(100);
+                entity.Property(media => media.Content).IsRequired();
+                entity.HasIndex(media => new { media.Category, media.CreatedAt });
+            });
+        }
+
+        private bool IsPostgreSqlProvider()
+        {
+            return Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private void ConfigureRowVersion(Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder<byte[]> property)
+        {
+            if (IsPostgreSqlProvider())
+            {
+                property.IsConcurrencyToken().HasDefaultValueSql("''::bytea");
+                return;
+            }
+
+            property.IsRowVersion();
         }
     }
 }

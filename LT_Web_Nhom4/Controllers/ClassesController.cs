@@ -17,17 +17,20 @@ namespace LT_Web_Nhom4.Controllers
         private readonly IUniqueCodeGenerator _codeGenerator;
         private readonly IAccessPolicy _accessPolicy;
         private readonly IPrivateMediaStorage _mediaStorage;
+        private readonly IAppClock _clock;
 
         public ClassesController(
             ApplicationDbContext context,
             IUniqueCodeGenerator codeGenerator,
             IAccessPolicy accessPolicy,
-            IPrivateMediaStorage mediaStorage)
+            IPrivateMediaStorage mediaStorage,
+            IAppClock clock)
         {
             _context = context;
             _codeGenerator = codeGenerator;
             _accessPolicy = accessPolicy;
             _mediaStorage = mediaStorage;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Index()
@@ -36,13 +39,13 @@ namespace LT_Web_Nhom4.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
             var model = new CreateClassViewModel
             {
-                AcademicYear = $"{DateTime.Now.Year}-{DateTime.Now.Year + 1}"
+                AcademicYear = $"{_clock.Now.Year}-{_clock.Now.Year + 1}",
+                CreateNewSubject = true
             };
-            await PopulateSubjectsAsync(model);
             return View(model);
         }
 
@@ -50,7 +53,9 @@ namespace LT_Web_Nhom4.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateClassViewModel model, CancellationToken cancellationToken)
         {
-            await PopulateSubjectsAsync(model);
+            model.CreateNewSubject = true;
+            ModelState.Remove(nameof(model.SubjectId));
+
             ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
             var imageFiles = GetFiles(model.ImageFiles);
             if (model.CoverImage is not null && imageFiles.Count == 0)
@@ -68,9 +73,15 @@ namespace LT_Web_Nhom4.Controllers
             var storedPaths = new List<string>();
             try
             {
+                var subject = await ResolveSubjectAsync(model, cancellationToken);
+                if (subject is null)
+                {
+                    return View(model);
+                }
+
                 var classRoom = new ClassEntity
                 {
-                    SubjectId = model.SubjectId,
+                    SubjectId = subject.Id,
                     TeacherId = CurrentUserId,
                     Code = await _codeGenerator.GenerateClassCodeAsync(cancellationToken),
                     Name = model.Name.Trim(),
@@ -79,6 +90,12 @@ namespace LT_Web_Nhom4.Controllers
                     AcademicYear = NormalizeOptional(model.AcademicYear),
                     IntroVideoUrl = NormalizeOptional(model.IntroVideoUrl)
                 };
+
+                if (subject.Id == 0)
+                {
+                    _context.Subjects.Add(subject);
+                    classRoom.Subject = subject;
+                }
 
                 await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
                 classRoom.CoverImagePath = classRoom.MediaAssets
@@ -143,7 +160,7 @@ namespace LT_Web_Nhom4.Controllers
             else
             {
                 existingMember.Status = ClassMemberStatus.Active;
-                existingMember.JoinedAt = DateTime.UtcNow;
+                existingMember.JoinedAt = _clock.UtcNow;
             }
 
             await _context.SaveChangesAsync();
@@ -192,6 +209,7 @@ namespace LT_Web_Nhom4.Controllers
                 AcademicYear = classRoom.AcademicYear,
                 ExamCount = visibleExams.Count(),
                 MemberCount = classRoom.Members.Count(member => member.Status == ClassMemberStatus.Active),
+                Now = _clock.Now,
                 IsOwner = isOwner,
                 Members = isOwner
                     ? classRoom.Members.Where(member => member.Status == ClassMemberStatus.Active).Select(member => new ClassMemberItemViewModel
@@ -239,6 +257,7 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var classRoom = await _context.Classes.AsNoTracking()
+                .Include(item => item.Subject)
                 .Include(item => item.MediaAssets)
                 .FirstOrDefaultAsync(item => item.Id == id);
             if (classRoom is null)
@@ -251,6 +270,10 @@ namespace LT_Web_Nhom4.Controllers
                 Id = classRoom.Id,
                 Code = classRoom.Code,
                 SubjectId = classRoom.SubjectId,
+                CreateNewSubject = true,
+                NewSubjectCode = classRoom.Subject.Code,
+                NewSubjectName = classRoom.Subject.Name,
+                NewSubjectDescription = classRoom.Subject.Description,
                 Name = classRoom.Name,
                 Description = classRoom.Description,
                 Semester = classRoom.Semester,
@@ -260,7 +283,6 @@ namespace LT_Web_Nhom4.Controllers
                 ExistingMedia = ToClassMediaViewModels(classRoom).ToList(),
                 RowVersion = classRoom.RowVersion
             };
-            await PopulateSubjectsAsync(model);
             return View(model);
         }
 
@@ -268,12 +290,14 @@ namespace LT_Web_Nhom4.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditClassViewModel model, CancellationToken cancellationToken)
         {
+            model.CreateNewSubject = true;
+            ModelState.Remove(nameof(model.SubjectId));
+
             if (!await _accessPolicy.IsClassOwnerAsync(model.Id, CurrentUserId, IsAdmin))
             {
                 return Forbid();
             }
 
-            await PopulateSubjectsAsync(model);
             ValidateVideoUrl(model.IntroVideoUrl, nameof(model.IntroVideoUrl));
             var classRoom = await _context.Classes
                 .Include(item => item.MediaAssets)
@@ -307,6 +331,12 @@ namespace LT_Web_Nhom4.Controllers
             var deletedPaths = new List<string>();
             try
             {
+                var subject = await ResolveSubjectAsync(model, cancellationToken);
+                if (subject is null)
+                {
+                    return View(model);
+                }
+
                 var removedMedia = classRoom.MediaAssets.Where(media => removeIds.Contains(media.Id)).ToList();
                 foreach (var media in removedMedia)
                 {
@@ -316,7 +346,13 @@ namespace LT_Web_Nhom4.Controllers
                 }
 
                 await AddClassMediaAsync(classRoom, imageFiles, videoFiles, storedPaths, cancellationToken);
-                classRoom.SubjectId = model.SubjectId;
+                classRoom.SubjectId = subject.Id;
+                if (subject.Id == 0)
+                {
+                    _context.Subjects.Add(subject);
+                    classRoom.Subject = subject;
+                }
+
                 classRoom.Name = model.Name.Trim();
                 classRoom.Description = NormalizeOptional(model.Description);
                 classRoom.Semester = NormalizeOptional(model.Semester);
@@ -407,6 +443,30 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             var member = await _context.ClassMembers.FindAsync(id, userId);
+            if (member is null)
+            {
+                if (IsAjaxRequest())
+                {
+                    return NotFound(new { ok = false, message = "Không tìm thấy học viên trong lớp." });
+                }
+
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            member.Status = ClassMemberStatus.Removed;
+            await _context.SaveChangesAsync();
+
+            var memberCount = await _context.ClassMembers
+                .CountAsync(item => item.ClassId == id && item.Status == ClassMemberStatus.Active);
+            var message = "Học viên đã được xóa khỏi lớp.";
+
+            if (IsAjaxRequest())
+            {
+                return Json(new { ok = true, message, memberCount });
+            }
+
+            TempData["ClassMessage"] = message;
+            member = null;
             if (member is not null)
             {
                 member.Status = ClassMemberStatus.Removed;
@@ -415,6 +475,11 @@ namespace LT_Web_Nhom4.Controllers
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private bool IsAjaxRequest()
+        {
+            return string.Equals(Request.Headers.XRequestedWith, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<ClassListViewModel> BuildListModelAsync()
@@ -529,13 +594,110 @@ namespace LT_Web_Nhom4.Controllers
 
         private async Task PopulateSubjectsAsync(CreateClassViewModel model)
         {
-            model.Subjects = await _context.Subjects.AsNoTracking().OrderBy(item => item.Name)
+            model.Subjects = await _context.Subjects.AsNoTracking()
+                .Where(item => item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin)
+                .OrderBy(item => item.Name)
                 .Select(item => new SubjectOptionViewModel { Id = item.Id, Label = item.Code + " - " + item.Name })
                 .ToListAsync();
             if (model.SubjectId == 0 && model.Subjects.Count > 0)
             {
                 model.SubjectId = model.Subjects[0].Id;
             }
+        }
+
+        private async Task<Subject?> ResolveSubjectAsync(CreateClassViewModel model, CancellationToken cancellationToken)
+        {
+            if (!model.CreateNewSubject)
+            {
+                var subjectExists = await _context.Subjects.AnyAsync(
+                    item => item.Id == model.SubjectId
+                        && (item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin),
+                    cancellationToken);
+                if (!subjectExists)
+                {
+                    ModelState.AddModelError(nameof(model.SubjectId), "Vui lòng chọn môn học hợp lệ hoặc tạo môn học riêng.");
+                    return null;
+                }
+
+                return new Subject { Id = model.SubjectId };
+            }
+
+            var code = NormalizeSubjectCode(model.NewSubjectCode);
+            var name = NormalizeOptional(model.NewSubjectName);
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectCode), "Vui lòng nhập mã môn học.");
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectName), "Vui lòng nhập tên môn học.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return null;
+            }
+
+            var currentSubject = model is EditClassViewModel editModel && editModel.SubjectId > 0
+                ? await _context.Subjects.FirstOrDefaultAsync(item => item.Id == editModel.SubjectId, cancellationToken)
+                : null;
+            if (currentSubject is not null
+                && string.Equals(currentSubject.Code, code, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(currentSubject.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.Equals(currentSubject.OwnerId, CurrentUserId, StringComparison.Ordinal) || IsAdmin)
+                {
+                    currentSubject.Description = NormalizeOptional(model.NewSubjectDescription);
+                    return currentSubject;
+                }
+
+                return new Subject { Id = currentSubject.Id };
+            }
+
+            var canUpdateCurrentSubject = currentSubject is not null
+                && string.Equals(currentSubject.OwnerId, CurrentUserId, StringComparison.Ordinal);
+            var excludedSubjectId = canUpdateCurrentSubject ? currentSubject!.Id : 0;
+
+            var duplicateCode = await _context.Subjects.AnyAsync(
+                item => item.Id != excludedSubjectId && item.Code.ToUpper() == code,
+                cancellationToken);
+            if (duplicateCode)
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectCode), "Mã môn học đã tồn tại. Vui lòng dùng mã khác.");
+            }
+
+            var normalizedName = name!.ToUpperInvariant();
+            var duplicateName = await _context.Subjects.AnyAsync(
+                item => item.Id != excludedSubjectId
+                    && item.Name.ToUpper() == normalizedName
+                    && (item.OwnerId == null || item.OwnerId == CurrentUserId || IsAdmin),
+                cancellationToken);
+            if (duplicateName)
+            {
+                ModelState.AddModelError(nameof(model.NewSubjectName), "Tên môn học đã tồn tại trong danh sách của bạn.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return null;
+            }
+
+            if (canUpdateCurrentSubject)
+            {
+                currentSubject!.Code = code;
+                currentSubject.Name = name;
+                currentSubject.Description = NormalizeOptional(model.NewSubjectDescription);
+                return currentSubject;
+            }
+
+            return new Subject
+            {
+                Code = code,
+                Name = name,
+                Description = NormalizeOptional(model.NewSubjectDescription),
+                OwnerId = CurrentUserId
+            };
         }
 
         private void ValidateVideoUrl(string? value, string key)
@@ -555,6 +717,16 @@ namespace LT_Web_Nhom4.Controllers
         {
             var normalized = value?.Trim();
             return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        }
+
+        private static string NormalizeSubjectCode(string? value)
+        {
+            var raw = new string((value ?? string.Empty)
+                .Trim()
+                .ToUpperInvariant()
+                .Where(character => char.IsLetterOrDigit(character) || character is '-' or '_')
+                .ToArray());
+            return raw.Length > 50 ? raw[..50] : raw;
         }
     }
 }
