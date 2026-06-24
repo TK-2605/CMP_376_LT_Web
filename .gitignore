@@ -26,6 +26,10 @@ artifacts/
 
 ## ASP.NET local config
 appsettings.*.local.json
+appsettings.Local.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.*.secrets.json
 secrets.json
 .env
 .env.*
@@ -39,6 +43,11 @@ deploy/postgres/render-deploy-summary.json
 *.bacpac
 *.bak
 *.trn
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
 
 ## Rider / VS Code
 .idea/
